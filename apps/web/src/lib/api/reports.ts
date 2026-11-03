@@ -7,7 +7,9 @@ export type ReportSlug =
   | "budget-utilization"
   | "purchase-orders"
   | "contracts"
-  | "invoices";
+  | "invoices"
+  | "asset-movements"
+  | "employees";
 
 export type ReportFormat = "json" | "csv" | "pdf" | "xlsx";
 
@@ -47,7 +49,18 @@ export const REPORT_DEFINITIONS: Array<{
   {
     slug: "invoices",
     title: "Invoices / expenditure",
-    description: "Invoice amounts and payment status.",
+    description:
+      "Invoice amounts, post/commitment USD (Wave 2), actual paid USD, and outstanding balance.",
+  },
+  {
+    slug: "asset-movements",
+    title: "Asset issuance & returns",
+    description: "Operational movement document lines (official forms pending D12).",
+  },
+  {
+    slug: "employees",
+    title: "Employee register",
+    description: "Employee master data for HR/IT assignment reporting (R02).",
   },
 ];
 

@@ -1,8 +1,8 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Wave 4 COMPLETE** (premium enterprise UI redesign — frontend only); **Wave 3 VERIFIED** baseline preserved; **UAT NOT STARTED**  
-**Last verified at:** 2026-11-03 — see `WAVE4_PREMIUM_UI_REDESIGN_REPORT.md`, `CLIENT_APPROVED_WAVE3_REPORT.md`  
-**Reports:** `CLIENT_APPROVED_WAVE3_REPORT.md`, Wave 2 report, `PHASE05_PRE_UAT_REPORT.md`
+**Current phase:** **Wave 5 checkpoint COMPLETE** (business closure + Windows deployment prep); **Wave 4 COMPLETE**; **Wave 3 VERIFIED**; **UAT NOT STARTED**  
+**Last verified at:** 2026-11-03 — `WAVE5_BUSINESS_CLOSURE_REPORT.md`, `docs/deployment/WINDOWS_DEPLOYMENT_READINESS_REPORT.md`  
+**Local Git:** Wave 5 commit on `master` (see deployment readiness report §10 after commit)
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -26,15 +26,17 @@
 | Client Wave 2 | **COMPLETE** (financial + backup rotation; provisional notices remain) | `docs/release/CLIENT_APPROVED_WAVE2_REPORT.md` |
 | Client Wave 3 | **VERIFIED** (6 finance + 6 inventory E2E scenarios; API 66/66; web Vitest 43/43; backup rotation + isolated restore) | `docs/release/CLIENT_APPROVED_WAVE3_REPORT.md` |
 | Client Wave 4 | **COMPLETE** (premium UI; Wave 4B fidelity pass on priority screens) | `docs/frontend/WAVE4_PREMIUM_UI_REDESIGN_REPORT.md` |
+| Client Wave 5 | **COMPLETE** (requirements audit; report exports; gap matrix) | `docs/release/WAVE5_BUSINESS_CLOSURE_REPORT.md` |
+| Windows deployment prep | **COMPLETE** (install/backup docs + `scripts/windows/*`; **not deployed**) | `docs/deployment/WINDOWS_*` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |
 | P14 | PARTIAL | D12 document templates |
 | P16 | **PARTIAL (Wave 1)** | 60-day `NOTIFICATION_LEAD_DAYS`; PO `valid_until` when set |
 | P17 | **PARTIAL (Wave 2)** | Weekly retention in script (`ITDMS_BACKUP_RETAIN_LOCAL`); restore drill Phase 02; RPO/RTO still pending |
-| P18 | PARTIAL | D12 export templates |
+| P18 | **PARTIAL** | Operational XLSX/CSV (Wave 5: +movements, +employees, invoice Wave 2 columns); official templates **D12** |
 | P19 | IMPLEMENTED | test matrix |
 
-**Production-ready:** **NO** — see `docs/release-report.md` and UI08 remaining issues.
+**Production-ready:** **NO** — see `docs/release-report.md`, `PRE_DEPLOYMENT_GAP_LIST.md`, and UI08 remaining issues.
 
 Never mark VERIFIED based on generated code alone.

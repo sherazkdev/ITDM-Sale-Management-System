@@ -148,19 +148,86 @@ export class ReportService {
       orderBy: { invoiceNumber: "asc" },
       take: 5000,
     });
-    const header = ["invoiceNumber", "poNumber", "amount", "status", "outstanding"];
+    const header = [
+      "invoiceNumber",
+      "poNumber",
+      "currency",
+      "invoiceAmount",
+      "postedAt",
+      "commitmentAmountUsd",
+      "actualPaidUsd",
+      "paymentStatus",
+      "outstandingInInvoiceCurrency",
+    ];
     const rows = invoices.map((inv) => {
       const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const paidUsd = inv.payments.reduce((s, p) => s + Number(p.amountUsd), 0);
       const outstanding = Number(inv.invoiceAmount) - paid;
+      const commitmentUsd =
+        inv.commitmentAmountUsd != null
+          ? String(inv.commitmentAmountUsd)
+          : inv.postedAt
+            ? "PROVISIONAL_COMMITMENT_USD"
+            : "";
       return [
         inv.invoiceNumber,
         inv.purchaseOrder.poNumber,
+        inv.currency.trim(),
         String(inv.invoiceAmount),
+        inv.postedAt ? inv.postedAt.toISOString() : "",
+        commitmentUsd,
+        inv.postedAt || inv.payments.length > 0 ? String(paidUsd) : "",
         inv.paymentStatus,
         String(outstanding),
       ];
     });
     return this.formatTabular("invoices", header, rows, format);
+  }
+
+  /** Operational issuance/return lines (non-official layout — D12). */
+  async assetMovements(format: ExportFormat) {
+    const lines = await this.prisma.assetMovementDocumentLine.findMany({
+      include: {
+        document: { include: { employee: true } },
+        asset: true,
+      },
+      orderBy: [{ document: { occurredAt: "desc" } }, { documentLineId: "asc" }],
+      take: 10000,
+    });
+    const header = [
+      "documentType",
+      "referenceNumber",
+      "occurredAt",
+      "employee",
+      "assetCode",
+      "assetName",
+    ];
+    const rows = lines.map((line) => [
+      line.document.documentType,
+      line.document.referenceNumber ?? "",
+      line.document.occurredAt.toISOString(),
+      line.document.employee?.fullName ?? "",
+      line.asset.assetCode,
+      line.asset.assetName,
+    ]);
+    return this.formatTabular("asset-movements", header, rows, format);
+  }
+
+  async employees(format: ExportFormat) {
+    const employees = await this.prisma.employee.findMany({
+      orderBy: { employeeNumber: "asc" },
+      take: 5000,
+    });
+    const header = ["employeeNumber", "fullName", "department", "email", "contactNumber", "isActive"];
+    const rows = employees.map((e) => [
+      e.employeeNumber,
+      e.fullName,
+      e.department ?? "",
+      e.email ?? "",
+      e.contactNumber ?? "",
+      e.isActive ? "yes" : "no",
+    ]);
+    return this.formatTabular("employees", header, rows, format);
   }
 
   private formatTabular(

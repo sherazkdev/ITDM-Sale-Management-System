@@ -118,6 +118,18 @@ describe("P12–P18 extended modules", () => {
     expect(xlsx.headers["x-itdms-export-disclaimer"]).toBe("NON-OFFICIAL-D12");
     expect(Buffer.isBuffer(xlsx.body) || typeof xlsx.body === "object").toBe(true);
 
+    const movements = await request(app)
+      .get("/api/v1/reports/asset-movements?format=json")
+      .set(sessionRequestHeaders(cookie))
+      .expect(200);
+    expect(movements.body.data.header).toContain("documentType");
+
+    const empReport = await request(app)
+      .get("/api/v1/reports/employees?format=csv")
+      .set(sessionRequestHeaders(cookie))
+      .expect(200);
+    expect(empReport.text).toContain("employeeNumber");
+
     const csv = await request(app)
       .get("/api/v1/reports/asset-register?format=csv")
       .set(sessionRequestHeaders(cookie))

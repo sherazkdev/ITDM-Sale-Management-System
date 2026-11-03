@@ -83,4 +83,18 @@ export class ReportController {
     await this.service.logExport(req.principal?.userId, "invoices", getRequestId(req));
     sendReport(req, res, data, format);
   });
+
+  assetMovements = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const data = await this.service.assetMovements(format);
+    await this.service.logExport(req.principal?.userId, "asset-movements", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
+
+  employees = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const data = await this.service.employees(format);
+    await this.service.logExport(req.principal?.userId, "employees", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
 }

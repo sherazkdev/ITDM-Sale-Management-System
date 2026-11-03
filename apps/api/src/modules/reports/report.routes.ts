@@ -19,5 +19,7 @@ export function createReportRouter(deps: {
   router.get("/purchase-orders", ...read, deps.reportController.purchaseOrders);
   router.get("/contracts", ...read, deps.reportController.contracts);
   router.get("/invoices", ...read, deps.reportController.invoices);
+  router.get("/asset-movements", ...read, deps.reportController.assetMovements);
+  router.get("/employees", ...read, deps.reportController.employees);
   return router;
 }
