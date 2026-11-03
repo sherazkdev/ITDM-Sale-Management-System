@@ -42,6 +42,7 @@ async function main() {
   for (const path of [
     "/api/v1/reports/asset-movements?format=xlsx",
     "/api/v1/reports/employees?format=xlsx",
+    "/api/v1/reports/invoices?format=xlsx",
     "/api/v1/reports/invoices?format=json",
   ]) {
     const res = await fetch(`${base}${path}`, { headers });
@@ -64,6 +65,22 @@ async function main() {
         process.exitCode = 1;
         continue;
       }
+    } else if (path.includes("invoices") && path.includes("json")) {
+      const body = await res.json();
+      const header = body?.data?.header;
+      const required = [
+        "invoiceNumber",
+        "commitmentAmountUsd",
+        "actualPaidUsd",
+        "postedAt",
+      ];
+      if (!Array.isArray(header) || !required.every((c) => header.includes(c))) {
+        console.error("FAIL invoice json columns", header);
+        process.exitCode = 1;
+        continue;
+      }
+      console.log("OK", path, `rows=${body?.data?.rows?.length ?? 0}`, `columns=${header.length}`);
+      continue;
     }
     console.log("OK", path, disclaimer ? `disclaimer=${disclaimer}` : "json");
   }

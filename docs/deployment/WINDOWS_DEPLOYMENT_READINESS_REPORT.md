@@ -84,12 +84,33 @@ Recommended boot order: PostgreSQL → API → Web. Health gate: `/api/v1/health
 |-------|--------|
 | API Vitest full suite (`itdms_test`) | **66/66 PASS** (Wave 5) |
 | Web Vitest | **43/43 PASS** |
-| `extended-modules.test.ts` (reports incl. movements/employees) | **4/4 PASS** |
-| `verify-wave5-report-exports.mjs` against local API | **404 on new routes** until API process restarted/rebuilt; **Vitest + extended-modules** confirm implementation |
+| `extended-modules.test.ts` (reports incl. movements/employees) | **4/4 PASS** (re-run 2026-11-03 after API restart) |
 | `preflight-check.ps1` | **PASS** (Node 24.x; warnings: no `pg_dump` in PATH, dev credentials in local `.env`) |
 | `build-production.ps1` | Validated by structure review; full run optional on dev machine (long) |
 
-**Requires client machine:** NSSM service recovery, Task Scheduler identity, firewall rules, PostgreSQL as Windows service under AV, restore drill on production paths.
+### 6.1 Local runtime verification (2026-11-03)
+
+| Step | Evidence |
+|------|----------|
+| Stale API removed | Stopped PID **26404** (`node dist/index.js` on `:3000`; prior `health/ready` → `service: itdms-api`) |
+| Dev database | **`itdms_dev@127.0.0.1:5433`** — not staging `:5434`; `prisma migrate status` → **8 migrations, schema up to date** |
+| Updated API | `npm run dev:api` (`tsx watch src/index.ts`), `NODE_ENV=development`, explicit `DATABASE_URL` → dev DB |
+| Health | `GET /api/v1/health/ready` → `success: true`, `checks.database: up` |
+| `verify-wave5-report-exports.mjs` | **PASS** — anonymous **401**; authenticated: asset-movements **XLSX** + `NON-OFFICIAL-D12`; employees **XLSX**; invoices **XLSX** + **JSON** (9 columns incl. `commitmentAmountUsd`, `actualPaidUsd`, `postedAt`; **134** invoice rows on dev DB) |
+
+**Requires client machine:** NSSM service recovery, Task Scheduler identity, firewall rules, PostgreSQL as Windows service under AV, restore drill on production paths; install **PostgreSQL client tools (`pg_dump`)** on PATH for scheduled backups (documented in installation guide).
+
+---
+
+## 6.2 Deployment safety (confirmed)
+
+| Item | Status |
+|------|--------|
+| Secrets in Git | **None** — `.env` gitignored; templates use placeholders only |
+| Production credentials | **Not** committed; dev seed passwords documented for rotation only |
+| `pg_dump` / backup tools | **Client prerequisite** — preflight warns if missing |
+| Windows helper scripts | **Non-destructive** — no auto DB reset, no silent prod service start |
+| Application scope | Report routes + verify script only; Wave 3/4 behavior preserved |
 
 ---
 
