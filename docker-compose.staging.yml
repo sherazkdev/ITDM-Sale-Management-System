@@ -1,0 +1,25 @@
+# Local staging stack — isolated from dev Postgres (5433) and test DB (itdms_test).
+# NOT for client production server. Credentials are staging-only placeholders.
+
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: itdms-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: itdms_staging
+      POSTGRES_PASSWORD: itdms_staging_local_only
+      POSTGRES_DB: itdms_staging
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - itdms_staging_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itdms_staging -d itdms_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  itdms_staging_pg_data:

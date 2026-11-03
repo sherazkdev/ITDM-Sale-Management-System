@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+ * ITDMS design tokens — ORLEN red corporate theme (Phase: final branding)
+ *
+ * Primary aligned to ORLEN corporate red (~ #E30613) pending client logo proof.
+ * Semantic success / warning / info / destructive unchanged for hierarchy.
+ * Layout tokens (radius, spacing) unchanged from CRM port.
+ * ------------------------------------------------------------------ */
+
+@layer base {
+  :root {
+    --background: 0 18% 97.5%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 357 93% 46%;
+    --primary-foreground: 0 0% 100%;
+    --brand-gradient-to: 0 76% 38%;
+
+    --secondary: 357 35% 96%;
+    --secondary-foreground: 357 55% 32%;
+
+    --muted: 220 16% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 357 100% 97%;
+    --accent-foreground: 357 60% 28%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 16% 91%;
+    --input: 220 16% 91%;
+    --ring: 357 93% 46%;
+
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-accent: 357 100% 97%;
+    --sidebar-accent-foreground: 357 85% 40%;
+
+    --radius: 0.625rem;
+    --radius-lg: 0.875rem;
+
+    --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    --surface-muted: 30 25% 97%;
+    --elevated: 0 0% 100%;
+
+    --chart-brand: 357 93% 46%;
+    --chart-brand-muted: 357 70% 58%;
+  }
+
+  .dark {
+    --background: 224 32% 8%;
+    --foreground: 220 14% 95%;
+
+    --card: 224 28% 11%;
+    --card-foreground: 220 14% 95%;
+
+    --popover: 224 28% 11%;
+    --popover-foreground: 220 14% 95%;
+
+    --primary: 357 88% 55%;
+    --primary-foreground: 0 0% 100%;
+    --brand-gradient-to: 0 70% 42%;
+
+    --secondary: 224 25% 16%;
+    --secondary-foreground: 220 14% 95%;
+
+    --muted: 224 25% 16%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 357 35% 18%;
+    --accent-foreground: 220 14% 95%;
+
+    --destructive: 0 65% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 224 22% 20%;
+    --input: 224 22% 20%;
+    --ring: 357 88% 55%;
+
+    --sidebar: 240 30% 6%;
+    --sidebar-foreground: 220 14% 95%;
+    --sidebar-accent: 357 40% 22%;
+    --sidebar-accent-foreground: 220 14% 95%;
+
+    --chart-brand: 357 88% 55%;
+    --chart-brand-muted: 357 65% 62%;
+
+    --surface-muted: 224 22% 12%;
+    --elevated: 224 28% 11%;
+  }
+}
+
+@layer components {
+  .page-stack {
+    @apply flex flex-col gap-6 md:gap-7;
+  }
+  .panel-muted {
+    @apply rounded-xl border border-border bg-[hsl(var(--surface-muted))]/50 p-4 md:p-5;
+  }
+  .list-toolbar-panel {
+    @apply rounded-xl border border-border bg-card p-4 shadow-card;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1, "ss01" 1;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--brand-gradient-to)) 100%
+  );
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "itdms",
+  "private": true,
+  "version": "0.1.0",
+  "description": "IT Department Management System — modular monolith",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@itdms/api && npm run build --workspace=@itdms/web",
+    "build:api": "npm run build --workspace=@itdms/api",
+    "build:web": "npm run build --workspace=@itdms/web",
+    "dev:api": "npm run dev --workspace=@itdms/api",
+    "dev:web": "npm run dev --workspace=@itdms/web",
+    "lint": "npm run lint --workspace=@itdms/api && npm run lint --workspace=@itdms/web",
+    "typecheck": "npm run typecheck --workspace=@itdms/api && npm run typecheck --workspace=@itdms/web",
+    "test": "npm run test --workspace=@itdms/api && npm run test --workspace=@itdms/web",
+    "smoke:web-auth": "node scripts/smoke-web-auth.mjs",
+    "smoke:web-auth:embedded": "node scripts/smoke-web-auth-embedded.mjs",
+    "smoke:ui02": "node scripts/smoke-ui02-verification.mjs",
+    "smoke:ui04": "node scripts/smoke-ui04.mjs",
+    "smoke:ui05": "node scripts/smoke-ui05.mjs",
+    "smoke:ui06": "node scripts/smoke-ui06.mjs",
+    "smoke:ui07": "node scripts/smoke-ui07.mjs",
+    "smoke:ui08": "node scripts/smoke-ui08.mjs",
+    "test:e2e": "npm run test:e2e --workspace=@itdms/web",
+    "db:verify": "node scripts/db-verify.mjs",
+    "backup:itdms": "node scripts/backup-itdms.mjs",
+    "backup:db": "node scripts/backup-db.mjs",
+    "restore:rehearsal": "node scripts/restore-rehearsal.mjs",
+    "perf:baseline": "node scripts/perf-baseline.mjs",
+    "perf:explain": "node scripts/explain-phase02.mjs",
+    "verify:documents": "node scripts/verify-document-integrity.mjs",
+    "staging:init": "node scripts/staging-init.mjs",
+    "staging:smoke": "node scripts/staging-smoke.mjs",
+    "staging:persistence": "node scripts/staging-persistence.mjs",
+    "staging:document-persistence": "node scripts/staging-document-persistence.mjs",
+    "staging:e2e": "npm run staging:e2e --workspace=@itdms/web",
+    "smoke:api": "npm run build --workspace=@itdms/api && node scripts/smoke-api.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "embedded-postgres": "17.5.0-beta.15",
+    "pg": "8.14.1"
+  }
+}

@@ -1,0 +1,571 @@
+// ITDMS core schema — source 13 PDF tables + engineering extensions (PO lines, auth, payments, movement docs).
+// Apply only via reviewed `prisma migrate` on isolated dev/test databases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// PDF: issue or return — not a business workflow enum beyond source literals.
+enum AssetTransactionType {
+  ISSUE  @map("issue")
+  RETURN @map("return")
+
+  @@map("asset_transaction_type")
+}
+
+model Employee {
+  employeeId     BigInt  @id @default(autoincrement()) @map("employee_id")
+  employeeNumber String  @unique @map("employee_number") @db.VarChar(64)
+  fullName       String  @map("full_name") @db.VarChar(255)
+  department     String? @db.VarChar(128)
+  designation    String? @db.VarChar(128)
+  contactNumber  String? @map("contact_number") @db.VarChar(64)
+  email          String? @db.VarChar(255)
+  isActive       Boolean @default(true) @map("is_active")
+
+  assetTransactions     AssetTransaction[]
+  currentAssignedAssets Asset[]            @relation("AssetCurrentAssignee")
+  user                  User?
+  movementDocuments     AssetMovementDocument[]
+
+  @@map("employees")
+}
+
+model AssetCategory {
+  categoryId   BigInt  @id @default(autoincrement()) @map("category_id")
+  categoryName String  @unique @map("category_name") @db.VarChar(128)
+  description  String? @db.Text
+
+  assets Asset[]
+  nonAssetStockItems NonAssetStockItem[]
+
+  @@map("asset_categories")
+}
+
+model Vendor {
+  vendorId           BigInt  @id @default(autoincrement()) @map("vendor_id")
+  vendorName         String  @map("vendor_name") @db.VarChar(255)
+  registrationNumber String? @map("registration_number") @db.VarChar(128)
+  contactPerson      String? @map("contact_person") @db.VarChar(255)
+  phone              String? @db.VarChar(64)
+  email              String? @db.VarChar(255)
+  address            String? @db.Text
+  isActive           Boolean @default(true) @map("is_active")
+
+  contracts          Contract[]
+  purchaseOrders     PurchaseOrder[]
+  maintenanceRecords MaintenanceRecord[]
+  softwareLicenses   SoftwareLicense[]
+
+  @@map("vendors")
+}
+
+model Contract {
+  contractId     BigInt   @id @default(autoincrement()) @map("contract_id")
+  contractNumber String   @unique @map("contract_number") @db.VarChar(64)
+  vendorId       BigInt   @map("vendor_id")
+  startDate      DateTime @map("start_date") @db.Date
+  expiryDate     DateTime @map("expiry_date") @db.Date
+  contractValue  Decimal? @map("contract_value") @db.Decimal(18, 2)
+  renewalStatus  String?  @map("renewal_status") @db.VarChar(64)
+  documentPath   String?  @map("document_path") @db.VarChar(512)
+
+  vendor             Vendor              @relation(fields: [vendorId], references: [vendorId], onDelete: Restrict)
+  purchaseOrders     PurchaseOrder[]
+  maintenanceRecords MaintenanceRecord[]
+
+  @@index([vendorId])
+  @@index([expiryDate])
+  @@map("contracts")
+}
+
+model PurchaseOrder {
+  purchaseOrderId BigInt   @id @default(autoincrement()) @map("purchase_order_id")
+  poNumber        String   @unique @map("po_number") @db.VarChar(64)
+  vendorId        BigInt   @map("vendor_id")
+  contractId      BigInt?  @map("contract_id")
+  poDate          DateTime @map("po_date") @db.Date
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(18, 2)
+  currency        String   @db.Char(3)
+  status          String   @db.VarChar(64)
+  documentPath    String?  @map("document_path") @db.VarChar(512)
+  /// Optional validity/end date for PO expiry alerts — semantics PROPOSED until D04 approved.
+  validUntil      DateTime? @map("valid_until") @db.Date
+
+  vendor             Vendor              @relation(fields: [vendorId], references: [vendorId], onDelete: Restrict)
+  contract           Contract?           @relation(fields: [contractId], references: [contractId], onDelete: Restrict)
+  invoices           Invoice[]
+  assets             Asset[]
+  softwareLicenses   SoftwareLicense[]
+  budgetTransactions BudgetTransaction[]
+  lines              PurchaseOrderLine[]
+  nonAssetStockItems NonAssetStockItem[]
+
+  @@index([vendorId])
+  @@index([contractId])
+  @@index([status])
+  @@index([validUntil])
+  @@map("purchase_orders")
+}
+
+model Invoice {
+  invoiceId       BigInt    @id @default(autoincrement()) @map("invoice_id")
+  invoiceNumber   String    @unique @map("invoice_number") @db.VarChar(64)
+  purchaseOrderId BigInt    @map("purchase_order_id")
+  invoiceDate     DateTime  @map("invoice_date") @db.Date
+  invoiceAmount   Decimal   @map("invoice_amount") @db.Decimal(18, 2)
+  /// Transaction currency (from PO at create). Reporting currency is USD (Wave 2 / D08).
+  currency        String    @db.Char(3)
+  paymentStatus   String    @map("payment_status") @db.VarChar(64)
+  paymentDate     DateTime? @map("payment_date") @db.Date
+  /// Set when invoice is posted — committed expenditure event (client Wave 2).
+  postedAt        DateTime? @map("posted_at") @db.Timestamptz(6)
+  budgetId        BigInt?   @map("budget_id")
+  /// Manual USD conversion at post for non-USD invoices (optional — null = committed USD provisional).
+  commitmentExchangeRateToUsd Decimal? @map("commitment_exchange_rate_to_usd") @db.Decimal(18, 8)
+  commitmentAmountUsd         Decimal? @map("commitment_amount_usd") @db.Decimal(18, 2)
+
+  purchaseOrder      PurchaseOrder       @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  budgetAllocation   BudgetAllocation?   @relation(fields: [budgetId], references: [budgetId], onDelete: Restrict)
+  budgetTransactions BudgetTransaction[]
+  payments           InvoicePayment[]
+
+  @@index([purchaseOrderId])
+  @@index([paymentStatus])
+  @@index([postedAt])
+  @@map("invoices")
+}
+
+model Asset {
+  assetId         BigInt    @id @default(autoincrement()) @map("asset_id")
+  assetCode       String    @unique @map("asset_code") @db.VarChar(64)
+  assetName       String    @map("asset_name") @db.VarChar(255)
+  categoryId      BigInt    @map("category_id")
+  serialNumber    String?   @map("serial_number") @db.VarChar(128)
+  purchaseOrderId BigInt?   @map("purchase_order_id")
+  purchaseDate    DateTime? @map("purchase_date") @db.Date
+  purchaseCost    Decimal?  @map("purchase_cost") @db.Decimal(18, 2)
+  assetStatus               String    @map("asset_status") @db.VarChar(64)
+  currentLocation           String?   @map("current_location") @db.VarChar(255)
+  currentAssigneeEmployeeId BigInt?   @map("current_assignee_employee_id")
+  purchaseOrderLineId       BigInt?   @map("purchase_order_line_id")
+
+  category           AssetCategory       @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
+  purchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  purchaseOrderLine  PurchaseOrderLine?  @relation(fields: [purchaseOrderLineId], references: [purchaseOrderLineId], onDelete: Restrict)
+  currentAssignee    Employee?           @relation("AssetCurrentAssignee", fields: [currentAssigneeEmployeeId], references: [employeeId], onDelete: Restrict)
+  assetTransactions  AssetTransaction[]
+  maintenanceRecords MaintenanceRecord[]
+  movementDocLines   AssetMovementDocumentLine[]
+
+  @@index([categoryId])
+  @@index([purchaseOrderId])
+  @@index([purchaseOrderLineId])
+  @@index([currentAssigneeEmployeeId])
+  @@index([assetStatus])
+  @@map("assets")
+}
+
+/// Quantity-based non-asset inventory (cables, consumables) — separate from serialized `assets` (Wave 1 / D09 partial).
+model NonAssetStockItem {
+  stockItemId      BigInt    @id @default(autoincrement()) @map("stock_item_id")
+  stockCode        String    @unique @map("stock_code") @db.VarChar(64)
+  itemName         String    @map("item_name") @db.VarChar(255)
+  /// Client classification (e.g. consumable, cable) — distinct from category tree.
+  itemType         String?   @map("item_type") @db.VarChar(64)
+  categoryId       BigInt    @map("category_id")
+  quantityOnHand   Decimal   @map("quantity_on_hand") @db.Decimal(18, 4)
+  unitOfMeasure    String    @map("unit_of_measure") @db.VarChar(32)
+  purchaseOrderId  BigInt?   @map("purchase_order_id")
+  stockReceivedDate DateTime @map("stock_received_date") @db.Date
+  currentLocation  String?   @map("current_location") @db.VarChar(255)
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  category      AssetCategory  @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+
+  @@index([categoryId])
+  @@index([unitOfMeasure])
+  @@index([purchaseOrderId])
+  @@index([stockReceivedDate])
+  @@map("non_asset_stock_items")
+}
+
+model AssetTransaction {
+  transactionId   BigInt               @id @default(autoincrement()) @map("transaction_id")
+  assetId         BigInt               @map("asset_id")
+  employeeId      BigInt?              @map("employee_id")
+  transactionType AssetTransactionType @map("transaction_type")
+  transactionDate DateTime             @map("transaction_date") @db.Timestamptz(6)
+  conditionNotes  String?              @map("condition_notes") @db.Text
+  referenceNumber      String?              @map("reference_number") @db.VarChar(64)
+  processedByUserId    BigInt?              @map("processed_by_user_id")
+  movementDocumentId   BigInt?              @map("movement_document_id")
+  remarks              String?              @db.Text
+
+  asset            Asset                  @relation(fields: [assetId], references: [assetId], onDelete: Restrict)
+  employee         Employee?              @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict)
+  processedByUser  User?                  @relation(fields: [processedByUserId], references: [userId], onDelete: Restrict)
+  movementDocument AssetMovementDocument? @relation(fields: [movementDocumentId], references: [documentId], onDelete: Restrict)
+  documentLine     AssetMovementDocumentLine?
+
+  @@index([assetId])
+  @@index([employeeId])
+  @@index([transactionDate])
+  @@index([processedByUserId])
+  @@index([movementDocumentId])
+  @@map("asset_transactions")
+}
+
+model MaintenanceRecord {
+  maintenanceId   BigInt    @id @default(autoincrement()) @map("maintenance_id")
+  assetId         BigInt?   @map("asset_id")
+  contractId      BigInt?   @map("contract_id")
+  vendorId        BigInt?   @map("vendor_id")
+  maintenanceType String    @map("maintenance_type") @db.VarChar(128)
+  requestDate     DateTime  @map("request_date") @db.Date
+  completionDate  DateTime? @map("completion_date") @db.Date
+  cost            Decimal?  @db.Decimal(18, 2)
+  status          String    @db.VarChar(64)
+  remarks         String?   @db.Text
+
+  asset    Asset?    @relation(fields: [assetId], references: [assetId], onDelete: Restrict)
+  contract Contract? @relation(fields: [contractId], references: [contractId], onDelete: Restrict)
+  vendor   Vendor?   @relation(fields: [vendorId], references: [vendorId], onDelete: Restrict)
+
+  @@index([assetId])
+  @@index([contractId])
+  @@index([vendorId])
+  @@index([status])
+  @@map("maintenance_records")
+}
+
+model SoftwareLicense {
+  licenseId           BigInt   @id @default(autoincrement()) @map("license_id")
+  softwareName        String   @map("software_name") @db.VarChar(255)
+  licenseKeyReference String?  @map("license_key_reference") @db.VarChar(255)
+  vendorId            BigInt?  @map("vendor_id")
+  purchaseOrderId     BigInt?  @map("purchase_order_id")
+  startDate           DateTime @map("start_date") @db.Date
+  expiryDate          DateTime @map("expiry_date") @db.Date
+  licenseQuantity     Int      @map("license_quantity")
+  renewalCost         Decimal? @map("renewal_cost") @db.Decimal(18, 2)
+  status              String   @db.VarChar(64)
+
+  vendor        Vendor?        @relation(fields: [vendorId], references: [vendorId], onDelete: Restrict)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+
+  @@index([vendorId])
+  @@index([purchaseOrderId])
+  @@index([expiryDate])
+  @@map("software_licenses")
+}
+
+model FinancialYear {
+  financialYearId BigInt   @id @default(autoincrement()) @map("financial_year_id")
+  yearName        String   @unique @map("year_name") @db.VarChar(32)
+  startDate       DateTime @map("start_date") @db.Date
+  endDate         DateTime @map("end_date") @db.Date
+  status          String   @db.VarChar(64)
+
+  budgetAllocations BudgetAllocation[]
+
+  @@map("financial_years")
+}
+
+model BudgetAllocation {
+  budgetId        BigInt  @id @default(autoincrement()) @map("budget_id")
+  financialYearId BigInt  @map("financial_year_id")
+  budgetCategory  String  @map("budget_category") @db.VarChar(128)
+  allocatedAmount Decimal @map("allocated_amount") @db.Decimal(18, 2)
+  currency        String  @db.Char(3)
+
+  financialYear      FinancialYear       @relation(fields: [financialYearId], references: [financialYearId], onDelete: Restrict)
+  budgetTransactions BudgetTransaction[]
+  invoices           Invoice[]
+  invoicePayments    InvoicePayment[]
+
+  @@index([financialYearId])
+  @@map("budget_allocations")
+}
+
+model BudgetTransaction {
+  budgetTransactionId BigInt   @id @default(autoincrement()) @map("budget_transaction_id")
+  budgetId            BigInt   @map("budget_id")
+  purchaseOrderId     BigInt?  @map("purchase_order_id")
+  invoiceId           BigInt?  @map("invoice_id")
+  invoicePaymentId    BigInt?  @unique @map("invoice_payment_id")
+  /// COMMITTED_INVOICE | ACTUAL_PAYMENT | MANUAL (and legacy text rows).
+  transactionType     String   @map("transaction_type") @db.VarChar(64)
+  amount              Decimal  @db.Decimal(18, 2)
+  currency            String?  @db.Char(3)
+  amountUsdReporting  Decimal? @map("amount_usd_reporting") @db.Decimal(18, 2)
+  exchangeRateToUsd   Decimal? @map("exchange_rate_to_usd") @db.Decimal(18, 8)
+  transactionDate     DateTime @map("transaction_date") @db.Date
+  remarks             String?  @db.Text
+
+  budget        BudgetAllocation @relation(fields: [budgetId], references: [budgetId], onDelete: Restrict)
+  purchaseOrder PurchaseOrder?   @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  invoice       Invoice?         @relation(fields: [invoiceId], references: [invoiceId], onDelete: Restrict)
+  invoicePayment InvoicePayment? @relation(fields: [invoicePaymentId], references: [invoicePaymentId], onDelete: Restrict)
+
+  @@index([budgetId])
+  @@index([purchaseOrderId])
+  @@index([invoiceId])
+  @@map("budget_transactions")
+}
+
+// --- Extensions (source-aligned + infrastructure; permission/budget semantics remain configurable) ---
+
+model PurchaseOrderLine {
+  purchaseOrderLineId BigInt  @id @default(autoincrement()) @map("purchase_order_line_id")
+  purchaseOrderId     BigInt  @map("purchase_order_id")
+  lineNumber          Int     @map("line_number")
+  description         String  @db.VarChar(512)
+  lineType            String  @map("line_type") @db.VarChar(32)
+  quantity            Decimal @db.Decimal(18, 4)
+  unitPrice           Decimal @map("unit_price") @db.Decimal(18, 2)
+  lineSubtotal        Decimal @map("line_subtotal") @db.Decimal(18, 2)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  assets        Asset[]
+
+  @@unique([purchaseOrderId, lineNumber])
+  @@index([purchaseOrderId])
+  @@map("purchase_order_lines")
+}
+
+model User {
+  userId           BigInt    @id @default(autoincrement()) @map("user_id")
+  username         String    @unique @db.VarChar(128)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  displayName      String    @map("display_name") @db.VarChar(255)
+  email            String?   @unique @db.VarChar(255)
+  isActive         Boolean   @default(true) @map("is_active")
+  isLocked         Boolean   @default(false) @map("is_locked")
+  employeeId       BigInt?   @unique @map("employee_id")
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee         Employee? @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict)
+  userRoles        UserRole[]
+  sessions         Session[]
+  loginAttempts    LoginAttempt[]
+  assetTransactions AssetTransaction[]
+  auditLogs        AuditLog[] @relation("AuditActor")
+  movementDocuments AssetMovementDocument[]
+  storedDocuments  StoredDocument[]
+
+  @@map("users")
+}
+
+model Role {
+  roleId      BigInt @id @default(autoincrement()) @map("role_id")
+  roleKey     String @unique @map("role_key") @db.VarChar(64)
+  displayName String @map("display_name") @db.VarChar(128)
+  description String? @db.Text
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  permissionId BigInt @id @default(autoincrement()) @map("permission_id")
+  permissionKey String @unique @map("permission_key") @db.VarChar(128)
+  description  String? @db.Text
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId BigInt @map("user_id")
+  roleId BigInt @map("role_id")
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  role Role @relation(fields: [roleId], references: [roleId], onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       BigInt @map("role_id")
+  permissionId BigInt @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [roleId], onDelete: Restrict)
+  permission Permission @relation(fields: [permissionId], references: [permissionId], onDelete: Restrict)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Session {
+  sessionId     BigInt   @id @default(autoincrement()) @map("session_id")
+  userId        BigInt   @map("user_id")
+  tokenHash     String   @unique @map("token_hash") @db.VarChar(128)
+  expiresAt     DateTime @map("expires_at") @db.Timestamptz(6)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastSeenAt    DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  ipAddress     String?  @map("ip_address") @db.VarChar(64)
+  userAgent     String?  @map("user_agent") @db.VarChar(512)
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model LoginAttempt {
+  loginAttemptId BigInt   @id @default(autoincrement()) @map("login_attempt_id")
+  userId         BigInt?  @map("user_id")
+  usernameAttempt String  @map("username_attempt") @db.VarChar(128)
+  success        Boolean
+  ipAddress      String?  @map("ip_address") @db.VarChar(64)
+  attemptedAt    DateTime @default(now()) @map("attempted_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [userId], onDelete: Restrict)
+
+  @@index([usernameAttempt, attemptedAt])
+  @@map("login_attempts")
+}
+
+model InvoicePayment {
+  invoicePaymentId BigInt   @id @default(autoincrement()) @map("invoice_payment_id")
+  invoiceId        BigInt   @map("invoice_id")
+  amount           Decimal  @db.Decimal(18, 2)
+  currency         String   @db.Char(3)
+  exchangeRateToUsd Decimal @map("exchange_rate_to_usd") @db.Decimal(18, 8)
+  amountUsd        Decimal  @map("amount_usd") @db.Decimal(18, 2)
+  paidAt           DateTime @map("paid_at") @db.Timestamptz(6)
+  referenceNumber  String?  @map("reference_number") @db.VarChar(64)
+  idempotencyKey   String?  @unique @map("idempotency_key") @db.VarChar(128)
+  notes            String?  @db.Text
+  budgetId         BigInt?  @map("budget_id")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [invoiceId], onDelete: Restrict)
+  budget  BudgetAllocation? @relation(fields: [budgetId], references: [budgetId], onDelete: Restrict)
+  budgetTransaction BudgetTransaction?
+
+  @@index([invoiceId])
+  @@map("invoice_payments")
+}
+
+enum AssetMovementDocumentType {
+  ISSUANCE @map("issuance")
+  RETURN   @map("return")
+
+  @@map("asset_movement_document_type")
+}
+
+model AssetMovementDocument {
+  documentId      BigInt                    @id @default(autoincrement()) @map("document_id")
+  documentType    AssetMovementDocumentType @map("document_type")
+  referenceNumber String?                   @map("reference_number") @db.VarChar(64)
+  employeeId      BigInt?                   @map("employee_id")
+  processedByUserId BigInt?                 @map("processed_by_user_id")
+  occurredAt      DateTime                  @map("occurred_at") @db.Timestamptz(6)
+  createdAt       DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  employee       Employee? @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict)
+  processedByUser User?    @relation(fields: [processedByUserId], references: [userId], onDelete: Restrict)
+  lines          AssetMovementDocumentLine[]
+  transactions   AssetTransaction[]
+
+  @@index([employeeId])
+  @@index([referenceNumber])
+  @@map("asset_movement_documents")
+}
+
+model AssetMovementDocumentLine {
+  documentLineId BigInt @id @default(autoincrement()) @map("document_line_id")
+  documentId     BigInt @map("document_id")
+  assetId        BigInt @map("asset_id")
+  transactionId  BigInt? @unique @map("transaction_id")
+
+  document    AssetMovementDocument @relation(fields: [documentId], references: [documentId], onDelete: Restrict)
+  asset       Asset                 @relation(fields: [assetId], references: [assetId], onDelete: Restrict)
+  transaction AssetTransaction?     @relation(fields: [transactionId], references: [transactionId], onDelete: Restrict)
+
+  @@unique([documentId, assetId])
+  @@index([documentId])
+  @@map("asset_movement_document_lines")
+}
+
+model AuditLog {
+  auditLogId   BigInt   @id @default(autoincrement()) @map("audit_log_id")
+  actorUserId  BigInt?  @map("actor_user_id")
+  action       String   @db.VarChar(128)
+  targetType   String   @map("target_type") @db.VarChar(64)
+  targetId     String?  @map("target_id") @db.VarChar(64)
+  result       String   @db.VarChar(32)
+  metadata     Json?
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  requestId    String?  @map("request_id") @db.VarChar(128)
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [userId], onDelete: Restrict)
+
+  @@index([occurredAt])
+  @@index([targetType, targetId])
+  @@index([actorUserId])
+  @@map("audit_logs")
+}
+
+model StoredDocument {
+  storedDocumentId BigInt   @id @default(autoincrement()) @map("stored_document_id")
+  storageKey       String   @unique @map("storage_key") @db.VarChar(512)
+  originalFileName String   @map("original_file_name") @db.VarChar(255)
+  mimeType         String   @map("mime_type") @db.VarChar(128)
+  sizeBytes        BigInt   @map("size_bytes")
+  sha256           String   @db.VarChar(64)
+  uploadedByUserId BigInt?  @map("uploaded_by_user_id")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  uploadedBy User? @relation(fields: [uploadedByUserId], references: [userId], onDelete: Restrict)
+  link       DocumentLink?
+
+  @@map("stored_documents")
+}
+
+model DocumentLink {
+  documentLinkId   BigInt   @id @default(autoincrement()) @map("document_link_id")
+  storedDocumentId BigInt   @unique @map("stored_document_id")
+  ownerType        String   @map("owner_type") @db.VarChar(64)
+  ownerId          String   @map("owner_id") @db.VarChar(64)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  storedDocument StoredDocument @relation(fields: [storedDocumentId], references: [storedDocumentId], onDelete: Restrict)
+
+  @@index([ownerType, ownerId])
+  @@map("document_links")
+}
+
+model NotificationEvent {
+  notificationEventId BigInt   @id @default(autoincrement()) @map("notification_event_id")
+  eventType           String   @map("event_type") @db.VarChar(64)
+  entityType          String   @map("entity_type") @db.VarChar(64)
+  entityId            String   @map("entity_id") @db.VarChar(64)
+  dueOn               DateTime @map("due_on") @db.Date
+  dedupeKey           String   @unique @map("dedupe_key") @db.VarChar(255)
+  payload             Json?
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  readAt              DateTime? @map("read_at") @db.Timestamptz(6)
+
+  @@index([dueOn])
+  @@index([readAt])
+  @@map("notification_events")
+}

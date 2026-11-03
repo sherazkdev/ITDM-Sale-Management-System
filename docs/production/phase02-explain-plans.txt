@@ -1,0 +1,69 @@
+# EXPLAIN captured 2026-11-03T05:44:32.181Z
+DATABASE_URL host: postgresql://itdms:***@127.0.0.1:5433/itdms_dev?schema=public
+
+## notification_expiry_contracts
+Seq Scan on contracts  (cost=0.00..3.00 rows=1 width=8) (actual time=0.033..0.034 rows=0 loops=1)
+  Filter: ((expiry_date >= CURRENT_DATE) AND (expiry_date <= (CURRENT_DATE + 30)))
+  Rows Removed by Filter: 89
+  Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=112 read=1
+Planning Time: 2.868 ms
+Execution Time: 0.154 ms
+
+## notification_unread_count
+Aggregate  (cost=8.16..8.17 rows=1 width=8) (actual time=0.188..0.189 rows=1 loops=1)
+  Buffers: shared hit=2
+  ->  Index Only Scan using notification_events_read_at_idx on notification_events  (cost=0.14..8.16 rows=1 width=0) (actual time=0.181..0.181 rows=0 loops=1)
+        Index Cond: (read_at IS NULL)
+        Heap Fetches: 0
+        Buffers: shared hit=2
+Planning:
+  Buffers: shared hit=85 read=1
+Planning Time: 1.559 ms
+Execution Time: 0.332 ms
+
+## assets_by_status_group
+HashAggregate  (cost=5.62..5.64 rows=2 width=16) (actual time=0.123..0.126 rows=2 loops=1)
+  Group Key: asset_status
+  Batches: 1  Memory Usage: 24kB
+  Buffers: shared hit=3
+  ->  Seq Scan on assets  (cost=0.00..4.75 rows=175 width=8) (actual time=0.013..0.047 rows=175 loops=1)
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=114 read=1
+Planning Time: 3.563 ms
+Execution Time: 0.257 ms
+
+## po_search_contains
+Limit  (cost=0.14..2.27 rows=20 width=8) (actual time=0.143..0.183 rows=20 loops=1)
+  Buffers: shared hit=3
+  ->  Index Scan Backward using purchase_orders_pkey on purchase_orders  (cost=0.14..17.06 rows=159 width=8) (actual time=0.141..0.178 rows=20 loops=1)
+        Filter: ((po_number)::text ~~* '%PO%'::text)
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=101 read=2
+Planning Time: 3.804 ms
+Execution Time: 0.274 ms
+
+## asset_list_search
+Limit  (cost=0.14..3.30 rows=20 width=8) (actual time=0.031..0.091 rows=20 loops=1)
+  Buffers: shared hit=5
+  ->  Index Scan Backward using assets_pkey on assets  (cost=0.14..20.02 rows=126 width=8) (actual time=0.030..0.086 rows=20 loops=1)
+        Filter: (((asset_code)::text ~~* '%A%'::text) OR ((asset_name)::text ~~* '%A%'::text))
+        Rows Removed by Filter: 16
+        Buffers: shared hit=5
+Planning:
+  Buffers: shared hit=9
+Planning Time: 0.538 ms
+Execution Time: 0.128 ms
+
+## audit_recent
+Limit  (cost=0.28..1.52 rows=20 width=16) (actual time=0.045..0.054 rows=20 loops=1)
+  Buffers: shared hit=3
+  ->  Index Scan Backward using audit_logs_occurred_at_idx on audit_logs  (cost=0.28..62.28 rows=998 width=16) (actual time=0.043..0.050 rows=20 loops=1)
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=73 read=1
+Planning Time: 1.507 ms
+Execution Time: 0.086 ms

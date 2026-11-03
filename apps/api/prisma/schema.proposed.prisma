@@ -1,0 +1,68 @@
+// =============================================================================
+// PROPOSED EXTENSIONS — NOT PART OF BASELINE MIGRATION
+// This file is for stakeholder review only. Prisma CLI does NOT load this file.
+// Merge into schema.prisma only after explicit approval per DECISION_REGISTER.md.
+// Do NOT run migrations from this draft without sign-off.
+// =============================================================================
+
+// --- Procurement (R15 / DB p4) — approve before PO line workflows (P08) ---
+// model PurchaseOrderLine {
+//   purchaseOrderLineId BigInt   @id @default(autoincrement()) @map("purchase_order_line_id")
+//   purchaseOrderId     BigInt   @map("purchase_order_id")
+//   lineType            String   @map("line_type") @db.VarChar(32) // ASSET|SERVICE|SOFTWARE|OTHER — PROPOSED
+//   description         String   @db.VarChar(512)
+//   quantity            Decimal  @db.Decimal(18, 4)
+//   unitPrice           Decimal  @map("unit_price") @db.Decimal(18, 2)
+//   lineSubtotal        Decimal  @map("line_subtotal") @db.Decimal(18, 2)
+//   purchaseOrder       PurchaseOrder @relation(...)
+//   @@index([purchaseOrderId])
+//   @@map("purchase_order_lines")
+// }
+// Optional on Asset after lines approved:
+//   purchaseOrderLineId BigInt? @map("purchase_order_line_id")
+
+// --- Auth / RBAC (D01, D02, D22) — P03 ---
+// model User { ... }
+// model Role { ... }
+// model Permission { ... }
+// model UserRole { ... }
+// model RolePermission { ... }
+// model Session { ... }
+// Then replace AssetTransaction.processedBy String? with processedByUserId FK.
+
+// --- Payments (D05) — P10 ---
+// model InvoicePayment {
+//   invoicePaymentId BigInt @id ...
+//   invoiceId        BigInt
+//   amount           Decimal @db.Decimal(18, 2)
+//   paidAt           DateTime @db.Timestamptz(6)
+//   referenceNumber  String?
+//   idempotencyKey   String? @unique
+//   @@map("invoice_payments")
+// }
+
+// --- Issuance documents (R17, D10) — P09/P14 ---
+// model AssetDocumentHeader { documentType ISSUE|RETURN, referenceNumber, issuedAt, ... }
+// model AssetDocumentLine { headerId, assetId, assetTransactionId? ... }
+// Optional: departmentId FK on header if D10 approves department holder.
+
+// --- Documents (D12, D13) — P14 ---
+// model StoredDocument { storageKey, sha256, mimeType, sizeBytes, ... }
+// model DocumentTemplate { ... }
+// model DocumentGeneration { ... }
+// Replace contract.documentPath / purchaseOrder.documentPath with FK when approved.
+
+// --- Inventory stock / consumables (D09) — P06 ---
+// model StockItem { ... }
+// model StockMovement { ... }
+
+// --- Department master (D18) ---
+// model Department { ... }
+// employees.department -> departmentId FK migration path TBD.
+
+// --- Operations (P16/P17) ---
+// model AuditLog { actorId, action, targetType, targetId, occurredAt, ... }
+// model NotificationEvent { ... }
+
+// --- PO expiry (D04) — NOT in baseline ---
+// purchase_orders.expiry_date — do not add until decision approved.

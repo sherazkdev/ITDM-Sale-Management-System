@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: itdms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: itdms
+      POSTGRES_PASSWORD: itdms_dev_password
+      POSTGRES_DB: itdms_dev
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - itdms_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itdms -d itdms_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  itdms_pg_data:

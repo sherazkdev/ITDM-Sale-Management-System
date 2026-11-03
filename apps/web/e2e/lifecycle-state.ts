@@ -1,0 +1,20 @@
+/** Shared IDs created by connected lifecycle E2E (serial). */
+export const lifecycle = {
+  ts: String(Date.now()),
+  employeeId: "",
+  employeeNumber: "",
+  vendorId: "",
+  vendorName: "",
+  contractId: "",
+  poId: "",
+  poNumber: "",
+  assetId: "",
+  assetCode: "",
+  invoiceId: "",
+  financialYearId: "",
+  budgetId: "",
+  maintenanceId: "",
+  licenseId: "",
+  documentId: "",
+  notificationId: "",
+};
