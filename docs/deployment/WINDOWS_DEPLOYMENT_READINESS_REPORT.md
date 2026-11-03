@@ -125,4 +125,4 @@ Highlights: UAT not started, D12 official forms, budget `remainingUsd` formula, 
 
 ## 10. Git commit reference
 
-*(Updated after commit — hash in IMPLEMENTATION_STATUS and operator handoff.)*
+**Wave 5 checkpoint (local, not pushed):** `edbe9ebe7f474863b85ee126517c7087c2e99267` — *Wave 5: business closure, report exports, Windows deployment prep*

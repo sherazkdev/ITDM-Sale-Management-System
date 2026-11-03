@@ -2,7 +2,7 @@
 
 **Current phase:** **Wave 5 checkpoint COMPLETE** (business closure + Windows deployment prep); **Wave 4 COMPLETE**; **Wave 3 VERIFIED**; **UAT NOT STARTED**  
 **Last verified at:** 2026-11-03 — `WAVE5_BUSINESS_CLOSURE_REPORT.md`, `docs/deployment/WINDOWS_DEPLOYMENT_READINESS_REPORT.md`  
-**Local Git:** Wave 5 commit on `master` (see deployment readiness report §10 after commit)
+**Local Git:** Wave 5 commit `edbe9eb` on `master` (not pushed)
 
 | Phase | Status | Evidence |
 |---|---|---|
