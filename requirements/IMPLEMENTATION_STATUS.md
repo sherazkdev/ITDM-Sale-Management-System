@@ -2,7 +2,7 @@
 
 **Current phase:** **Wave 6 PARTIAL** (offline package + docs **VERIFIED**; live rehearsal blocked — PG down 2026-11-05); **Wave 5 COMPLETE**; **UAT NOT STARTED**  
 **Last verified at:** 2026-11-05 — `docs/deployment/WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md`  
-**Local Git:** Wave 5 `edbe9eb` / `20e8a46`; Wave 6 changes **uncommitted** until authorized
+**Local Git:** Wave 6 commit `122e8a3` on `master` (not pushed)
 
 | Phase | Status | Evidence |
 |---|---|---|
