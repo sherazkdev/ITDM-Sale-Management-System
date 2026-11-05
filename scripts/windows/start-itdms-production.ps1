@@ -50,9 +50,17 @@ $apiProc = Start-Process -FilePath "node" -ArgumentList "dist/index.js" `
   -RedirectStandardOutput $apiLog -RedirectStandardError $apiErr -PassThru -WindowStyle Hidden
 $apiProc.Id | Set-Content $apiPidFile
 
-Start-Sleep -Seconds 3
-$ready = Invoke-RestMethod "http://127.0.0.1:${ApiPort}/api/v1/health/ready" -TimeoutSec 15
-if (-not $ready.success) { throw "API health failed" }
+Start-Sleep -Seconds 2
+$ready = $null
+for ($i = 0; $i -lt 20; $i++) {
+  try {
+    $ready = Invoke-RestMethod "http://127.0.0.1:${ApiPort}/api/v1/health/ready" -TimeoutSec 5
+    if ($ready.success) { break }
+  } catch {
+    Start-Sleep -Seconds 1
+  }
+}
+if (-not $ready.success) { throw "API health failed after wait" }
 
 $webEnvPath = Join-Path $PackageRoot "config\web.env.local"
 if (Test-Path $webEnvPath) {
@@ -67,7 +75,7 @@ if (Test-Path $webEnvPath) {
 $env:PORT = "$WebPort"
 $webLog = Join-Path $logs "web.stdout.log"
 $webErr = Join-Path $logs "web.stderr.log"
-$webProc = Start-Process -FilePath "npx" -ArgumentList "next", "start", "-p", "$WebPort" `
+$webProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npx", "next", "start", "-p", "$WebPort" `
   -WorkingDirectory (Join-Path $appRoot "apps\web") `
   -RedirectStandardOutput $webLog -RedirectStandardError $webErr -PassThru -WindowStyle Hidden
 $webProc.Id | Set-Content $webPidFile

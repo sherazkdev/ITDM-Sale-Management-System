@@ -1,14 +1,18 @@
 # Windows Deployment Readiness Report
 
 **Project:** ITDMS — `D:\ITDM-Sale-Management`  
-**Date:** 2026-11-05 (Wave 6 update) · client target unchanged  
+**Date:** 2026-11-05 (Wave 6B verification) · client target unchanged  
 **Claim:** **Not production-ready** · **Not client UAT** · **Not deployed to client hardware**
 
 ---
 
 ## 1. Executive summary
 
-Wave 6 adds **offline package assembly**, **isolated rehearsal automation** (`rehearsal/offline-pack`, database `itdms_deploy_rehearsal`), **production start/stop scripts**, **backup lock + disk guard**, and operator handover docs. **2026-11-05:** production **build**, **lint/typecheck**, **web Vitest 43/43**, and **package manifest (1014 files)** are **VERIFIED**. **Live rehearsal and API Vitest** were **blocked** because PostgreSQL was not listening on `127.0.0.1:5433` (Docker Desktop stopped). Re-run `run-offline-rehearsal.ps1` after PostgreSQL is up to complete runtime evidence.
+Wave 6 adds **offline package assembly**, **isolated rehearsal automation** (`rehearsal/offline-pack`, database `itdms_deploy_rehearsal`), **production start/stop scripts**, **backup lock + disk guard**, and operator handover docs.
+
+**Wave 6B (2026-11-05):** PostgreSQL restored via **Docker** on `127.0.0.1:5433`. Packaged production stack **API :3010 / Web :3012** started; smoke, workflow API checks, and Wave 5 report export verify **PASS**. Backup lock, disk-space guard, and **2-generation** local rotation **PASS**. API Vitest **66/66** and web Vitest **43/43** re-run on engineering workstation. **Native Windows PostgreSQL service** and **full air-gap** host test **NOT EXECUTED**. Playwright Wave 3 **not re-run** this session (prior **13/13** baseline unchanged).
+
+**Wave 6 engineering commits (local):** `122e8a3`, `4e2d866` (not pushed).
 
 ---
 
@@ -91,12 +95,16 @@ Recommended boot order: PostgreSQL → API → Web. Health gate: `/api/v1/health
 
 | Check | Result |
 |-------|--------|
-| API Vitest full suite (`itdms_test`) | **66/66** (Wave 5 baseline); **NOT re-run 2026-11-05** (PG down) |
+| API Vitest full suite (`itdms_test`) | **66/66 PASS** (2026-11-05 Wave 6B; `rehearsal/wave6b-api-vitest.log`) |
 | Web Vitest | **43/43 PASS** (2026-11-05) |
-| `npm run typecheck` / `lint` / `build` | **PASS** (2026-11-05) |
-| Offline package manifest | **1014 files** SHA-256 (2026-11-05) |
-| `run-offline-rehearsal.ps1` | **PARTIAL** — `ECONNREFUSED` PostgreSQL :5433 |
-| Playwright Wave 3 | **NOT EXECUTED** (2026-11-05) |
+| `npm run typecheck` / `lint` / `build` | **PASS** (Wave 6 checkpoint) |
+| Offline package manifest | **1014 files** SHA-256 |
+| `run-offline-rehearsal.ps1` (SkipAssemble/SkipBuildPackage) | **VERIFIED** — isolated DB + prod processes; see `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
+| `production-smoke.ps1` / `verify-rehearsal-workflows.mjs` | **PASS** on `:3010` / `:3012` |
+| Backup lock / min free space / rotation (2) | **PASS** on rehearsal `BACKUP_DIR` |
+| Restore to `itdms_restore_test` | **VERIFIED** (6B); `itdms_dev` not overwritten |
+| Playwright Wave 3 | **NOT RE-RUN** (2026-11-05); baseline **13/13** in Wave 3 report |
+| PostgreSQL | **Docker compose** on engineering PC — **not** native Windows service test |
 
 ### 6.1 Local runtime verification (2026-11-03)
 

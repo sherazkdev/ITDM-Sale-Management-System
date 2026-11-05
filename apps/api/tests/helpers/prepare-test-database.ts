@@ -33,15 +33,20 @@ export async function prepareTestDatabase(): Promise<void> {
   if (prepared) {
     return;
   }
+  const seedEnv = {
+    ...process.env,
+    SEED_ADMIN_USERNAME: "admin.dev",
+    SEED_ADMIN_PASSWORD: "ChangeMe_DevOnly!",
+  };
   execSync("npx prisma migrate deploy", {
     cwd: apiRoot,
     stdio: "pipe",
-    env: process.env,
+    env: seedEnv,
   });
   execSync("npx prisma db seed", {
     cwd: apiRoot,
     stdio: "pipe",
-    env: process.env,
+    env: seedEnv,
   });
   prepared = true;
 }

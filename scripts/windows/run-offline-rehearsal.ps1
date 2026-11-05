@@ -9,6 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location $RepoRoot
 
+$env:ADMIN_DATABASE_URL = "postgresql://itdms:itdms_dev_password@127.0.0.1:5433/postgres?schema=public"
+
 if (-not $SkipAssemble) {
   & (Join-Path $PSScriptRoot "assemble-offline-package.ps1") -RepoRoot $RepoRoot -PackageRoot $PackageRoot -SkipBuild:$SkipBuildPackage
 }
@@ -18,7 +20,14 @@ if (-not $rehearsalSecret -or $rehearsalSecret.Length -lt 32) {
   $rehearsalSecret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 40 | ForEach-Object { [char]$_ })
 }
 $dbPass = $env:REHEARSAL_DB_PASSWORD
-if (-not $dbPass) { $dbPass = "Rehearsal_Isolated_Only_" + (Get-Random) }
+if (-not $dbPass) {
+  # Isolated rehearsal on engineering Docker Postgres (compose) — not production credentials.
+  if ($env:ADMIN_DATABASE_URL -match "itdms_dev_password") {
+    $dbPass = "itdms_dev_password"
+  } else {
+    $dbPass = "Rehearsal_Isolated_Only_" + (Get-Random)
+  }
+}
 
 $configDir = Join-Path $PackageRoot "config"
 $apiEnv = Join-Path $configDir "api.env"
@@ -34,7 +43,6 @@ ITDMS_API_URL=http://127.0.0.1:3010
 ITDMS_SESSION_COOKIE_NAME=itdms_session
 "@ | Set-Content $webEnv
 
-$env:ADMIN_DATABASE_URL = "postgresql://itdms:itdms_dev_password@127.0.0.1:5433/postgres?schema=public"
 node (Join-Path $RepoRoot "scripts\windows\ensure-rehearsal-database.mjs")
 
 Push-Location (Join-Path $PackageRoot "app\apps\api")
@@ -45,10 +53,12 @@ Get-Content $apiEnv | ForEach-Object {
 }
 npx prisma migrate deploy
 $seedUser = if ($env:REHEARSAL_SEED_USER) { $env:REHEARSAL_SEED_USER } else { "rehearsal.admin" }
-$seedPass = if ($env:REHEARSAL_SEED_PASSWORD) { $env:REHEARSAL_SEED_PASSWORD } else { "Rehearsal-Local-Only-" + (Get-Random -Maximum 999999) }
+$seedPass = if ($env:REHEARSAL_SEED_PASSWORD) { $env:REHEARSAL_SEED_PASSWORD } else { "Rehearsal-W6B-Local-Verify-Only!" }
 $env:SEED_ADMIN_USERNAME = $seedUser
 $env:SEED_ADMIN_PASSWORD = $seedPass
 npx prisma db seed 2>&1 | Out-Host
+Remove-Item Env:SEED_ADMIN_USERNAME -ErrorAction SilentlyContinue
+Remove-Item Env:SEED_ADMIN_PASSWORD -ErrorAction SilentlyContinue
 Pop-Location
 
 & (Join-Path $PSScriptRoot "start-itdms-production.ps1") -PackageRoot $PackageRoot -ApiEnvFile $apiEnv
@@ -61,3 +71,5 @@ $env:ITDMS_SMOKE_PASSWORD = $smokePass
 node (Join-Path $RepoRoot "scripts\windows\verify-wave5-report-exports.mjs")
 
 Write-Host "Rehearsal stack running on http://127.0.0.1:3012 — stop with stop-itdms-production.ps1"
+Write-Host "REHEARSAL_ADMIN_USER=$seedUser"
+Write-Host "REHEARSAL_ADMIN_PASSWORD=$seedPass"

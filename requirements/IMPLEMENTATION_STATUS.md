@@ -1,8 +1,8 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Wave 6 PARTIAL** (offline package + docs **VERIFIED**; live rehearsal blocked — PG down 2026-11-05); **Wave 5 COMPLETE**; **UAT NOT STARTED**  
-**Last verified at:** 2026-11-05 — `docs/deployment/WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md`  
-**Local Git:** Wave 6 commit `122e8a3` on `master` (not pushed)
+**Current phase:** **Wave 6 VERIFIED (engineering rehearsal)** — offline package + isolated prod rehearsal **VERIFIED** on dev workstation; **client PC install / native PG / air-gap NOT VERIFIED**; **Wave 5 COMPLETE**; **UAT NOT STARTED**  
+**Last verified at:** 2026-11-05 — `docs/deployment/WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` (Wave 6B)  
+**Local Git:** Wave 6 commits `122e8a3`, `4e2d866` (+ optional uncommitted 6B script fixes; not pushed)
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -28,7 +28,7 @@
 | Client Wave 4 | **COMPLETE** (premium UI; Wave 4B fidelity pass on priority screens) | `docs/frontend/WAVE4_PREMIUM_UI_REDESIGN_REPORT.md` |
 | Client Wave 5 | **COMPLETE** (requirements audit; report exports; gap matrix) | `docs/release/WAVE5_BUSINESS_CLOSURE_REPORT.md` |
 | Windows deployment prep | **COMPLETE** (Wave 5 docs + scripts) | `docs/deployment/WINDOWS_*` |
-| Windows Wave 6 offline package | **PARTIAL** | Build/package/manifest **VERIFIED**; rehearsal runtime **NOT TESTED** (PG unavailable) — `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
+| Windows Wave 6 offline package | **VERIFIED (engineering)** | Build/manifest/rehearsal runtime on Docker PG **VERIFIED**; native client PG + air-gap **NOT TESTED** — `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |
