@@ -1,8 +1,8 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Wave 5 checkpoint COMPLETE** (business closure + Windows deployment prep); **Wave 4 COMPLETE**; **Wave 3 VERIFIED**; **UAT NOT STARTED**  
-**Last verified at:** 2026-11-03 — `WAVE5_BUSINESS_CLOSURE_REPORT.md`, `docs/deployment/WINDOWS_DEPLOYMENT_READINESS_REPORT.md`  
-**Local Git:** Wave 5 commit `edbe9eb` on `master` (not pushed)
+**Current phase:** **Wave 6 PARTIAL** (offline package + docs **VERIFIED**; live rehearsal blocked — PG down 2026-11-05); **Wave 5 COMPLETE**; **UAT NOT STARTED**  
+**Last verified at:** 2026-11-05 — `docs/deployment/WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md`  
+**Local Git:** Wave 5 `edbe9eb` / `20e8a46`; Wave 6 changes **uncommitted** until authorized
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -27,7 +27,8 @@
 | Client Wave 3 | **VERIFIED** (6 finance + 6 inventory E2E scenarios; API 66/66; web Vitest 43/43; backup rotation + isolated restore) | `docs/release/CLIENT_APPROVED_WAVE3_REPORT.md` |
 | Client Wave 4 | **COMPLETE** (premium UI; Wave 4B fidelity pass on priority screens) | `docs/frontend/WAVE4_PREMIUM_UI_REDESIGN_REPORT.md` |
 | Client Wave 5 | **COMPLETE** (requirements audit; report exports; gap matrix) | `docs/release/WAVE5_BUSINESS_CLOSURE_REPORT.md` |
-| Windows deployment prep | **COMPLETE** (install/backup docs + `scripts/windows/*`; **not deployed**) | `docs/deployment/WINDOWS_*` |
+| Windows deployment prep | **COMPLETE** (Wave 5 docs + scripts) | `docs/deployment/WINDOWS_*` |
+| Windows Wave 6 offline package | **PARTIAL** | Build/package/manifest **VERIFIED**; rehearsal runtime **NOT TESTED** (PG unavailable) — `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

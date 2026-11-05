@@ -18,6 +18,7 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  statfsSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -84,6 +85,44 @@ if (!databaseUrl) {
 
 const outDir = resolve(process.env.BACKUP_DIR ?? join(repoRoot, "backups"));
 mkdirSync(outDir, { recursive: true });
+
+const lockFile = join(outDir, ".itdms-backup.lock");
+if (existsSync(lockFile)) {
+  log("backup_failed", { reason: "backup already in progress", lockFile });
+  process.exit(1);
+}
+writeFileSync(lockFile, String(process.pid));
+const releaseLock = () => {
+  try {
+    unlinkSync(lockFile);
+  } catch {
+    // ignore
+  }
+};
+process.on("exit", releaseLock);
+process.on("SIGINT", () => {
+  releaseLock();
+  process.exit(130);
+});
+
+const minFreeBytes = Number(process.env.ITDMS_BACKUP_MIN_FREE_BYTES ?? "524288000");
+try {
+  const fsStat = statfsSync(outDir);
+  const freeBytes = fsStat.bavail * fsStat.bsize;
+  if (Number.isFinite(minFreeBytes) && minFreeBytes > 0 && freeBytes < minFreeBytes) {
+    releaseLock();
+    log("backup_failed", {
+      reason: "insufficient_disk_space",
+      freeBytes,
+      minFreeBytes,
+      outDir,
+    });
+    process.exit(1);
+  }
+} catch {
+  log("disk_space_check_skipped", { outDir });
+}
+
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const sqlFile = join(outDir, `itdms-db-${stamp}.sql`);
 const manifestFile = join(outDir, `itdms-manifest-${stamp}.json`);

@@ -12,6 +12,8 @@
 | PostgreSQL database | `pg_dump` via `scripts/backup-itdms.mjs` | `*.sql` + manifest JSON |
 | Document files | Optional `ITDMS_BACKUP_INCLUDE_STORAGE=1` | `storage-*.tar.gz` + manifest entries |
 | Rotation | `ITDMS_BACKUP_RETAIN_LOCAL` (default **2**) | Deletes **older local** manifest sets only after successful backup |
+| Concurrency | `.itdms-backup.lock` in `BACKUP_DIR` | Second run exits with `backup already in progress` |
+| Disk space | `ITDMS_BACKUP_MIN_FREE_BYTES` (default 500MB) | Fails before `pg_dump` if volume too full |
 
 **Backup directory:** set `BACKUP_DIR` (e.g. `D:\ITDMS\data\backups`).
 

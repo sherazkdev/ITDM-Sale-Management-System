@@ -1,15 +1,14 @@
 # Windows Deployment Readiness Report
 
 **Project:** ITDMS — `D:\ITDM-Sale-Management`  
-**Date:** 2026-11-03  
-**Client target:** Windows desktop, Core i5 10th Gen, 16 GB RAM, 1 TB SSD, standalone then LAN  
+**Date:** 2026-11-05 (Wave 6 update) · client target unchanged  
 **Claim:** **Not production-ready** · **Not client UAT** · **Not deployed to client hardware**
 
 ---
 
 ## 1. Executive summary
 
-Wave 5 closed business-requirement gaps in documentation and operational report exports. This checkpoint adds **Windows standalone installation planning**, **operator runbooks**, and **non-destructive helper scripts**. Deployment to the client PC remains **operator-driven** after prerequisite installs and **D17/D01/D02** decisions.
+Wave 6 adds **offline package assembly**, **isolated rehearsal automation** (`rehearsal/offline-pack`, database `itdms_deploy_rehearsal`), **production start/stop scripts**, **backup lock + disk guard**, and operator handover docs. **2026-11-05:** production **build**, **lint/typecheck**, **web Vitest 43/43**, and **package manifest (1014 files)** are **VERIFIED**. **Live rehearsal and API Vitest** were **blocked** because PostgreSQL was not listening on `127.0.0.1:5433` (Docker Desktop stopped). Re-run `run-offline-rehearsal.ps1` after PostgreSQL is up to complete runtime evidence.
 
 ---
 
@@ -61,6 +60,16 @@ See §8 for commit hash after local commit in this session.
 | `scripts/windows/build-production.ps1` | No DB reset; migrate only with `-RunMigrations` |
 | `scripts/windows/run-scheduled-backup.ps1` | Delegates to existing `backup-itdms.mjs` |
 | `scripts/windows/verify-wave5-report-exports.mjs` | Env-based credentials |
+| `scripts/windows/assemble-offline-package.ps1` | Robocopy package + manifest |
+| `scripts/windows/run-offline-rehearsal.ps1` | Isolated DB rehearsal orchestration |
+| `scripts/windows/start-itdms-production.ps1` / `stop-itdms-production.ps1` | PID-tracked prod processes |
+| `scripts/windows/wait-postgres.ps1` | TCP readiness |
+| `scripts/windows/write-package-manifest.mjs` | SHA-256 integrity file |
+| `scripts/windows/ensure-rehearsal-database.mjs` | Creates `itdms_deploy_rehearsal` only |
+| `scripts/windows/production-smoke.ps1` | Health smoke |
+| `scripts/windows/register-weekly-backup.example.ps1` | Task template; `-Register` optional |
+| `deploy/windows/nssm-services.example.ps1` | Service registration example |
+| `scripts/backup-itdms.mjs` | `.itdms-backup.lock`, `ITDMS_BACKUP_MIN_FREE_BYTES` |
 
 Scripts do **not** install global software, start production services automatically during prep, or delete client data.
 
@@ -82,11 +91,12 @@ Recommended boot order: PostgreSQL → API → Web. Health gate: `/api/v1/health
 
 | Check | Result |
 |-------|--------|
-| API Vitest full suite (`itdms_test`) | **66/66 PASS** (Wave 5) |
-| Web Vitest | **43/43 PASS** |
-| `extended-modules.test.ts` (reports incl. movements/employees) | **4/4 PASS** (re-run 2026-11-03 after API restart) |
-| `preflight-check.ps1` | **PASS** (Node 24.x; warnings: no `pg_dump` in PATH, dev credentials in local `.env`) |
-| `build-production.ps1` | Validated by structure review; full run optional on dev machine (long) |
+| API Vitest full suite (`itdms_test`) | **66/66** (Wave 5 baseline); **NOT re-run 2026-11-05** (PG down) |
+| Web Vitest | **43/43 PASS** (2026-11-05) |
+| `npm run typecheck` / `lint` / `build` | **PASS** (2026-11-05) |
+| Offline package manifest | **1014 files** SHA-256 (2026-11-05) |
+| `run-offline-rehearsal.ps1` | **PARTIAL** — `ECONNREFUSED` PostgreSQL :5433 |
+| Playwright Wave 3 | **NOT EXECUTED** (2026-11-05) |
 
 ### 6.1 Local runtime verification (2026-11-03)
 

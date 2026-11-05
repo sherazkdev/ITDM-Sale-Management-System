@@ -176,7 +176,13 @@ Does **not** automatically uninstall PostgreSQL or Node.
 |--------|---------|
 | `scripts/windows/preflight-check.ps1` | Read-only environment checks |
 | `scripts/windows/build-production.ps1` | `npm ci`, build, optional migrate deploy |
+| `scripts/windows/assemble-offline-package.ps1` | Copy built app to offline package + manifest |
+| `scripts/windows/run-offline-rehearsal.ps1` | Isolated DB + production start + report verify |
+| `scripts/windows/start-itdms-production.ps1` / `stop-itdms-production.ps1` | Manual production processes (PID files) |
+| `scripts/windows/wait-postgres.ps1` | Wait for DB TCP port |
 | `scripts/windows/run-scheduled-backup.ps1` | Invoke `backup-itdms.mjs` with env file |
-| `scripts/windows/verify-wave5-report-exports.mjs` | Auth + XLSX smoke for new reports |
+| `scripts/windows/register-weekly-backup.example.ps1` | Task Scheduler template (`-Register` off by default) |
+| `scripts/windows/verify-wave5-report-exports.mjs` | Auth + XLSX smoke for reports |
+| `deploy/windows/nssm-services.example.ps1` | NSSM service example (not executed in Wave 6) |
 
 **Requires actual Windows machine testing:** NSSM service recovery, Task Scheduler under locked-down user, antivirus interaction with PostgreSQL data dir and storage.

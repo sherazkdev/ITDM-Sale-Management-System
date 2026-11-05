@@ -19,6 +19,7 @@ apps/web/playwright-report/
 apps/web/e2e/.auth/admin.json
 /backups/
 backups-rotation-test/
+rehearsal/
 apps/web/.next/
 apps/api/storage/
 storage-staging/
