@@ -23,7 +23,7 @@ export type PoSearchResult = {
       description: string;
       quantity: string;
       unitPrice: string;
-      lineTotal: string;
+      lineSubtotal: string;
     }>;
     invoices: Array<{
       invoiceId: string;
@@ -39,6 +39,20 @@ export type PoSearchResult = {
       purchasePrice: string | null;
     }>;
   };
+  /** Non-asset stock linked to this PO (quantity-based inventory). */
+  nonAssetStockItems: Array<{
+    stockItemId: string;
+    stockCode: string;
+    itemName: string;
+    itemType: string | null;
+    unitOfMeasure: string;
+    /** Registered / on-hand quantity (schema: quantityOnHand). */
+    quantityOnHand: string;
+    /** Equals quantityOnHand until D09 consumption is implemented. */
+    quantityAvailable: string;
+    quantityAvailableNote: string;
+    purchaseOrder?: { purchaseOrderId: string; poNumber: string } | null;
+  }>;
   expiryDates: {
     contractExpiry: string | null;
     poValidUntil: string | null;
@@ -62,7 +76,7 @@ export type PoSearchResult = {
     transactionType: string;
     transactionDate: string;
     asset?: { assetCode: string; assetName: string };
-    employee?: { employeeCode: string; fullName: string } | null;
+    employee?: { employeeNumber: string; fullName: string } | null;
   }>;
   maintenance: Array<{
     maintenanceRecordId: string;
@@ -73,7 +87,7 @@ export type PoSearchResult = {
   }>;
   softwareLicenses: Array<{
     licenseId: string;
-    productName: string;
+    softwareName: string;
     expiryDate: string | null;
     status: string;
   }>;
@@ -94,6 +108,7 @@ export type PoSearchResult = {
     movementsCap: number;
     maintenanceCap: number;
     licensesCap: number;
+    nonAssetStockCap: number;
   };
 };
 

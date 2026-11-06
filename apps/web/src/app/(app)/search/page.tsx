@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -101,7 +101,11 @@ export default function GlobalSearchPage() {
     { key: "desc", header: "Description", cell: (r) => r.description },
     { key: "qty", header: "Qty", cell: (r) => r.quantity },
     { key: "unit", header: "Unit", cell: (r) => formatCurrency(Number(r.unitPrice), currency) },
-    { key: "total", header: "Line total", cell: (r) => formatCurrency(Number(r.lineTotal), currency) },
+    {
+      key: "total",
+      header: "Line total",
+      cell: (r) => formatCurrency(Number(r.lineSubtotal), currency),
+    },
   ];
 
   const assetColumns: Column<PoSearchResult["purchaseOrder"]["assets"][number]>[] = [
@@ -241,6 +245,7 @@ export default function GlobalSearchPage() {
             <TabsList className="flex flex-wrap h-auto gap-1">
               <TabsTrigger value="lines">Line items</TabsTrigger>
               <TabsTrigger value="assets">Assets</TabsTrigger>
+              <TabsTrigger value="non-asset">Non-asset stock</TabsTrigger>
               <TabsTrigger value="movements">Issuance / returns</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="licenses">Licenses</TabsTrigger>
@@ -271,6 +276,60 @@ export default function GlobalSearchPage() {
               </SectionCard>
             </TabsContent>
 
+            <TabsContent value="non-asset">
+              <SectionCard title="Non-asset stock on PO">
+                {searchQuery.data.nonAssetStockItems.length >=
+                  searchQuery.data.truncation.nonAssetStockCap && (
+                  <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
+                    Showing first {searchQuery.data.truncation.nonAssetStockCap} non-asset items.
+                  </p>
+                )}
+                {searchQuery.data.nonAssetStockItems[0]?.quantityAvailableNote ? (
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    {searchQuery.data.nonAssetStockItems[0].quantityAvailableNote}
+                  </p>
+                ) : null}
+                <DataTable
+                  columns={[
+                    {
+                      key: "item",
+                      header: "Item",
+                      cell: (r) => (
+                        <Link
+                          href={`/assets/non-asset/${r.stockItemId}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {r.itemName}
+                        </Link>
+                      ),
+                    },
+                    { key: "code", header: "Code", cell: (r) => r.stockCode },
+                    { key: "uom", header: "Unit", cell: (r) => r.unitOfMeasure },
+                    {
+                      key: "registered",
+                      header: "Registered qty",
+                      cell: (r) => r.quantityOnHand,
+                    },
+                    {
+                      key: "available",
+                      header: "Available qty",
+                      cell: (r) => r.quantityAvailable,
+                    },
+                    {
+                      key: "po",
+                      header: "Linked PO",
+                      cell: (r) => r.purchaseOrder?.poNumber ?? po.poNumber,
+                    },
+                  ]}
+                  data={searchQuery.data.nonAssetStockItems}
+                  getRowId={(r) => r.stockItemId}
+                  empty={
+                    <p className="text-sm text-muted-foreground p-4">No non-asset stock linked to this PO.</p>
+                  }
+                />
+              </SectionCard>
+            </TabsContent>
+
             <TabsContent value="movements">
               <SectionCard title="Issuance and return history">
                 {searchQuery.data.movements.length >= searchQuery.data.truncation.movementsCap && (
@@ -290,7 +349,8 @@ export default function GlobalSearchPage() {
                     {
                       key: "employee",
                       header: "Employee",
-                      cell: (r) => (r.employee ? `${r.employee.employeeCode} — ${r.employee.fullName}` : "—"),
+                      cell: (r) =>
+                        r.employee ? `${r.employee.employeeNumber} — ${r.employee.fullName}` : "—",
                     },
                   ]}
                   data={searchQuery.data.movements}
@@ -335,7 +395,7 @@ export default function GlobalSearchPage() {
                       header: "Product",
                       cell: (r) => (
                         <Link href={`/software-licenses/${r.licenseId}`} className="text-primary hover:underline">
-                          {r.productName}
+                          {r.softwareName}
                         </Link>
                       ),
                     },

@@ -17,7 +17,8 @@ test.describe("Authentication", () => {
     await loginAsAdmin(page);
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { name: /good morning/i })).toBeVisible();
+    // Greeting is time-of-day dependent (morning / afternoon / evening).
+    await expect(page.getByRole("heading", { name: /good (morning|afternoon|evening)/i })).toBeVisible();
   });
 
   test("anonymous user is redirected from protected route", async ({ page }) => {

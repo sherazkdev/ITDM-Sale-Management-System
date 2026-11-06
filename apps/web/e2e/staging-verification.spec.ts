@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { STATIC_APP_ROUTES } from "./helpers";
 
+/**
+ * Staging-only (Phase 04B). Not part of local `playwright.config.ts`.
+ * Run with: `npm run staging:e2e` against the staging stack + authorized UAT accounts.
+ * BLOCKED until staging credentials/environment are provided — do not invent users.
+ */
 const STAGING_ADMIN = {
   username: process.env.ITDMS_E2E_USER ?? "uat.admin",
   password: process.env.ITDMS_E2E_PASSWORD ?? "StagingUatAdmin-ChangeMe!",

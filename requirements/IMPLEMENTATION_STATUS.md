@@ -1,8 +1,8 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Wave 6 VERIFIED (engineering rehearsal)** — offline package + isolated prod rehearsal **VERIFIED** on dev workstation; **client PC install / native PG / air-gap NOT VERIFIED**; **Wave 5 COMPLETE**; **UAT NOT STARTED**  
-**Last verified at:** 2026-11-05 — `docs/deployment/WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` (Wave 6B)  
-**Local Git:** Wave 6 commits `122e8a3`, `4e2d866` (+ optional uncommitted 6B script fixes; not pushed)
+**Current phase:** **Wave 6 VERIFIED (engineering)**; search defects remediated; **local Playwright on isolated `itdms_e2e`** (full local suite closed after harness fixes); **staging E2E BLOCKED**; **client PC / native PG / air-gap / UAT NOT VERIFIED**  
+**Last verified at:** 2026-11-06 — `itdms_e2e` Playwright (`rehearsal/playwright-e2e-isolated.log` + fix3); see `FINAL_SOURCE_CODE_GAP_AUDIT.md` §4  
+**Local Git:** Wave 6 commits `122e8a3`, `4e2d866`; remediation + E2E isolation harness **uncommitted** (no push)
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -29,6 +29,9 @@
 | Client Wave 5 | **COMPLETE** (requirements audit; report exports; gap matrix) | `docs/release/WAVE5_BUSINESS_CLOSURE_REPORT.md` |
 | Windows deployment prep | **COMPLETE** (Wave 5 docs + scripts) | `docs/deployment/WINDOWS_*` |
 | Windows Wave 6 offline package | **VERIFIED (engineering)** | Build/manifest/rehearsal runtime on Docker PG **VERIFIED**; native client PG + air-gap **NOT TESTED** — `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
+| Confirmed gap audit defects (search fields, non-asset PO search, PO report copy) | **VERIFIED** | Unit/API Vitest + Playwright hub — `FINAL_SOURCE_CODE_GAP_AUDIT.md` |
+| Playwright local regression (isolated `itdms_e2e`) | **VERIFIED** | Full local suite after harness fixes; staging excluded/`BLOCKED`; prep: `prepare-e2e-database.ps1` |
+| Playwright staging (`staging-verification`) | **BLOCKED** | Authorized UAT accounts + staging stack required (`npm run staging:e2e`) |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

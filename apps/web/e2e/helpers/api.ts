@@ -16,7 +16,15 @@ export async function apiJson<T>(
     },
     data: body,
   });
-  const json = (await res.json()) as T;
+  const text = await res.text();
+  let json: T;
+  try {
+    json = JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `API ${method} /api/v1${path} returned non-JSON (HTTP ${res.status}): ${text.slice(0, 120)}`,
+    );
+  }
   return { status: res.status(), json };
 }
 

@@ -3,6 +3,7 @@ import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import type { PrismaClient } from "@prisma/client";
 import { sumDecimals, toDecimal } from "../../shared/money/decimal-math.js";
 import { listDocumentsForOwner } from "../../shared/documents/document-owner.js";
+import { enrichNonAssetStockItem } from "../non-asset-stock/non-asset-stock.presenter.js";
 
 export class SearchService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -16,6 +17,13 @@ export class SearchService {
         lines: true,
         invoices: { include: { payments: true } },
         assets: true,
+        nonAssetStockItems: {
+          include: {
+            category: { select: { categoryId: true, categoryName: true } },
+            purchaseOrder: { select: { purchaseOrderId: true, poNumber: true, poDate: true } },
+          },
+          take: 200,
+        },
         budgetTransactions: { include: { budget: { include: { financialYear: true } } } },
       },
     });
@@ -78,8 +86,11 @@ export class SearchService {
       };
     });
 
+    const { nonAssetStockItems, ...purchaseOrder } = po;
+
     return {
-      purchaseOrder: po,
+      purchaseOrder,
+      nonAssetStockItems: nonAssetStockItems.map((item) => enrichNonAssetStockItem(item)),
       expiryDates: {
         contractExpiry: po.contract?.expiryDate ?? null,
         poValidUntil: po.validUntil ?? null,
@@ -101,6 +112,7 @@ export class SearchService {
         movementsCap: 500,
         maintenanceCap: 200,
         licensesCap: 200,
+        nonAssetStockCap: 200,
       },
     };
   }

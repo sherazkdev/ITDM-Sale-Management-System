@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:local": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "capture:ui08": "playwright test e2e/screenshots.spec.ts --project=chromium-desktop",
     "test:e2e:responsive": "playwright test e2e/responsive.spec.ts",

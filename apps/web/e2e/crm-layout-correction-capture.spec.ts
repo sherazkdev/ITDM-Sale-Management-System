@@ -64,62 +64,53 @@ test.describe("CRM layout correction capture — phase 02", () => {
     await applyTheme(page, "light");
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    await page.goto("/employees", { waitUntil: "networkidle" });
-    const firstEmployee = page.locator("table tbody tr").first();
-    if (await firstEmployee.count()) {
-      await firstEmployee.click();
-      await page.waitForURL(/\/employees\//);
-      await page.getByRole("heading", { level: 2 }).waitFor({ timeout: 20_000 });
+    async function captureDetailIfLinked(
+      listPath: string,
+      linkHref: RegExp,
+      urlPattern: RegExp,
+      fileName: string,
+    ) {
+      await page.goto(listPath, { waitUntil: "networkidle" });
+      const link = page.locator("table tbody tr a[href]").first();
+      if (!(await link.count())) return;
+      await link.click();
+      await page.waitForURL(urlPattern, { timeout: 30_000 });
+      await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
       await page.screenshot({
-        path: path.join(OUT, "employees-detail-1440-light.png"),
+        path: path.join(OUT, fileName),
         fullPage: true,
       });
+      void linkHref;
     }
 
-    await page.goto("/vendors", { waitUntil: "networkidle" });
-    const firstVendor = page.locator("table tbody tr").first();
-    if (await firstVendor.count()) {
-      await firstVendor.click();
-      await page.waitForURL(/\/vendors\//);
-      await page.getByRole("heading", { level: 2 }).waitFor({ timeout: 20_000 });
-      await page.screenshot({
-        path: path.join(OUT, "vendors-detail-1440-light.png"),
-        fullPage: true,
-      });
-    }
-
-    await page.goto("/assets", { waitUntil: "networkidle" });
-    const firstAsset = page.locator("table tbody tr").first();
-    if (await firstAsset.count()) {
-      await firstAsset.click();
-      await page.waitForURL(/\/assets\//);
-      await page.getByRole("heading", { level: 2 }).waitFor({ timeout: 20_000 });
-      await page.screenshot({
-        path: path.join(OUT, "assets-detail-1440-light.png"),
-        fullPage: true,
-      });
-    }
-
-    await page.goto("/purchase-orders", { waitUntil: "networkidle" });
-    const firstPo = page.locator("table tbody tr").first();
-    if (await firstPo.count()) {
-      await firstPo.click();
-      await page.waitForURL(/\/purchase-orders\//);
-      await page.getByRole("heading", { level: 2 }).waitFor({ timeout: 20_000 });
-      await page.screenshot({
-        path: path.join(OUT, "purchase-orders-detail-1440-light.png"),
-        fullPage: true,
-      });
-    }
+    await captureDetailIfLinked(
+      "/employees",
+      /\/employees\//,
+      /\/employees\/\d+/,
+      "employees-detail-1440-light.png",
+    );
+    await captureDetailIfLinked(
+      "/vendors",
+      /\/vendors\//,
+      /\/vendors\/\d+/,
+      "vendors-detail-1440-light.png",
+    );
+    await captureDetailIfLinked("/assets", /\/assets\//, /\/assets\/\d+/, "assets-detail-1440-light.png");
+    await captureDetailIfLinked(
+      "/purchase-orders",
+      /\/purchase-orders\//,
+      /\/purchase-orders\/\d+/,
+      "purchase-orders-detail-1440-light.png",
+    );
   });
 
   test("gap closure detail modules @ 1440 and 390", async ({ page }) => {
     const modules = [
-      { listPath: "/invoices", urlPattern: /\/invoices\//, filePrefix: "invoices-detail" },
-      { listPath: "/maintenance", urlPattern: /\/maintenance\//, filePrefix: "maintenance-detail" },
+      { listPath: "/invoices", urlPattern: /\/invoices\/\d+/, filePrefix: "invoices-detail" },
+      { listPath: "/maintenance", urlPattern: /\/maintenance\/\d+/, filePrefix: "maintenance-detail" },
       {
         listPath: "/software-licenses",
-        urlPattern: /\/software-licenses\//,
+        urlPattern: /\/software-licenses\/\d+/,
         filePrefix: "software-licenses-detail",
       },
     ] as const;
@@ -133,11 +124,11 @@ test.describe("CRM layout correction capture — phase 02", () => {
 
       for (const mod of modules) {
         await page.goto(mod.listPath, { waitUntil: "networkidle" });
-        const firstRow = page.locator("table tbody tr").first();
-        if (!(await firstRow.count())) continue;
-        await firstRow.click();
-        await page.waitForURL(mod.urlPattern);
-        await page.getByRole("heading", { level: 2 }).waitFor({ timeout: 20_000 });
+        const link = page.locator("table tbody tr a[href]").first();
+        if (!(await link.count())) continue;
+        await link.click();
+        await page.waitForURL(mod.urlPattern, { timeout: 30_000 });
+        await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
         await page.screenshot({
           path: path.join(OUT, `${mod.filePrefix}-${viewport.tag}-light.png`),
           fullPage: true,

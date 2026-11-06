@@ -39,7 +39,8 @@ export const REPORT_DEFINITIONS: Array<{
   {
     slug: "purchase-orders",
     title: "Purchase orders",
-    description: "PO header and line summary.",
+    description:
+      "PO header register (poNumber, vendor, status, totalAmount, currency, validUntil). Line-level export is not included — R15 report lines remain out of scope pending client requirement.",
   },
   {
     slug: "contracts",

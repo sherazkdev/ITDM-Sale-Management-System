@@ -10,7 +10,7 @@ test.describe("Employee lifecycle (UI)", () => {
     await page.getByLabel(/designation/i).fill("QA Tester");
     await page.getByRole("button", { name: /create employee/i }).click();
     await expect(page).toHaveURL(/\/employees\//, { timeout: 30_000 });
-    await expect(page.getByRole("heading", { name: /E2E QA Employee/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /E2E QA Employee/i }).first()).toBeVisible();
   });
 });
 
