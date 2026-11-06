@@ -6,6 +6,23 @@
 
 ---
 
+## Latest confirmed client responses (recorded 2026-11-06)
+
+**Important:** Confirmation of business rules is **not** proof that corresponding code is already implemented. Implementation status remains separate (`requirements/IMPLEMENTATION_STATUS.md`).
+
+| Topic | Confirmed client rule | Decision IDs | Code status (do not assume complete) |
+|---|---|---|---|
+| Budget consumption | Budget is **manually allocated** to PO/contract and **consumed on invoice posting**; **actual payments** remain separately recorded | D06, D07 | Wave 2 post/pay paths exist; remaining-formula provisional notices may still apply |
+| Non-asset stock movements | Supports **withdrawals, returns, manual replenishment, write-offs**, **decimal quantities**, linked to **employee/department** | D09 | Registration/units exist; **movement/consumption workflows not implemented in Phase A** |
+| Asset issuance identity | Issuance records **employee and department** | D10 (partial supersede of “dept-only holder”) | Employee holder exists; **department capture on issuance may still be incomplete** |
+| Budget currency | Allocations are **always USD**; foreign-currency conversion rates entered **manually** | D08 | Aligns with Wave 2 USD reporting + manual FX; non-USD allocation edge cases may remain provisional |
+| Financial corrections | **Admin-only** and **must be audited** | D01 / finance ops | Do not invent correction UI in Phase A; preserve audit expectations |
+| Official templates | Official issuance/return templates **still awaiting client files** | D12 | Operational XLSX/CSV remain; official layouts **blocked** until files arrive |
+
+**Phase A UI note:** Premium UI Phase A does **not** implement stock consumption, budget formula changes, or financial correction workflows.
+
+---
+
 ## Wave 1 classifications (2026-11-03)
 
 **Client response:** Document1.pdf (client clarification) — **file not in repository**; classifications below follow the written Wave 1 engineering brief aligned to that response. **Approver name/date:** pending formal sign-off in PDF.
@@ -14,9 +31,9 @@
 |---|---|---|---|
 | **D03** | **CONFIRMED / SUPERSEDES prior “enable PO workflow” proposals** | No ITDMS PO approval; SAP/manual external approval; ITDMS keeps PO records | Submit/approve/cancel stay **403**; UI explains SAP; **no** approval engine |
 | **D04** | **PARTIALLY CONFIRMED** | 60-day reminders; PO when expiry/applicable date exists | Scan uses existing `valid_until` only — **no invented dates** |
-| **D09** | **PARTIALLY CONFIRMED** | Asset vs non-asset stock; commercial units | `non_asset_stock_items` + UI entry; **no** consumption/replenishment rules |
-| **D10** | **NOT ANSWERED** | (Issue/return dept holder not confirmed in Wave 1 brief) | Employee holder unchanged |
-| **D12** | **PARTIALLY CONFIRMED** | Excel reports required | XLSX/CSV operational exports; **official templates still blocked** |
+| **D09** | **CONFIRMED (rules) / PARTIAL (code)** | Non-asset stock + decimal qty + employee/dept-linked movements (withdraw/return/replenish/write-off) | Registration exists; **movement APIs/UI still required** — see 2026-11-06 section |
+| **D10** | **PARTIALLY CONFIRMED** | Issuance records employee **and** department (not department-only custody) | Employee issuance exists; department field on movement still to verify/implement |
+| **D12** | **PARTIALLY CONFIRMED** | Excel reports required; official issuance/return templates awaiting files | XLSX/CSV operational exports; **official templates still blocked** |
 | **D14** | **PARTIALLY CONFIRMED** | **60 days** before expiry; in-app (email/SMS not confirmed) | `NOTIFICATION_LEAD_DAYS=60` default |
 | **D01** | **PARTIALLY CONFIRMED** | One initial full-access user | RBAC kept; see `WAVE1_INITIAL_ADMIN_SETUP.md`; matrix still needed |
 | **D02** | **NEEDS CLARIFICATION** | Not explicitly resolved in Wave 1 brief | Local auth unchanged |
@@ -35,7 +52,7 @@
 | **D05** | **PARTIALLY CONFIRMED** | Partial payments = amounts on invoice; actual after post | Post required before pay; partial pay supported; no credit-note workflow |
 | **D06** | **CONFIRMED (committed)** | Committed with submitted/posted invoices; multiple invoices per PO | `postInvoice` → `COMMITTED_INVOICE`; one commitment per posted invoice |
 | **D07** | **CONFIRMED (actual paid)** | Actual expenditure after posting; paid = sum of payments only | `ACTUAL_PAYMENT` from payments; not invoice total until paid |
-| **D08** | **CONFIRMED (reporting)** | USD main currency; manual conversion; FX on payment dates | Manual rates on payments; optional rate at post for non-USD commitment USD |
+| **D08** | **CONFIRMED (reporting)** | USD main currency; **allocations always USD**; manual FX rates | Manual rates on payments; optional rate at post for non-USD invoice commitment USD |
 | **D17** | **PARTIALLY CONFIRMED** | Weekly backups; ≥1 prior on system; older to external manually | `ITDMS_BACKUP_RETAIN_LOCAL` rotation; **no** prod schedule or RPO/RTO |
 
 **Provisional (not fully verified):** non-USD commitment without post rate; non-USD allocation remaining USD; reversals/cancellations; search budget rollup.
@@ -49,7 +66,7 @@ Detail report: [`CLIENT_APPROVED_WAVE2_REPORT.md`](./CLIENT_APPROVED_WAVE2_REPOR
 | ID | Status | Work | Effect |
 |---|---|---|---|
 | **D05–D08** | **Verified (core paths)** | Playwright + API cross-check | Post/pay/FX/idempotency; provisional notices remain |
-| **D09** | **PARTIALLY CONFIRMED (extended)** | Asset vs non-asset entry; units; PO/type/received date; detail UI | No qty consumption/withdrawal |
+| **D09** | **CONFIRMED (rules) / PARTIAL (code)** | Client confirmed full non-asset movement set (2026-11-06) | Entry/units verified; withdrawals/returns/replenishment/write-offs **not yet coded** |
 | **D17** | **PARTIALLY CONFIRMED** | Rotation verify script + restore rehearsal docs | No prod schedule |
 
 Detail report: [`CLIENT_APPROVED_WAVE3_REPORT.md`](./CLIENT_APPROVED_WAVE3_REPORT.md).

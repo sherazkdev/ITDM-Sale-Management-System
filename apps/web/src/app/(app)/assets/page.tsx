@@ -42,7 +42,8 @@ export default function AssetsPage() {
   const { hasPermission } = useAuth();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search);
-  const [statusFilter, setStatusFilter] = useState("");
+  const initialStatus = searchParams.get("status") ?? "";
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);

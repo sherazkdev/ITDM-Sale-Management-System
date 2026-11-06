@@ -1,8 +1,8 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Wave 6 VERIFIED (engineering)**; search defects remediated; **local Playwright on isolated `itdms_e2e`** (full local suite closed after harness fixes); **staging E2E BLOCKED**; **client PC / native PG / air-gap / UAT NOT VERIFIED**  
-**Last verified at:** 2026-11-06 — `itdms_e2e` Playwright (`rehearsal/playwright-e2e-isolated.log` + fix3); see `FINAL_SOURCE_CODE_GAP_AUDIT.md` §4  
-**Local Git:** Wave 6 commits `122e8a3`, `4e2d866`; remediation + E2E isolation harness **uncommitted** (no push)
+**Current phase:** **Premium UI Phase B VERIFIED** (dashboard analytics) on top of Phase A + Wave 6 baseline; **staging E2E BLOCKED**; **client PC / native PG / air-gap / UAT NOT VERIFIED**  
+**Last verified at:** 2026-11-06 — Phase B premium dashboard (see `docs/release/PREMIUM_UI_IMPROVEMENT_ROADMAP.md`); prior Phase A honesty fixes  
+**Local Git:** Wave 6 + Premium UI Phase A/B on main
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -32,6 +32,10 @@
 | Confirmed gap audit defects (search fields, non-asset PO search, PO report copy) | **VERIFIED** | Unit/API Vitest + Playwright hub — `FINAL_SOURCE_CODE_GAP_AUDIT.md` |
 | Playwright local regression (isolated `itdms_e2e`) | **VERIFIED** | Full local suite after harness fixes; staging excluded/`BLOCKED`; prep: `prepare-e2e-database.ps1` |
 | Playwright staging (`staging-verification`) | **BLOCKED** | Authorized UAT accounts + staging stack required (`npm run staging:e2e`) |
+| Premium UI Phase A (PO search honesty, Ctrl/Cmd+K, invoice filters, issuance asset search, Help) | **VERIFIED** | Web typecheck/lint/vitest; API invoice-list-filters vitest; Playwright workflows + a11y + responsive + po-search-hub on `itdms_e2e`; **no** stock consumption / budget formula / import |
+| Premium UI Phase B (ops analytics dashboard) | **VERIFIED** | Extended `GET /dashboard/summary` (`nonAssetStock`, `movements`, `expiryWatchlist`, `budgetOverview` provisional — **no** approved `remainingUsd`); clickable KPIs/charts; 60d watchlist; activity links; permissioned quick actions; API dashboard vitest 3/3; web vitest 49/49; Playwright `dashboard-phase-b` 2/2 + a11y 5/5 + responsive 162/162 on `itdms_e2e`; screenshots `docs/release/audit-screenshots/dashboard-phase-b-*-loaded.png`; **no** finance service formula changes / Non-Asset consumption / CSV import / commits |
+| Client rules D09 movements / D10 department on issue / Admin financial corrections | **CONFIRMED (rules) / NOT IMPLEMENTED (code)** | Recorded in `CLIENT_DECISION_REGISTER.md`; out of Phase A/B scope |
+| Nov 2026 budget rules (manual allocation, invoice commit, actual≠payment, USD + manual FX) | **CONFIRMED (client) / PARTIAL (backend)** | Dashboard shows labeled provisional values only; formula services unchanged in Phase B |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

@@ -135,8 +135,8 @@ export default function GlobalSearchPage() {
   return (
     <div className="page-stack">
       <PageHeader
-        title="Global search"
-        description="Purchase order interconnected lookup — vendor, contract, assets, finance, documents, and alerts."
+        title="PO search"
+        description="Exact purchase order lookup — vendor, contract, assets, finance, documents, and alerts linked to that PO."
       />
 
       <QuickTip title="Search scope">{PO_SEARCH_SCOPE_NOTE}</QuickTip>

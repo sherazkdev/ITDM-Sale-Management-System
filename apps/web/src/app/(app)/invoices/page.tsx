@@ -11,6 +11,8 @@ import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
+import { ListToolbar } from "@/components/crud/ListToolbar";
+import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchInvoices, type Invoice } from "@/lib/api/invoices";
@@ -18,17 +20,33 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { INVOICE_PAYMENT_LABELS, invoicePaymentToPill } from "@/lib/domain/invoice-ui";
+
+const PAYMENT_STATUS_OPTIONS = [
+  { value: "UNPAID", label: "Unpaid" },
+  { value: "PARTIAL", label: "Partially paid" },
+  { value: "PAID", label: "Paid" },
+];
 
 export default function InvoicesPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["invoices", page, pageSize],
-    queryFn: () => fetchInvoices({ page, pageSize }),
+    queryKey: ["invoices", page, pageSize, debouncedSearch, paymentStatus],
+    queryFn: () =>
+      fetchInvoices({
+        page,
+        pageSize,
+        search: debouncedSearch || undefined,
+        paymentStatus: paymentStatus || undefined,
+      }),
   });
 
   const rows = data?.data ?? [];
@@ -89,6 +107,28 @@ export default function InvoicesPage() {
         }
       />
 
+      <ListToolbar
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        searchPlaceholder="Search invoice # or PO number…"
+        filters={
+          <FilterSelect
+            value={paymentStatus}
+            onChange={(value) => {
+              setPaymentStatus(value);
+              setPage(1);
+            }}
+            placeholder="All payment statuses"
+            options={PAYMENT_STATUS_OPTIONS}
+            aria-label="Filter by payment status"
+            className="w-full sm:w-48"
+          />
+        }
+      />
+
       {isError ? (
         <Card className="p-4 text-sm text-destructive">
           {error instanceof ApiClientError ? error.message : "Failed to load invoices."}{" "}
@@ -108,8 +148,12 @@ export default function InvoicesPage() {
           empty={
             <EmptyState
               icon={Receipt}
-              title="No invoices yet"
-              description="Create an invoice linked to a purchase order."
+              title={debouncedSearch || paymentStatus ? "No matching invoices" : "No invoices yet"}
+              description={
+                debouncedSearch || paymentStatus
+                  ? "Try a different search or payment status filter."
+                  : "Create an invoice linked to a purchase order."
+              }
             />
           }
         />

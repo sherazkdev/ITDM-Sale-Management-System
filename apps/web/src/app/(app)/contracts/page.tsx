@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Handshake, Plus } from "lucide-react";
@@ -28,15 +28,22 @@ function expiringBeforeDate(days: number): string {
 
 export default function ContractsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasPermission } = useAuth();
   const [vendorFilter, setVendorFilter] = useState("");
-  const [expiringOnly, setExpiringOnly] = useState(false);
+  const expiringWithinParam = Number(searchParams.get("expiringWithin") ?? "");
+  const defaultExpiringDays =
+    Number.isFinite(expiringWithinParam) && expiringWithinParam > 0 ? expiringWithinParam : 60;
+  const [expiringOnly, setExpiringOnly] = useState(
+    searchParams.get("expiringWithin") != null && searchParams.get("expiringWithin") !== "",
+  );
+  const [expiringDays] = useState(defaultExpiringDays);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const expiringBefore = useMemo(
-    () => (expiringOnly ? expiringBeforeDate(90) : undefined),
-    [expiringOnly],
+    () => (expiringOnly ? expiringBeforeDate(expiringDays) : undefined),
+    [expiringOnly, expiringDays],
   );
 
   const { data: vendorPage } = useQuery({
@@ -54,7 +61,7 @@ export default function ContractsPage() {
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["contracts", page, pageSize, vendorFilter, expiringOnly],
+    queryKey: ["contracts", page, pageSize, vendorFilter, expiringOnly, expiringDays],
     queryFn: () =>
       fetchContracts({
         page,
@@ -146,7 +153,9 @@ export default function ContractsPage() {
             setPage(1);
           }}
           placeholder="All contracts"
-          options={[{ value: "expiring", label: "Expiring within 90 days" }]}
+          options={[
+            { value: "expiring", label: `Expiring within ${expiringDays} days` },
+          ]}
         />
       </div>
 

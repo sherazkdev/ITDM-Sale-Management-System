@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,8 +43,11 @@ type EntryKind = "asset" | "non_asset";
 
 export default function NewAssetPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasPermission } = useAuth();
-  const [entryKind, setEntryKind] = useState<EntryKind>("asset");
+  const [entryKind, setEntryKind] = useState<EntryKind>(
+    searchParams.get("kind") === "non_asset" ? "non_asset" : "asset",
+  );
   const canManage = hasPermission(PermissionKeys.assetsManage);
   const canSeePurchaseCost =
     hasPermission(PermissionKeys.assetsManage) ||

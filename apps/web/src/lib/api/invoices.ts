@@ -52,6 +52,8 @@ export type InvoicePayment = {
 export type InvoiceListParams = {
   page?: number;
   pageSize?: number;
+  search?: string;
+  paymentStatus?: string;
 };
 
 export function fetchInvoices(params: InvoiceListParams) {
@@ -59,6 +61,8 @@ export function fetchInvoices(params: InvoiceListParams) {
     `/invoices${toQueryString({
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 20,
+      search: params.search,
+      paymentStatus: params.paymentStatus,
     })}`,
   );
 }

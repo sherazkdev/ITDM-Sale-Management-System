@@ -7,12 +7,18 @@ import { paginationMeta } from "../../shared/http/pagination.schema.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
-import { createInvoiceSchema, postInvoiceSchema, recordPaymentSchema } from "./invoice.schema.js";
+import {
+  createInvoiceSchema,
+  listInvoicesQuerySchema,
+  postInvoiceSchema,
+  recordPaymentSchema,
+} from "./invoice.schema.js";
 import type { InvoiceService } from "./invoice.service.js";
 
 type CreateBody = z.infer<typeof createInvoiceSchema>;
 type PaymentBody = z.infer<typeof recordPaymentSchema>;
 type PostBody = z.infer<typeof postInvoiceSchema>;
+type ListQuery = z.infer<typeof listInvoicesQuerySchema>;
 
 function parseId(raw: string): bigint {
   if (!/^\d+$/.test(raw)) {
@@ -33,12 +39,18 @@ export class InvoiceController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 20);
-    const result = await this.service.list({ page, pageSize, sortDir: "desc" });
+    const parsed = listInvoicesQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new AppError(ErrorCodes.BAD_REQUEST, parsed.error.issues[0]?.message ?? "Invalid query", 400);
+    }
+    const query = parsed.data as ListQuery;
+    const result = await this.service.list(
+      { page: query.page, pageSize: query.pageSize, sortDir: "desc" },
+      { search: query.search, paymentStatus: query.paymentStatus },
+    );
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
-      ...paginationMeta(page, pageSize, result.total),
+      ...paginationMeta(query.page, query.pageSize, result.total),
     });
   });
 

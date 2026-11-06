@@ -2,6 +2,21 @@ import { z } from "zod";
 
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+export const listInvoicesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  search: z
+    .string()
+    .trim()
+    .max(128)
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+  paymentStatus: z
+    .enum(["UNPAID", "PARTIAL", "PAID", ""])
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+});
+
 export const createInvoiceSchema = z.object({
   invoiceNumber: z.string().min(1).max(64),
   purchaseOrderId: z.coerce.bigint(),

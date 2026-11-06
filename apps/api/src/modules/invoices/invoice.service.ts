@@ -339,15 +339,32 @@ export class InvoiceService {
     });
   }
 
-  async list(query: PaginationQuery) {
+  async list(
+    query: PaginationQuery,
+    filters: { search?: string; paymentStatus?: string } = {},
+  ) {
+    const search = filters.search?.trim();
+    const paymentStatus = filters.paymentStatus?.trim();
+    const where: Prisma.InvoiceWhereInput = {
+      ...(paymentStatus ? { paymentStatus } : {}),
+      ...(search
+        ? {
+            OR: [
+              { invoiceNumber: { contains: search, mode: "insensitive" } },
+              { purchaseOrder: { poNumber: { contains: search, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    };
     const [items, total] = await Promise.all([
       this.prisma.invoice.findMany({
+        where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
         orderBy: { invoiceId: "desc" },
         include: { purchaseOrder: true },
       }),
-      this.prisma.invoice.count(),
+      this.prisma.invoice.count({ where }),
     ]);
     return { items, total };
   }

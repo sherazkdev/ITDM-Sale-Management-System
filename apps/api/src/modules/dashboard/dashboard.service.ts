@@ -1,11 +1,24 @@
-import type { PrismaClient } from "@prisma/client";
+import { AssetMovementDocumentType, type PrismaClient } from "@prisma/client";
 import { PermissionKeys } from "../../shared/auth/permissions.js";
 import type { AuthPrincipal } from "../../shared/auth/principal.js";
 import { AssetStatus } from "../../shared/domain/asset-status.js";
+import { BudgetTransactionType } from "../../shared/domain/financial-rules.js";
 import { MaintenanceStatus } from "../../shared/domain/maintenance-status.js";
-import type { DashboardSummary } from "./dashboard.types.js";
+import type {
+  DashboardExpiryWatchlistItem,
+  DashboardSummary,
+} from "./dashboard.types.js";
 
 const EXPIRING_WINDOW_DAYS_FALLBACK = 60;
+
+const NON_ASSET_COUNT_NOTE =
+  "Registered non-asset item counts only. Quantities are not summed across units of measure (e.g. feet vs kilograms).";
+
+const BUDGET_SEMANTICS_NOTE =
+  "Committed expenditure is recorded when an invoice is posted. Actual paid expenditure is the sum of payment amounts converted to USD using manual rates on each payment date.";
+
+const BUDGET_PROVISIONAL_NOTE =
+  "Allocation totals below are USD allocations only. Remaining-budget formulas and non-USD allocation reporting remain provisional pending full implementation of confirmed Nov 2026 client rules.";
 
 function startOfUtcDay(d = new Date()): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -15,6 +28,15 @@ function addUtcDays(d: Date, days: number): Date {
   const next = new Date(d);
   next.setUTCDate(next.getUTCDate() + days);
   return next;
+}
+
+function daysBetweenUtc(from: Date, to: Date): number {
+  const ms = to.getTime() - from.getTime();
+  return Math.ceil(ms / 86_400_000);
+}
+
+function dateOnlyIso(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }
 
 function has(principal: AuthPrincipal, key: string): boolean {
@@ -57,10 +79,17 @@ export class DashboardService {
     if (has(principal, PermissionKeys.assetsRead)) {
       tasks.push(
         (async () => {
-          const grouped = await this.prisma.asset.groupBy({
-            by: ["assetStatus"],
-            _count: { _all: true },
-          });
+          const [grouped, nonAssetCount, movementGrouped] = await Promise.all([
+            this.prisma.asset.groupBy({
+              by: ["assetStatus"],
+              _count: { _all: true },
+            }),
+            this.prisma.nonAssetStockItem.count(),
+            this.prisma.assetMovementDocument.groupBy({
+              by: ["documentType"],
+              _count: { _all: true },
+            }),
+          ]);
           const countFor = (status: string) =>
             grouped.find((g) => g.assetStatus === status)?._count._all ?? 0;
           const inStock = countFor(AssetStatus.inStock);
@@ -75,6 +104,20 @@ export class DashboardService {
             retired,
           };
           sectionsIncluded.push("assets");
+
+          summary.nonAssetStock = {
+            registeredItemCount: nonAssetCount,
+            note: NON_ASSET_COUNT_NOTE,
+          };
+          sectionsIncluded.push("nonAssetStock");
+
+          const movementCount = (type: AssetMovementDocumentType) =>
+            movementGrouped.find((g) => g.documentType === type)?._count._all ?? 0;
+          summary.movements = {
+            issuanceDocuments: movementCount(AssetMovementDocumentType.ISSUANCE),
+            returnDocuments: movementCount(AssetMovementDocumentType.RETURN),
+          };
+          sectionsIncluded.push("movements");
         })(),
       );
     }
@@ -198,10 +241,89 @@ export class DashboardService {
       );
     }
 
+    const canContracts = has(principal, PermissionKeys.contractsRead);
+    const canLicenses = has(principal, PermissionKeys.licensesRead);
+    if (canContracts || canLicenses) {
+      tasks.push(
+        (async () => {
+          const items: DashboardExpiryWatchlistItem[] = [];
+          if (canContracts) {
+            const contracts = await this.prisma.contract.findMany({
+              where: { expiryDate: { gte: today, lte: expiringBefore } },
+              orderBy: { expiryDate: "asc" },
+              take: 8,
+              select: { contractId: true, contractNumber: true, expiryDate: true },
+            });
+            for (const c of contracts) {
+              items.push({
+                kind: "contract",
+                id: String(c.contractId),
+                label: c.contractNumber,
+                expiryDate: dateOnlyIso(c.expiryDate),
+                daysRemaining: daysBetweenUtc(today, startOfUtcDay(c.expiryDate)),
+              });
+            }
+          }
+          if (canLicenses) {
+            const licenses = await this.prisma.softwareLicense.findMany({
+              where: { expiryDate: { gte: today, lte: expiringBefore } },
+              orderBy: { expiryDate: "asc" },
+              take: 8,
+              select: { licenseId: true, softwareName: true, expiryDate: true },
+            });
+            for (const l of licenses) {
+              items.push({
+                kind: "software_license",
+                id: String(l.licenseId),
+                label: l.softwareName,
+                expiryDate: dateOnlyIso(l.expiryDate),
+                daysRemaining: daysBetweenUtc(today, startOfUtcDay(l.expiryDate)),
+              });
+            }
+          }
+          items.sort((a, b) => a.daysRemaining - b.daysRemaining || a.expiryDate.localeCompare(b.expiryDate));
+          summary.expiryWatchlist = {
+            windowDays: this.expiringWindowDays,
+            items: items.slice(0, 10),
+          };
+          sectionsIncluded.push("expiryWatchlist");
+        })(),
+      );
+    }
+
     if (has(principal, PermissionKeys.budgetsRead)) {
-      summary.budgetNotice =
-        "Wave 2 invoice posting and payments are in production code; budget committed/remaining USD summaries may remain provisional per client FX and remainingUsd rules (see budgets module notice).";
-      sectionsIncluded.push("budgetNotice");
+      tasks.push(
+        (async () => {
+          const [usdAllocations, committedLines, paymentLines] = await Promise.all([
+            this.prisma.budgetAllocation.findMany({
+              where: { currency: "USD" },
+              select: { allocatedAmount: true },
+            }),
+            this.prisma.budgetTransaction.count({
+              where: { transactionType: BudgetTransactionType.committedInvoice },
+            }),
+            this.prisma.budgetTransaction.count({
+              where: { transactionType: BudgetTransactionType.actualPayment },
+            }),
+          ]);
+          let allocated = 0;
+          for (const row of usdAllocations) {
+            allocated += Number(row.allocatedAmount);
+          }
+          summary.budgetOverview = {
+            provisional: true,
+            usdAllocationCount: usdAllocations.length,
+            usdAllocatedTotal: allocated.toFixed(2),
+            committedInvoiceLedgerLines: committedLines,
+            actualPaymentLedgerLines: paymentLines,
+            semanticsNote: BUDGET_SEMANTICS_NOTE,
+            provisionalNote: BUDGET_PROVISIONAL_NOTE,
+          };
+          summary.budgetNotice = BUDGET_PROVISIONAL_NOTE;
+          sectionsIncluded.push("budgetOverview");
+          sectionsIncluded.push("budgetNotice");
+        })(),
+      );
     }
 
     await Promise.all(tasks);

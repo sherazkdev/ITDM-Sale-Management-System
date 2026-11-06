@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeftRight, RotateCcw } from "lucide-react";
+import { ArrowLeftRight, RotateCcw, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -31,6 +31,7 @@ import {
 } from "@/lib/validators/asset-movement";
 import { ApiClientError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 
 type IssueFormValues = IssueAssetsInput;
 type ReturnFormValues = ReturnAssetsInput;
@@ -127,8 +128,14 @@ export default function AssetIssuancePage() {
 
   const [issueSelected, setIssueSelected] = useState<Set<string>>(() => new Set());
   const [issueNotes, setIssueNotes] = useState<Record<string, string>>({});
+  const [issueAssetCache, setIssueAssetCache] = useState<Record<string, Asset>>({});
+  const [issueAssetSearch, setIssueAssetSearch] = useState("");
+  const debouncedIssueAssetSearch = useDebouncedValue(issueAssetSearch);
   const [returnSelected, setReturnSelected] = useState<Set<string>>(() => new Set());
   const [returnNotes, setReturnNotes] = useState<Record<string, string>>({});
+  const [returnAssetCache, setReturnAssetCache] = useState<Record<string, Asset>>({});
+  const [returnAssetSearch, setReturnAssetSearch] = useState("");
+  const debouncedReturnAssetSearch = useDebouncedValue(returnAssetSearch);
 
   const { data: employeePage, isLoading: employeesLoading } = useQuery({
     queryKey: ["employees", "select", "issuance", employeeSearch],
@@ -172,16 +179,37 @@ export default function AssetIssuancePage() {
   const returnEmployeeId = returnForm.watch("employeeId");
 
   const { data: inStockPage, isLoading: inStockLoading } = useQuery({
-    queryKey: ["assets", "IN_STOCK", "issuance"],
-    queryFn: () => fetchAssets({ page: 1, pageSize: 100, status: "IN_STOCK" }),
+    queryKey: ["assets", "IN_STOCK", "issuance", debouncedIssueAssetSearch],
+    queryFn: () =>
+      fetchAssets({
+        page: 1,
+        pageSize: 100,
+        status: "IN_STOCK",
+        search: debouncedIssueAssetSearch || undefined,
+      }),
     enabled: canIssue,
   });
 
-  const inStockAssets = inStockPage?.data ?? [];
+  const inStockAssets = useMemo(() => inStockPage?.data ?? [], [inStockPage?.data]);
+
+  const visibleIssueAssets = useMemo(() => {
+    const seen = new Set(inStockAssets.map((a) => a.assetId));
+    const retained = [...issueSelected]
+      .filter((id) => !seen.has(id))
+      .map((id) => issueAssetCache[id])
+      .filter((a): a is Asset => Boolean(a));
+    return [...retained, ...inStockAssets];
+  }, [inStockAssets, issueSelected, issueAssetCache]);
 
   const { data: issuedPage, isLoading: issuedLoading } = useQuery({
-    queryKey: ["assets", "ISSUED", "return", returnEmployeeId],
-    queryFn: () => fetchAssets({ page: 1, pageSize: 100, status: "ISSUED" }),
+    queryKey: ["assets", "ISSUED", "return", returnEmployeeId, debouncedReturnAssetSearch],
+    queryFn: () =>
+      fetchAssets({
+        page: 1,
+        pageSize: 100,
+        status: "ISSUED",
+        search: debouncedReturnAssetSearch || undefined,
+      }),
     enabled: canReturn && !!returnEmployeeId,
   });
 
@@ -192,6 +220,15 @@ export default function AssetIssuancePage() {
       ),
     [issuedPage?.data, returnEmployeeId],
   );
+
+  const visibleReturnAssets = useMemo(() => {
+    const seen = new Set(issuedForEmployee.map((a) => a.assetId));
+    const retained = [...returnSelected]
+      .filter((id) => !seen.has(id))
+      .map((id) => returnAssetCache[id])
+      .filter((a): a is Asset => Boolean(a));
+    return [...retained, ...issuedForEmployee];
+  }, [issuedForEmployee, returnSelected, returnAssetCache]);
 
   const invalidateAfterMovement = () => {
     void queryClient.invalidateQueries({ queryKey: ["assets"] });
@@ -244,6 +281,12 @@ export default function AssetIssuancePage() {
       else next.delete(assetId);
       return next;
     });
+    if (checked) {
+      const asset = inStockAssets.find((a) => a.assetId === assetId) ?? issueAssetCache[assetId];
+      if (asset) {
+        setIssueAssetCache((prev) => ({ ...prev, [assetId]: asset }));
+      }
+    }
   };
 
   const toggleReturnAsset = (assetId: string, checked: boolean) => {
@@ -253,16 +296,25 @@ export default function AssetIssuancePage() {
       else next.delete(assetId);
       return next;
     });
+    if (checked) {
+      const asset =
+        issuedForEmployee.find((a) => a.assetId === assetId) ?? returnAssetCache[assetId];
+      if (asset) {
+        setReturnAssetCache((prev) => ({ ...prev, [assetId]: asset }));
+      }
+    }
   };
 
   const clearIssueSelection = () => {
     setIssueSelected(new Set());
     setIssueNotes({});
+    setIssueAssetCache({});
   };
 
   const clearReturnSelection = () => {
     setReturnSelected(new Set());
     setReturnNotes({});
+    setReturnAssetCache({});
   };
 
   const submitIssue = issueForm.handleSubmit(() => {
@@ -373,27 +425,39 @@ export default function AssetIssuancePage() {
               <WorkflowSection
                 step="Step 2"
                 title="Available assets"
-                description="Select one or more in-stock assets to issue."
+                description="Search and select one or more in-stock assets to issue. Selected assets stay checked if they leave the current filter."
               >
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <p className="text-sm text-muted-foreground min-w-0">
-                    <span className="font-semibold text-foreground tabular">{issueSelected.size}</span>{" "}
-                    selected
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={clearIssueSelection}
-                    disabled={issueSelected.size === 0}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Clear selection
-                  </Button>
+                <div className="mb-4 flex flex-col gap-3">
+                  <Input
+                    value={issueAssetSearch}
+                    onChange={(e) => setIssueAssetSearch(e.target.value)}
+                    placeholder="Filter by code, name, or serial…"
+                    leftIcon={<Search className="h-4 w-4" />}
+                    aria-label="Filter available assets"
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground min-w-0">
+                      <span className="font-semibold text-foreground tabular">{issueSelected.size}</span>{" "}
+                      selected
+                      {debouncedIssueAssetSearch ? (
+                        <span className="ml-2">· showing matches for “{debouncedIssueAssetSearch}”</span>
+                      ) : null}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={clearIssueSelection}
+                      disabled={issueSelected.size === 0}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Clear selection
+                    </Button>
+                  </div>
                 </div>
                 <AssetCheckboxList
-                  assets={inStockAssets}
+                  assets={visibleIssueAssets}
                   selected={issueSelected}
                   onToggle={toggleIssueAsset}
                   conditionNotes={issueNotes}
@@ -444,6 +508,8 @@ export default function AssetIssuancePage() {
                             field.onChange(v);
                             setReturnSelected(new Set());
                             setReturnNotes({});
+                            setReturnAssetCache({});
+                            setReturnAssetSearch("");
                           }}
                           placeholder={employeesLoading ? "Loading…" : "Select employee"}
                           options={employeeOptions}
@@ -461,26 +527,36 @@ export default function AssetIssuancePage() {
               <WorkflowSection
                 step="Step 2"
                 title="Issued assets for employee"
-                description="Only assets currently issued to the selected employee are listed."
+                description="Only assets currently issued to the selected employee are listed. Use search to narrow large inventories."
               >
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <p className="text-sm text-muted-foreground min-w-0">
-                    <span className="font-semibold text-foreground tabular">{returnSelected.size}</span>{" "}
-                    selected
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={clearReturnSelection}
-                    disabled={returnSelected.size === 0}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Clear selection
-                  </Button>
+                <div className="mb-4 flex flex-col gap-3">
+                  <Input
+                    value={returnAssetSearch}
+                    onChange={(e) => setReturnAssetSearch(e.target.value)}
+                    placeholder="Filter by code, name, or serial…"
+                    leftIcon={<Search className="h-4 w-4" />}
+                    aria-label="Filter issued assets"
+                    disabled={!returnEmployeeId}
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground min-w-0">
+                      <span className="font-semibold text-foreground tabular">{returnSelected.size}</span>{" "}
+                      selected
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearReturnSelection}
+                      disabled={returnSelected.size === 0}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Clear selection
+                    </Button>
+                  </div>
                 </div>
                 <AssetCheckboxList
-                  assets={issuedForEmployee}
+                  assets={visibleReturnAssets}
                   selected={returnSelected}
                   onToggle={toggleReturnAsset}
                   conditionNotes={returnNotes}

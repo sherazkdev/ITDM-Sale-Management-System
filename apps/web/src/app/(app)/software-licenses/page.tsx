@@ -1,10 +1,12 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, KeyRound } from "lucide-react";
+
+import { utcDatePlusDays } from "@/lib/domain/dashboard-links";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
@@ -23,10 +25,16 @@ import { LICENSE_RENEW_BLOCKED_MESSAGE } from "@/lib/domain/license-ui";
 
 export default function SoftwareLicensesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasPermission } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [expiringBefore, setExpiringBefore] = useState("");
+  const initialExpiringBefore = useMemo(() => {
+    const days = Number(searchParams.get("expiringWithin") ?? "");
+    if (Number.isFinite(days) && days > 0) return utcDatePlusDays(days);
+    return "";
+  }, [searchParams]);
+  const [expiringBefore, setExpiringBefore] = useState(initialExpiringBefore);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["software-licenses", page, pageSize, expiringBefore],

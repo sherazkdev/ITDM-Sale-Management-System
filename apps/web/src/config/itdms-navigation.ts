@@ -141,7 +141,7 @@ export const ITDMS_NAV: NavSection[] = [
         permission: PermissionKeys.licensesRead,
       },
       {
-        label: "Global search",
+        label: "PO search",
         href: "/search",
         icon: Search,
         permission: PermissionKeys.searchRead,

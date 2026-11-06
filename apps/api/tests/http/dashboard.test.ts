@@ -39,6 +39,23 @@ describe("Dashboard API", () => {
       inStock: expect.any(Number),
       issued: expect.any(Number),
     });
+    expect(res.body.data.sectionsIncluded).toContain("nonAssetStock");
+    expect(res.body.data.nonAssetStock).toMatchObject({
+      registeredItemCount: expect.any(Number),
+      note: expect.stringContaining("not summed"),
+    });
+    expect(res.body.data.sectionsIncluded).toContain("expiryWatchlist");
+    expect(res.body.data.expiryWatchlist).toMatchObject({
+      windowDays: expect.any(Number),
+      items: expect.any(Array),
+    });
+    expect(res.body.data.sectionsIncluded).toContain("budgetOverview");
+    expect(res.body.data.budgetOverview).toMatchObject({
+      provisional: true,
+      usdAllocationCount: expect.any(Number),
+      usdAllocatedTotal: expect.any(String),
+    });
+    expect(res.body.data.budgetOverview.remainingUsd).toBeUndefined();
   });
 
   it("omits restricted sections for read-only employees user", async () => {
