@@ -8,7 +8,9 @@ import { sendSuccess } from "../../shared/http/response.js";
 import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
 import { createEmployeeSchema, updateEmployeeSchema } from "./employee.schema.js";
+import multer from "multer";
 import type { EmployeeService } from "./employee.service.js";
+import type { EmployeeImportService } from "./employee-import.service.js";
 
 type CreateEmployeeBody = z.infer<typeof createEmployeeSchema>;
 type UpdateEmployeeBody = z.infer<typeof updateEmployeeSchema>;
@@ -20,8 +22,16 @@ function parseEmployeeId(raw: string): bigint {
   return BigInt(raw);
 }
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+});
+
 export class EmployeeController {
-  constructor(private readonly service: EmployeeService) {}
+  constructor(
+    private readonly service: EmployeeService,
+    private readonly importService: EmployeeImportService,
+  ) {}
 
   create = asyncHandler(async (req: Request, res: Response) => {
     const employee = await this.service.create(req.body as CreateEmployeeBody);
@@ -36,9 +46,13 @@ export class EmployeeController {
     const search = typeof req.query.search === "string" ? req.query.search : undefined;
     const isActive =
       req.query.isActive === "true" ? true : req.query.isActive === "false" ? false : undefined;
+    const departmentId =
+      typeof req.query.departmentId === "string" && /^\d+$/.test(req.query.departmentId)
+        ? BigInt(req.query.departmentId)
+        : undefined;
     const result = await this.service.list(
       { page, pageSize, sortBy, sortDir },
-      { search, isActive },
+      { search, isActive, departmentId },
     );
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
@@ -66,4 +80,16 @@ export class EmployeeController {
     const employee = await this.service.deactivate(parseEmployeeId(String(req.params.id)));
     sendSuccess(res, toPublicJson(employee), { requestId: getRequestId(req) });
   });
+
+  importSpreadsheet = [
+    upload.single("file"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const file = req.file;
+      if (!file?.buffer) {
+        throw new AppError(ErrorCodes.VALIDATION_ERROR, "Missing import file", 422);
+      }
+      const data = await this.importService.importBuffer(file.buffer, file.originalname);
+      sendSuccess(res, data, { requestId: getRequestId(req) });
+    }),
+  ];
 }

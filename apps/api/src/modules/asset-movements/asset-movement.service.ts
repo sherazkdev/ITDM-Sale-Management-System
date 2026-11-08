@@ -59,13 +59,17 @@ export class AssetMovementService {
     this.ensureUniqueAssetIds(input.assets);
     const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
 
-    const employee = await this.prisma.employee.findUnique({ where: { employeeId: input.employeeId } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { employeeId: input.employeeId },
+      include: { departmentRef: true },
+    });
     if (!employee || !employee.isActive) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, "Employee not found or inactive", 422);
     }
+    const employeeDepartment = employee.departmentRef?.departmentName ?? employee.department ?? null;
     const receivingDepartment = this.resolveReceivingDepartment(
       input.receivingDepartment,
-      employee.department,
+      employeeDepartment,
     );
 
     return runInTransaction(this.prisma, async (tx) => {

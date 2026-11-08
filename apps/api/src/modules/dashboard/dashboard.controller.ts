@@ -13,7 +13,15 @@ export class DashboardController {
     if (!req.principal) {
       throw new AppError(ErrorCodes.UNAUTHORIZED, "Authentication required", 401);
     }
-    const data = await this.service.buildSummary(req.principal);
+    const parseDate = (raw: unknown): Date | undefined => {
+      if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(raw)) return undefined;
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    };
+    const data = await this.service.buildSummary(req.principal, {
+      activityFrom: parseDate(req.query.from),
+      activityTo: parseDate(req.query.to),
+    });
     sendSuccess(res, data, { requestId: getRequestId(req) });
   });
 }

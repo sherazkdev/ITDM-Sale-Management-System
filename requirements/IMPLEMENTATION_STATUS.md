@@ -1,7 +1,7 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-08 PM final — Docker engine recovered (`docker desktop start`); packaged rehearsal **VERIFIED** on `itdms_deploy_rehearsal` — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md`  
+**Last verified at:** 2026-11-08 — Phase 7 CRM/settings/import foundation + PDF fix — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md`  
 **Git recovery:** `5b9cf2b` / tag `itdms-pre-client-uat-2026-11-08` (unchanged)  
 **Local Git:** Wave 6 + Premium UI Phase A/B on main
 
@@ -51,6 +51,8 @@
 | Prompt 2 — full regression & security closure | **COMPLETE (engineering)** | Prisma validate; typecheck/lint **PASS**; API **91/91**; Web **50/50**; Playwright **315/0/216** on `itdms_e2e` @ :3020/:3021 — `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` |
 | Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
 | Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
+| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Recovery tag `itdms-pre-crm-enhancements-2026-11-08`; tabular PDF/XLSX fix; `/users/me` profile/avatar/password/theme; employees/vendors import; Settings + Import/Export UI; full module matrix + Playwright capture **pending** — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md` |
+| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Department master + legacy labels migration; `/departments` + `/roles` API; CRM roles UI; employee department FK; financial.corrections escalation guard; completion gate + full regression **pending** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

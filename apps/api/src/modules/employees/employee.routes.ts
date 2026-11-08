@@ -21,6 +21,11 @@ export function createEmployeeRouter(deps: {
     validateBody(createEmployeeSchema),
     deps.employeeController.create,
   );
+  router.post(
+    "/import",
+    requirePermission(PermissionKeys.employeesWrite),
+    ...deps.employeeController.importSpreadsheet,
+  );
   router.get("/:id", requirePermission(PermissionKeys.employeesRead), deps.employeeController.getById);
   router.patch(
     "/:id",

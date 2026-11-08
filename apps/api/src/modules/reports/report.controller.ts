@@ -27,7 +27,10 @@ function sendReport(req: Request, res: Response, data: unknown, format: string) 
   }
   if (format === "xlsx") {
     const x = data as { body: Buffer };
-    res.setHeader("Content-Type", "application/vnd.ms-excel");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
     res.setHeader("X-ITDMS-Export-Disclaimer", "NON-OFFICIAL-D12");
     res.send(x.body);
     return;

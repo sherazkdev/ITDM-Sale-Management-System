@@ -77,10 +77,31 @@ export class UserAdminService {
     if (roles.length !== roleKeys.length) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, "One or more roles not found", 422);
     }
+  const protectedAdminKeys = new Set(["admin", "it_admin_proposed"]);
+  const adminRoles = await this.prisma.role.findMany({
+      where: { roleKey: { in: [...protectedAdminKeys] } },
+    });
+    const adminRoleIds = new Set(adminRoles.map((r) => r.roleId));
+    const hadAdmin = await this.prisma.userRole.findFirst({
+      where: { userId, roleId: { in: [...adminRoleIds] } },
+    });
+    const willHaveAdmin = roles.some((r) => adminRoleIds.has(r.roleId));
+    if (hadAdmin && !willHaveAdmin) {
+      const otherAdmins = await this.prisma.userRole.count({
+        where: { roleId: { in: [...adminRoleIds] }, userId: { not: userId } },
+      });
+      if (otherAdmins === 0) {
+        throw new AppError(ErrorCodes.FORBIDDEN, "Cannot remove the last Admin role assignment", 403);
+      }
+    }
     return this.prisma.$transaction(async (tx) => {
       await tx.userRole.deleteMany({ where: { userId } });
       await tx.userRole.createMany({
         data: roles.map((r) => ({ userId, roleId: r.roleId })),
+      });
+      await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
       });
       return tx.user.findUniqueOrThrow({
         where: { userId },

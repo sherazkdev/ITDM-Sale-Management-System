@@ -9,6 +9,7 @@ export class EmployeeRepository {
     employeeNumber: string;
     fullName: string;
     department?: string;
+    departmentId?: bigint | null;
     designation?: string;
     contactNumber?: string;
     email?: string;
@@ -31,8 +32,12 @@ export class EmployeeRepository {
     });
   }
 
-  async list(query: PaginationQuery, filters: { search?: string; isActive?: boolean }) {
+  async list(
+    query: PaginationQuery,
+    filters: { search?: string; isActive?: boolean; departmentId?: bigint },
+  ) {
     const where = {
+      ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
       ...(filters.isActive === undefined ? {} : { isActive: filters.isActive }),
       ...(filters.search
         ? {

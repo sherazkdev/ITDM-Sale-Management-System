@@ -21,6 +21,12 @@ export function createVendorRouter(deps: {
     validateBody(createVendorSchema),
     deps.vendorController.create,
   );
+  router.get("/export", requirePermission(PermissionKeys.vendorsRead), deps.vendorController.exportList);
+  router.post(
+    "/import",
+    requirePermission(PermissionKeys.vendorsManage),
+    ...deps.vendorController.importSpreadsheet,
+  );
   router.get("/:id", requirePermission(PermissionKeys.vendorsRead), deps.vendorController.getById);
   router.patch(
     "/:id",

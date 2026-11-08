@@ -2,6 +2,9 @@
 export const PermissionKeys = {
   employeesRead: "employees.read",
   employeesWrite: "employees.write",
+  departmentsRead: "departments.read",
+  departmentsManage: "departments.manage",
+  rolesManage: "roles.manage",
   vendorsRead: "vendors.read",
   vendorsManage: "vendors.manage",
   assetsRead: "assets.read",

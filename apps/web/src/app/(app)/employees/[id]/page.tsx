@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ import {
 } from "@/lib/api/employees";
 import { updateEmployeeSchema, type UpdateEmployeeInput } from "@/lib/validators/employee";
 import { ApiClientError } from "@/lib/api/client";
+import { DepartmentSelect } from "@/components/forms/DepartmentSelect";
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -61,7 +62,7 @@ export default function EmployeeDetailPage() {
     values: employee
       ? {
           fullName: employee.fullName,
-          department: employee.department ?? "",
+          departmentId: employee.departmentId ?? "",
           designation: employee.designation ?? "",
           contactNumber: employee.contactNumber ?? "",
           email: employee.email ?? "",
@@ -176,7 +177,18 @@ export default function EmployeeDetailPage() {
       >
         <SectionCard title="Organization">
           <dl className="grid gap-4 sm:grid-cols-2">
-            <DetailField label="Department" value={employee.department ?? "—"} />
+            <DetailField
+              label="Department"
+              value={
+                employee.department ?? "—"
+              }
+            />
+            {!employee.departmentId && employee.department ? (
+              <DetailField
+                label="Department link"
+                value={<span className="text-xs text-muted-foreground">Legacy free-text (not linked to catalog)</span>}
+              />
+            ) : null}
             <DetailField label="Designation" value={employee.designation ?? "—"} />
             <DetailField label="Employee number" value={employee.employeeNumber} />
             <DetailField
@@ -209,9 +221,19 @@ export default function EmployeeDetailPage() {
               ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit-department">Department</Label>
-                <Input id="edit-department" {...editForm.register("department")} />
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label>Department</Label>
+                <Controller
+                  name="departmentId"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <DepartmentSelect
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      legacyDepartment={employee.department}
+                    />
+                  )}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="edit-designation">Designation</Label>

@@ -55,7 +55,10 @@ export class DashboardService {
     this.expiringWindowDays = notificationLeadDays ?? EXPIRING_WINDOW_DAYS_FALLBACK;
   }
 
-  async buildSummary(principal: AuthPrincipal): Promise<DashboardSummary> {
+  async buildSummary(
+    principal: AuthPrincipal,
+    options?: { activityFrom?: Date; activityTo?: Date },
+  ): Promise<DashboardSummary> {
     const generatedAt = new Date().toISOString();
     const sectionsIncluded: string[] = [];
     const summary: DashboardSummary = { generatedAt, sectionsIncluded };
@@ -222,9 +225,13 @@ export class DashboardService {
     if (has(principal, PermissionKeys.auditRead)) {
       tasks.push(
         (async () => {
+          const occurredAt: { gte?: Date; lte?: Date } = {};
+          if (options?.activityFrom) occurredAt.gte = options.activityFrom;
+          if (options?.activityTo) occurredAt.lte = options.activityTo;
           const items = await this.prisma.auditLog.findMany({
+            where: Object.keys(occurredAt).length ? { occurredAt } : undefined,
             orderBy: { occurredAt: "desc" },
-            take: 8,
+            take: 20,
             include: {
               actor: { select: { displayName: true, username: true } },
             },

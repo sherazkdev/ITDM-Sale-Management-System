@@ -20,9 +20,12 @@ import {
 import { createAuditRouter } from "../modules/audit/audit.routes.js";
 import { createReportRouter } from "../modules/reports/report.routes.js";
 import { createUserAdminRouter } from "../modules/users/user.routes.js";
+import { createUserProfileRouter } from "../modules/user-profile/user-profile.routes.js";
 import { createHealthRouter } from "../modules/health/health.routes.js";
 import { createNonAssetStockRouter } from "../modules/non-asset-stock/non-asset-stock.routes.js";
 import { createDashboardRouter } from "../modules/dashboard/dashboard.routes.js";
+import { createDepartmentRouter } from "../modules/departments/department.routes.js";
+import { createRoleAdminRouter } from "../modules/roles-admin/role-admin.routes.js";
 import type { ApplicationControllers } from "../application/controllers.js";
 import { createCsrfProtection } from "../shared/middleware/csrf.middleware.js";
 import { createApiRateLimiter } from "../shared/middleware/api-rate-limit.js";
@@ -44,6 +47,20 @@ export function createApiRouter(controllers: ApplicationControllers): Router {
     "/dashboard",
     createDashboardRouter({
       dashboardController: controllers.dashboardController,
+      authService: controllers.authService,
+    }),
+  );
+  router.use(
+    "/departments",
+    createDepartmentRouter({
+      departmentController: controllers.departmentController,
+      authService: controllers.authService,
+    }),
+  );
+  router.use(
+    "/roles",
+    createRoleAdminRouter({
+      roleAdminController: controllers.roleAdminController,
       authService: controllers.authService,
     }),
   );
@@ -159,6 +176,13 @@ export function createApiRouter(controllers: ApplicationControllers): Router {
     "/reports",
     createReportRouter({
       reportController: controllers.reportController,
+      authService: controllers.authService,
+    }),
+  );
+  router.use(
+    "/users",
+    createUserProfileRouter({
+      userProfileController: controllers.userProfileController,
       authService: controllers.authService,
     }),
   );

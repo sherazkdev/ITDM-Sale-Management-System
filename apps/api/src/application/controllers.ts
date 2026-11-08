@@ -9,9 +9,16 @@ import { AuthController } from "../modules/auth/auth.controller.js";
 import { EmployeeRepository } from "../modules/employees/employee.repository.js";
 import { EmployeeService } from "../modules/employees/employee.service.js";
 import { EmployeeController } from "../modules/employees/employee.controller.js";
+import { EmployeeImportService } from "../modules/employees/employee-import.service.js";
+import { DepartmentService } from "../modules/departments/department.service.js";
+import { DepartmentImportService } from "../modules/departments/department-import.service.js";
+import { DepartmentController } from "../modules/departments/department.controller.js";
+import { RoleAdminService } from "../modules/roles-admin/role-admin.service.js";
+import { RoleAdminController } from "../modules/roles-admin/role-admin.controller.js";
 import { VendorRepository } from "../modules/vendors/vendor.repository.js";
 import { VendorService } from "../modules/vendors/vendor.service.js";
 import { VendorController } from "../modules/vendors/vendor.controller.js";
+import { VendorImportService } from "../modules/vendors/vendor-import.service.js";
 import { AssetCategoryRepository } from "../modules/asset-categories/asset-category.repository.js";
 import { AssetCategoryService } from "../modules/asset-categories/asset-category.service.js";
 import { AssetCategoryController } from "../modules/asset-categories/asset-category.controller.js";
@@ -54,6 +61,9 @@ import { DashboardController } from "../modules/dashboard/dashboard.controller.j
 import { NonAssetStockRepository } from "../modules/non-asset-stock/non-asset-stock.repository.js";
 import { NonAssetStockService } from "../modules/non-asset-stock/non-asset-stock.service.js";
 import { NonAssetStockController } from "../modules/non-asset-stock/non-asset-stock.controller.js";
+import { AvatarStorageService } from "../shared/storage/avatar-storage.js";
+import { UserProfileService } from "../modules/user-profile/user-profile.service.js";
+import { UserProfileController } from "../modules/user-profile/user-profile.controller.js";
 
 export type ApplicationControllers = {
   healthController: HealthController;
@@ -77,6 +87,9 @@ export type ApplicationControllers = {
   userAdminController: UserAdminController;
   dashboardController: DashboardController;
   nonAssetStockController: NonAssetStockController;
+  userProfileController: UserProfileController;
+  departmentController: DepartmentController;
+  roleAdminController: RoleAdminController;
   authService: AuthService;
 };
 
@@ -91,13 +104,22 @@ export function createApplicationControllers(
   const authService = new AuthService(authRepository, permissionService);
   const authController = new AuthController(authService, env);
 
+  const departmentService = new DepartmentService(prisma, audit);
+  const departmentImportService = new DepartmentImportService(prisma, audit);
+  const departmentController = new DepartmentController(departmentService, departmentImportService);
+
   const employeeRepository = new EmployeeRepository(prisma);
-  const employeeService = new EmployeeService(employeeRepository);
-  const employeeController = new EmployeeController(employeeService);
+  const employeeService = new EmployeeService(employeeRepository, prisma);
+  const employeeImportService = new EmployeeImportService(prisma, departmentService);
+  const employeeController = new EmployeeController(employeeService, employeeImportService);
+
+  const roleAdminService = new RoleAdminService(prisma, audit);
+  const roleAdminController = new RoleAdminController(roleAdminService);
 
   const vendorRepository = new VendorRepository(prisma);
   const vendorService = new VendorService(vendorRepository);
-  const vendorController = new VendorController(vendorService);
+  const vendorImportService = new VendorImportService(prisma);
+  const vendorController = new VendorController(vendorService, vendorImportService);
 
   const assetCategoryRepository = new AssetCategoryRepository(prisma);
   const assetCategoryService = new AssetCategoryService(assetCategoryRepository);
@@ -159,6 +181,10 @@ export function createApplicationControllers(
   const dashboardService = new DashboardService(prisma, env.NOTIFICATION_LEAD_DAYS);
   const dashboardController = new DashboardController(dashboardService);
 
+  const avatarStorage = new AvatarStorageService(env.STORAGE_ROOT);
+  const userProfileService = new UserProfileService(prisma, audit, avatarStorage);
+  const userProfileController = new UserProfileController(userProfileService);
+
   return {
     healthController,
     authController,
@@ -181,6 +207,9 @@ export function createApplicationControllers(
     userAdminController,
     dashboardController,
     nonAssetStockController,
+    userProfileController,
+    departmentController,
+    roleAdminController,
     authService,
   };
 }

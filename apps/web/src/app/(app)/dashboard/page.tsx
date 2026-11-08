@@ -28,6 +28,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/avatar";
 import { CHART, HorizontalBarList, StatusDonut } from "@/components/dashboard/DashboardCharts";
 import { DashboardHero } from "@/components/premium/DashboardHero";
+import {
+  DashboardFilterBar,
+  filterRecentActivityByRange,
+  useDashboardDateRange,
+} from "@/components/dashboard/DashboardFilterBar";
 import { fetchDashboardSummary, type DashboardSummary } from "@/lib/api/dashboard";
 import { ApiClientError } from "@/lib/api/client";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -105,15 +110,18 @@ function kpiGridClass(count: number): string {
 export default function DashboardPage() {
   const router = useRouter();
   const { session, hasPermission, serviceUnavailable } = useAuth();
+  const dateRange = useDashboardDateRange();
   const firstName =
     session.status === "authenticated" ? session.user.displayName.split(" ")[0] : "there";
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["dashboard", "summary"],
-    queryFn: fetchDashboardSummary,
+    queryKey: ["dashboard", "summary", dateRange.from, dateRange.to],
+    queryFn: () => fetchDashboardSummary({ from: dateRange.from, to: dateRange.to }),
     staleTime: 30_000,
     enabled: session.status === "authenticated" && !serviceUnavailable,
   });
+
+  const filteredRecentActivity = filterRecentActivityByRange(data?.recentActivity, dateRange);
 
   const networkDown = error instanceof ApiClientError && error.status === 0;
   const forbidden = error instanceof ApiClientError && error.status === 403;
@@ -334,6 +342,8 @@ export default function DashboardPage() {
           </>
         }
       />
+
+      <DashboardFilterBar />
 
       {serviceUnavailable ? <ServiceUnavailableBanner /> : null}
 
@@ -657,15 +667,19 @@ export default function DashboardPage() {
               <Card className="col-span-12 min-w-0 lg:col-span-7">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">Recent activity</CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Date filter applies to this list only until the dashboard summary API accepts range
+                    parameters for all KPI sections.
+                  </p>
                 </CardHeader>
                 <CardContent className="max-h-80 overflow-y-auto scrollbar-thin pr-1">
                   <div className="flex flex-col gap-0.5">
-                    {data.recentActivity.length === 0 ? (
+                    {filteredRecentActivity.length === 0 ? (
                       <div className="py-8 text-center text-sm text-muted-foreground">
-                        No audit events recorded yet.
+                        No audit events in the selected period.
                       </div>
                     ) : (
-                      data.recentActivity.slice(0, 8).map((a) => {
+                      filteredRecentActivity.slice(0, 8).map((a) => {
                         const href = activityRecordHref(a.targetType, a.targetId);
                         const body = (
                           <>

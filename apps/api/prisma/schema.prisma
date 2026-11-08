@@ -29,11 +29,40 @@ enum NonAssetStockMovementType {
   @@map("non_asset_stock_movement_type")
 }
 
+model Department {
+  departmentId   BigInt   @id @default(autoincrement()) @map("department_id")
+  departmentCode String   @unique @map("department_code") @db.VarChar(64)
+  departmentName String   @map("department_name") @db.VarChar(255)
+  description    String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employees      Employee[]
+  legacyLabels   DepartmentLegacyLabel[]
+
+  @@map("departments")
+}
+
+/// Unresolved or historical free-text department labels — no automatic synonym merge (Phase 8).
+model DepartmentLegacyLabel {
+  legacyLabel  String   @id @map("legacy_label") @db.VarChar(128)
+  departmentId BigInt?  @map("department_id")
+  reviewStatus String   @default("pending") @map("review_status") @db.VarChar(16)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  department Department? @relation(fields: [departmentId], references: [departmentId], onDelete: SetNull)
+
+  @@map("department_legacy_labels")
+}
+
 model Employee {
   employeeId     BigInt  @id @default(autoincrement()) @map("employee_id")
   employeeNumber String  @unique @map("employee_number") @db.VarChar(64)
   fullName       String  @map("full_name") @db.VarChar(255)
   department     String? @db.VarChar(128)
+  departmentId   BigInt? @map("department_id")
   designation    String? @db.VarChar(128)
   contactNumber  String? @map("contact_number") @db.VarChar(64)
   email          String? @db.VarChar(255)
@@ -44,7 +73,9 @@ model Employee {
   user                     User?
   movementDocuments        AssetMovementDocument[]
   nonAssetStockMovements   NonAssetStockMovement[]
+  departmentRef            Department? @relation(fields: [departmentId], references: [departmentId], onDelete: SetNull)
 
+  @@index([departmentId])
   @@map("employees")
 }
 
@@ -394,6 +425,11 @@ model User {
   isLocked         Boolean   @default(false) @map("is_locked")
   employeeId       BigInt?   @unique @map("employee_id")
   passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(6)
+  profilePhone      String?   @map("profile_phone") @db.VarChar(64)
+  profileLocation   String?   @map("profile_location") @db.VarChar(255)
+  profileBio        String?   @map("profile_bio") @db.Text
+  avatarStorageKey  String?   @map("avatar_storage_key") @db.VarChar(512)
+  themePreferences  Json?     @map("theme_preferences")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -415,6 +451,9 @@ model Role {
   roleKey     String @unique @map("role_key") @db.VarChar(64)
   displayName String @map("display_name") @db.VarChar(128)
   description String? @db.Text
+  isActive    Boolean @default(true) @map("is_active")
+  isSystem    Boolean @default(false) @map("is_system")
+  colorKey    String? @map("color_key") @db.VarChar(32)
 
   userRoles       UserRole[]
   rolePermissions RolePermission[]

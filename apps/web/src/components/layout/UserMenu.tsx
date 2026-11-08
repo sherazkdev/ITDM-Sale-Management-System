@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, LogOut, Moon, Settings, Sun, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,10 +17,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
+import { fetchUserProfile, userAvatarSrc } from "@/lib/api/user-profile";
 
 export function UserMenu() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { session, loading, signOut, hasPermission } = useAuth();
+
+  const profileQuery = useQuery({
+    queryKey: ["user", "profile", "me"],
+    queryFn: fetchUserProfile,
+    enabled: session.status === "authenticated",
+    staleTime: 120_000,
+  });
 
   if (loading) {
     return (
@@ -39,12 +48,13 @@ export function UserMenu() {
   }
 
   const { user } = session;
+  const avatarSrc = profileQuery.data?.avatarUrl ? userAvatarSrc(true) : undefined;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-10 gap-2 pl-1.5 pr-2">
-          <UserAvatar name={user.displayName} size={32} />
+          <UserAvatar name={user.displayName} src={avatarSrc} size={32} />
           <div className="hidden md:flex flex-col items-start leading-tight">
             <span className="text-sm font-medium">{user.displayName}</span>
             <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">{user.username}</span>
@@ -55,8 +65,10 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <UserIcon className="h-4 w-4" /> {user.username}
+        <DropdownMenuItem asChild>
+          <Link href="/settings/profile">
+            <UserIcon className="h-4 w-4" /> Profile & settings
+          </Link>
         </DropdownMenuItem>
         {hasPermission(PermissionKeys.usersManage) ? (
           <DropdownMenuItem asChild>

@@ -106,6 +106,17 @@ export type DashboardSummary = {
   budgetOverview?: DashboardBudgetOverviewSection;
 };
 
-export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  return apiGet<DashboardSummary>("/dashboard/summary");
+export type DashboardSummaryParams = {
+  from?: string;
+  to?: string;
+};
+
+export async function fetchDashboardSummary(params?: DashboardSummaryParams): Promise<DashboardSummary> {
+  const qs =
+    params?.from || params?.to
+      ? `?${new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v) as Array<[string, string]>,
+        ).toString()}`
+      : "";
+  return apiGet<DashboardSummary>(`/dashboard/summary${qs}`);
 }

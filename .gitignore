@@ -20,6 +20,7 @@ apps/web/e2e/.auth/admin.json
 /backups/
 backups-rotation-test/
 rehearsal/
+.reference/
 apps/web/.next/
 apps/api/storage/
 storage-staging/

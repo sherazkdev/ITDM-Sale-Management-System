@@ -8,6 +8,9 @@ import { Plus, UserCheck, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
+import { DataTableToolbar } from "@/components/common/DataTableToolbar";
+import { ImportModal } from "@/components/data-management/ImportModal";
+import { ExportMenu } from "@/components/data-management/ExportMenu";
 import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -16,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { fetchEmployees, type Employee } from "@/lib/api/employees";
+import { fetchDepartmentSelectOptions } from "@/lib/api/departments";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
@@ -24,13 +29,20 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { useListMetaTotals } from "@/lib/hooks/use-list-meta";
 import { ApiClientError } from "@/lib/api/client";
 
-const EMPLOYEE_LIST_DEFAULTS = { page: 1, pageSize: 20, active: "all" };
+const EMPLOYEE_LIST_DEFAULTS = { page: 1, pageSize: 20, active: "all", departmentId: "" };
 
 export default function EmployeesPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
   const list = useServerListTable({ defaults: EMPLOYEE_LIST_DEFAULTS, defaultSortBy: "employeeNumber" });
   const activeFilter = list.extras.active ?? "all";
+  const departmentFilter = list.extras.departmentId ?? "";
+
+  const { data: departmentOptions = [] } = useQuery({
+    queryKey: ["departments", "select-options"],
+    queryFn: () => fetchDepartmentSelectOptions(),
+    staleTime: 60_000,
+  });
 
   const isActive =
     activeFilter === "active" ? true : activeFilter === "inactive" ? false : undefined;
@@ -50,6 +62,7 @@ export default function EmployeesPage() {
       list.pageSize,
       list.debouncedSearch,
       activeFilter,
+      departmentFilter,
       sortParams.sortBy,
       sortParams.sortDir,
     ],
@@ -59,6 +72,7 @@ export default function EmployeesPage() {
         pageSize: list.pageSize,
         search: list.debouncedSearch || undefined,
         isActive,
+        departmentId: departmentFilter || undefined,
         sortBy: sortParams.sortBy,
         sortDir: sortParams.sortDir,
       }),
@@ -165,18 +179,30 @@ export default function EmployeesPage() {
         }}
         searchPlaceholder="Search name or number…"
         filters={
-          <FilterSelect
-            aria-label="Status filter"
-            value={activeFilter === "all" ? "" : activeFilter}
-            onChange={(v) => {
-              list.patch({ extras: { active: v || "all" }, page: 1 });
-            }}
-            placeholder="All statuses"
-            options={[
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ]}
-          />
+          <>
+            <div className="w-full sm:w-56">
+              <SearchableSelect
+                aria-label="Department filter"
+                value={departmentFilter}
+                onChange={(v) => list.patch({ extras: { departmentId: v }, page: 1 })}
+                options={[{ value: "", label: "All departments" }, ...departmentOptions]}
+                placeholder="All departments"
+                searchPlaceholder="Filter by department…"
+              />
+            </div>
+            <FilterSelect
+              aria-label="Status filter"
+              value={activeFilter === "all" ? "" : activeFilter}
+              onChange={(v) => {
+                list.patch({ extras: { active: v || "all" }, page: 1 });
+              }}
+              placeholder="All statuses"
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+            />
+          </>
         }
       />
 
@@ -190,6 +216,28 @@ export default function EmployeesPage() {
       ) : null}
 
       <SectionCard flush className="shadow-soft">
+        <DataTableToolbar
+          rangeLabel={`${total === 0 ? "No" : total} employee${total === 1 ? "" : "s"} in view`}
+          trailing={
+            <div className="flex flex-wrap items-center gap-2">
+              {hasPermission(PermissionKeys.employeesWrite) ? (
+                <ImportModal entity="employees" />
+              ) : null}
+              {hasPermission(PermissionKeys.reportsRead) ? (
+                <ExportMenu
+                  entity="employees"
+                  filterParams={{
+                    search: list.debouncedSearch || undefined,
+                    active: activeFilter !== "all" ? activeFilter : undefined,
+                    departmentId: departmentFilter || undefined,
+                    sortBy: sortParams.sortBy,
+                    sortDir: sortParams.sortDir,
+                  }}
+                />
+              ) : null}
+            </div>
+          }
+        />
         <DataTable
           tableId="employees"
           data={rows}

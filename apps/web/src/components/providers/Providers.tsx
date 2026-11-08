@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "./ThemeProvider";
+import { BrandThemeProvider } from "./BrandThemeProvider";
 import { AuthProvider } from "./AuthProvider";
 import { Toaster } from "sonner";
 
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <QueryClientProvider client={client}>
         <AuthProvider>
+          <BrandThemeProvider>
           {children}
           <Toaster
             richColors
@@ -34,6 +36,7 @@ export function Providers({ children }: { children: ReactNode }) {
               className: "rounded-xl border shadow-soft",
             }}
           />
+          </BrandThemeProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

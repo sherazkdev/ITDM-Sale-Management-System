@@ -8,6 +8,9 @@ import { Plus, Building2, UserCheck } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
+import { DataTableToolbar } from "@/components/common/DataTableToolbar";
+import { ImportModal } from "@/components/data-management/ImportModal";
+import { ExportMenu } from "@/components/data-management/ExportMenu";
 import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -188,6 +191,25 @@ export default function VendorsPage() {
       ) : null}
 
       <Card className="overflow-hidden">
+        <DataTableToolbar
+          rangeLabel={`${total === 0 ? "No" : total} vendor${total === 1 ? "" : "s"} in view`}
+          trailing={
+            <div className="flex flex-wrap items-center gap-2">
+              {hasPermission(PermissionKeys.vendorsManage) ? <ImportModal entity="vendors" /> : null}
+              {hasPermission(PermissionKeys.vendorsRead) ? (
+                <ExportMenu
+                  entity="vendors"
+                  filterParams={{
+                    search: list.debouncedSearch || undefined,
+                    active: activeFilter !== "all" ? activeFilter : undefined,
+                    sortBy: sortParams.sortBy,
+                    sortDir: sortParams.sortDir,
+                  }}
+                />
+              ) : null}
+            </div>
+          }
+        />
         <DataTable
           tableId="vendors"
           sortMode="server"

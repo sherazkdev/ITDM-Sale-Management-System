@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import { createEmployee, type Employee } from "@/lib/api/employees";
 import { createEmployeeSchema, type CreateEmployeeInput } from "@/lib/validators/employee";
 import { ApiClientError } from "@/lib/api/client";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
+import { DepartmentSelect } from "@/components/forms/DepartmentSelect";
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -39,13 +40,14 @@ export default function NewEmployeePage() {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors, isDirty },
   } = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
       employeeNumber: "",
       fullName: "",
-      department: "",
+      departmentId: "",
       designation: "",
       contactNumber: "",
       email: "",
@@ -121,8 +123,7 @@ export default function NewEmployeePage() {
                     {preview.employeeNumber || "Employee number"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {[preview.department, preview.designation].filter(Boolean).join(" · ") ||
-                      "Department · designation"}
+                    {[preview.designation].filter(Boolean).join(" · ") || "Designation"}
                   </p>
                 </div>
               </div>
@@ -167,8 +168,14 @@ export default function NewEmployeePage() {
                 ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" {...register("department")} />
+                <Label>Department</Label>
+                <Controller
+                  name="departmentId"
+                  control={control}
+                  render={({ field }) => (
+                    <DepartmentSelect value={field.value ?? ""} onChange={field.onChange} />
+                  )}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="designation">Designation</Label>

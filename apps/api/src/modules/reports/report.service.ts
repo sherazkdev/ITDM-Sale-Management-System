@@ -5,10 +5,10 @@ import {
   csvFromRows,
   NON_OFFICIAL_DISCLAIMER,
   parseExportFormat,
-  placeholderPdf,
-  placeholderXlsxSheet,
   type ExportFormat,
 } from "../../shared/export/tabular-export.js";
+import { buildTabularPdf } from "../../shared/export/tabular-pdf.js";
+import { buildTabularXlsx } from "../../shared/export/tabular-xlsx.js";
 
 export class ReportService {
   constructor(
@@ -314,7 +314,7 @@ export class ReportService {
     return this.formatTabular("employees", header, rows, format);
   }
 
-  private formatTabular(
+  private async formatTabular(
     title: string,
     header: string[],
     rows: string[][],
@@ -333,16 +333,15 @@ export class ReportService {
       return { contentType: "text/csv", body: csvFromRows(header, rows) };
     }
     if (format === "pdf") {
-      const lines = rows.slice(0, 40).map((r) => r.join(" | "));
       return {
         contentType: "application/pdf",
-        body: placeholderPdf(title, lines),
+        body: await buildTabularPdf({ title, header, rows }),
         disclaimer: NON_OFFICIAL_DISCLAIMER,
       };
     }
     return {
-      contentType: "application/vnd.ms-excel",
-      body: placeholderXlsxSheet(title, header, rows),
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      body: await buildTabularXlsx(title, header, rows),
       disclaimer: NON_OFFICIAL_DISCLAIMER,
     };
   }

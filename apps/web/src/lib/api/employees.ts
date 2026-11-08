@@ -6,6 +6,7 @@ export type Employee = {
   employeeId: string;
   employeeNumber: string;
   fullName: string;
+  departmentId: string | null;
   department: string | null;
   designation: string | null;
   contactNumber: string | null;
@@ -18,6 +19,7 @@ export type EmployeeListParams = {
   pageSize?: number;
   search?: string;
   isActive?: boolean;
+  departmentId?: string;
   sortBy?: string;
   sortDir?: "asc" | "desc";
 };
@@ -38,6 +40,7 @@ export function fetchEmployees(params: EmployeeListParams) {
       pageSize: params.pageSize ?? 20,
       search: params.search,
       isActive: params.isActive === undefined ? undefined : params.isActive ? "true" : "false",
+      departmentId: params.departmentId,
       sortBy: params.sortBy,
       sortDir: params.sortDir,
     })}`,
