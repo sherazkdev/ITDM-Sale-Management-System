@@ -170,6 +170,8 @@ export default function ContractsPage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="contracts"
+          sortMode="off"
           data={rows}
           columns={columns}
           getRowId={(c) => c.contractId}

@@ -82,6 +82,7 @@ describe("issueAssetsSchema", () => {
     expect(
       issueAssetsSchema.safeParse({
         employeeId: "1",
+        receivingDepartment: "IT",
         assets: [{ assetId: "10" }],
       }).success,
     ).toBe(true);

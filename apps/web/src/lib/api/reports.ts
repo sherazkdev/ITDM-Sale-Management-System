@@ -9,7 +9,8 @@ export type ReportSlug =
   | "contracts"
   | "invoices"
   | "asset-movements"
-  | "employees";
+  | "employees"
+  | "non-asset-stock-ledger";
 
 export type ReportFormat = "json" | "csv" | "pdf" | "xlsx";
 
@@ -62,6 +63,12 @@ export const REPORT_DEFINITIONS: Array<{
     slug: "employees",
     title: "Employee register",
     description: "Employee master data for HR/IT assignment reporting (R02).",
+  },
+  {
+    slug: "non-asset-stock-ledger",
+    title: "Non-asset stock ledger (D09)",
+    description: "Movement history with units, recipients, and quantity before/after per transaction.",
+    inventoryAlias: true,
   },
 ];
 

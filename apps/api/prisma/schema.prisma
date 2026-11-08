@@ -18,6 +18,17 @@ enum AssetTransactionType {
   @@map("asset_transaction_type")
 }
 
+/// D09 — append-only non-asset quantity ledger (issue, return, replenishment, write-off).
+enum NonAssetStockMovementType {
+  INITIAL_STOCK  @map("initial_stock")
+  ISSUE          @map("issue")
+  RETURN         @map("return")
+  REPLENISHMENT  @map("replenishment")
+  WRITE_OFF      @map("write_off")
+
+  @@map("non_asset_stock_movement_type")
+}
+
 model Employee {
   employeeId     BigInt  @id @default(autoincrement()) @map("employee_id")
   employeeNumber String  @unique @map("employee_number") @db.VarChar(64)
@@ -28,10 +39,11 @@ model Employee {
   email          String? @db.VarChar(255)
   isActive       Boolean @default(true) @map("is_active")
 
-  assetTransactions     AssetTransaction[]
-  currentAssignedAssets Asset[]            @relation("AssetCurrentAssignee")
-  user                  User?
-  movementDocuments     AssetMovementDocument[]
+  assetTransactions        AssetTransaction[]
+  currentAssignedAssets    Asset[]                      @relation("AssetCurrentAssignee")
+  user                     User?
+  movementDocuments        AssetMovementDocument[]
+  nonAssetStockMovements   NonAssetStockMovement[]
 
   @@map("employees")
 }
@@ -179,8 +191,10 @@ model NonAssetStockItem {
   /// Client classification (e.g. consumable, cable) — distinct from category tree.
   itemType         String?   @map("item_type") @db.VarChar(64)
   categoryId       BigInt    @map("category_id")
-  quantityOnHand   Decimal   @map("quantity_on_hand") @db.Decimal(18, 4)
-  unitOfMeasure    String    @map("unit_of_measure") @db.VarChar(32)
+  quantityOnHand      Decimal @map("quantity_on_hand") @db.Decimal(18, 4)
+  /// Usable quantity in store (reduced by issue/write-off; increased by return/replenishment).
+  quantityAvailable   Decimal @map("quantity_available") @db.Decimal(18, 4)
+  unitOfMeasure       String  @map("unit_of_measure") @db.VarChar(32)
   purchaseOrderId  BigInt?   @map("purchase_order_id")
   stockReceivedDate DateTime @map("stock_received_date") @db.Date
   currentLocation  String?   @map("current_location") @db.VarChar(255)
@@ -188,8 +202,9 @@ model NonAssetStockItem {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  category      AssetCategory  @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
-  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  category      AssetCategory             @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
+  purchaseOrder PurchaseOrder?            @relation(fields: [purchaseOrderId], references: [purchaseOrderId], onDelete: Restrict)
+  movements     NonAssetStockMovement[]
 
   @@index([categoryId])
   @@index([unitOfMeasure])
@@ -198,12 +213,39 @@ model NonAssetStockItem {
   @@map("non_asset_stock_items")
 }
 
+model NonAssetStockMovement {
+  movementId          BigInt                      @id @default(autoincrement()) @map("movement_id")
+  stockItemId         BigInt                      @map("stock_item_id")
+  movementType        NonAssetStockMovementType   @map("movement_type")
+  quantity            Decimal                     @db.Decimal(18, 4)
+  quantityBefore      Decimal?                    @map("quantity_before") @db.Decimal(18, 4)
+  quantityAfter       Decimal?                    @map("quantity_after") @db.Decimal(18, 4)
+  employeeId          BigInt?                     @map("employee_id")
+  /// Department recipient when issuance is not tied to a specific employee record.
+  department          String?                     @db.VarChar(128)
+  performedByUserId   BigInt?                     @map("performed_by_user_id")
+  referenceReason     String?                     @map("reference_reason") @db.VarChar(255)
+  idempotencyKey      String?                     @unique @map("idempotency_key") @db.VarChar(128)
+  createdAt           DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  stockItem       NonAssetStockItem @relation(fields: [stockItemId], references: [stockItemId], onDelete: Restrict)
+  employee        Employee?         @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict)
+  performedByUser User?           @relation(fields: [performedByUserId], references: [userId], onDelete: Restrict)
+
+  @@index([stockItemId, createdAt])
+  @@index([employeeId])
+  @@index([movementType])
+  @@map("non_asset_stock_movements")
+}
+
 model AssetTransaction {
   transactionId   BigInt               @id @default(autoincrement()) @map("transaction_id")
   assetId         BigInt               @map("asset_id")
   employeeId      BigInt?              @map("employee_id")
   transactionType AssetTransactionType @map("transaction_type")
   transactionDate DateTime             @map("transaction_date") @db.Timestamptz(6)
+  /// Department snapshot at issuance (D10); null on legacy or return rows.
+  receivingDepartment String?          @map("receiving_department") @db.VarChar(128)
   conditionNotes  String?              @map("condition_notes") @db.Text
   referenceNumber      String?              @map("reference_number") @db.VarChar(64)
   processedByUserId    BigInt?              @map("processed_by_user_id")
@@ -359,10 +401,11 @@ model User {
   userRoles        UserRole[]
   sessions         Session[]
   loginAttempts    LoginAttempt[]
-  assetTransactions AssetTransaction[]
-  auditLogs        AuditLog[] @relation("AuditActor")
-  movementDocuments AssetMovementDocument[]
-  storedDocuments  StoredDocument[]
+  assetTransactions       AssetTransaction[]
+  auditLogs               AuditLog[]                  @relation("AuditActor")
+  movementDocuments       AssetMovementDocument[]
+  storedDocuments         StoredDocument[]
+  nonAssetStockMovements  NonAssetStockMovement[]
 
   @@map("users")
 }
@@ -477,6 +520,8 @@ model AssetMovementDocument {
   documentType    AssetMovementDocumentType @map("document_type")
   referenceNumber String?                   @map("reference_number") @db.VarChar(64)
   employeeId      BigInt?                   @map("employee_id")
+  /// Department snapshot for issuance documents (D10).
+  receivingDepartment String?               @map("receiving_department") @db.VarChar(128)
   processedByUserId BigInt?                 @map("processed_by_user_id")
   occurredAt      DateTime                  @map("occurred_at") @db.Timestamptz(6)
   createdAt       DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)

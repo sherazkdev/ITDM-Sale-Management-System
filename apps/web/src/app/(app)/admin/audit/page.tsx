@@ -98,7 +98,14 @@ export default function AuditLogPage() {
         )}
         {rows.length > 0 && (
           <>
-            <DataTable columns={columns} data={rows} getRowId={(r) => r.auditLogId} />
+            <DataTable
+              tableId="audit-log"
+              sortMode="off"
+              columns={columns}
+              data={rows}
+              getRowId={(r) => r.auditLogId}
+              caption="Audit event log"
+            />
             <Pagination
               className="mt-4"
               page={page}

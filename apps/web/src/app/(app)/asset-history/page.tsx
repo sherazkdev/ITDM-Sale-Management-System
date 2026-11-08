@@ -103,6 +103,8 @@ export default function AssetHistoryPage() {
       {searchActive ? (
         <Card className="overflow-hidden">
           <DataTable
+            tableId="asset-history"
+            sortMode="client"
             data={rows}
             columns={columns}
             getRowId={(a) => a.assetId}

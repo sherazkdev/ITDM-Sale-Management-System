@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { apiPostEnvelope } from "./helpers/api";
+import { pickSearchableSelect } from "./helpers/searchable-select";
 
 test.describe.configure({ mode: "serial", timeout: 180_000, retries: 0 });
 
@@ -50,7 +51,7 @@ test.describe("Wave 3 — financial verification (UI + API)", () => {
 
     await page.goto(`/invoices/new?po=${encodeURIComponent(poNumber)}`);
     await page.locator("#invoiceNumber").fill(`W3-INV-A-${ts}`);
-    await page.getByLabel(/^purchase order$/i).selectOption({ index: 1 });
+    await pickSearchableSelect(page, "Purchase order", poNumber, new RegExp(poNumber, "i"));
     await page.getByLabel(/invoice date/i).fill("2026-05-10");
     await page.locator("#invoiceAmount").fill("1000");
     await page.getByRole("button", { name: /create invoice/i }).click();
@@ -59,7 +60,7 @@ test.describe("Wave 3 — financial verification (UI + API)", () => {
 
     await page.goto(`/invoices/new?po=${encodeURIComponent(poNumber)}`);
     await page.locator("#invoiceNumber").fill(`W3-INV-B-${ts}`);
-    await page.getByLabel(/^purchase order$/i).selectOption({ index: 1 });
+    await pickSearchableSelect(page, "Purchase order", poNumber, new RegExp(poNumber, "i"));
     await page.getByLabel(/invoice date/i).fill("2026-05-12");
     await page.locator("#invoiceAmount").fill("500");
     await page.getByRole("button", { name: /create invoice/i }).click();
@@ -87,7 +88,8 @@ test.describe("Wave 3 — financial verification (UI + API)", () => {
 
     await page.goto(`/invoices/${invoiceIdA}`);
     await page.locator("#amount").fill("400");
-    await page.getByRole("button", { name: /record payment/i }).click();
+    await page.getByRole("button", { name: /review payment/i }).click();
+    await page.getByRole("button", { name: /^record payment$/i }).click();
     await expect(page.getByText(/payment recorded/i)).toBeVisible({ timeout: 20_000 });
 
     const balRes = await page.request.get(`/api/v1/invoices/${invoiceIdA}/balance`);

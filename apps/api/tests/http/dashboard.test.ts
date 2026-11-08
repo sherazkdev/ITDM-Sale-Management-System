@@ -51,11 +51,13 @@ describe("Dashboard API", () => {
     });
     expect(res.body.data.sectionsIncluded).toContain("budgetOverview");
     expect(res.body.data.budgetOverview).toMatchObject({
-      provisional: true,
+      provisional: expect.any(Boolean),
       usdAllocationCount: expect.any(Number),
       usdAllocatedTotal: expect.any(String),
+      utilizedUsdTotal: expect.any(String),
+      actualUsdTotal: expect.any(String),
     });
-    expect(res.body.data.budgetOverview.remainingUsd).toBeUndefined();
+    expect(res.body.data.budgetOverview).not.toHaveProperty("remainingUsd");
   });
 
   it("omits restricted sections for read-only employees user", async () => {

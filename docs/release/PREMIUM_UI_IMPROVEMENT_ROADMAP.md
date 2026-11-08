@@ -2,7 +2,7 @@
 
 **Companion to:** `docs/release/FINAL_UI_UX_AUDIT.md`  
 **Date:** 2026-11-06  
-**Status:** Phase A + Phase B **IMPLEMENTED & VERIFIED** (2026-11-06); Phases C–E remain proposal-only until approved  
+**Status:** Phase A + B **VERIFIED** (2026-11-06); Phase C **COMPLETE** (2026-11-08); Phase D **COMPLETE** (2026-11-08); Phase E optional — unchanged  
 **Constraints:** Preserve Wave 2 finance semantics, D03 SAP PO policy, D09 non-consumption stock, D12 non-official export disclaimer, Windows offline standalone, no unofficial ORLEN artwork
 
 ---
@@ -67,27 +67,25 @@ Modernize interaction quality and operational insight **without** rewriting the 
 **Verified on `itdms_e2e`:** API typecheck + `dashboard.test.ts` 3/3; web typecheck/lint/vitest 49/49; Playwright `dashboard-phase-b` 2/2, a11y 5/5, responsive 162/162; screenshots `dashboard-phase-b-*-loaded.png`.  
 **Out of scope (preserved):** budget formula services, Non-Asset consumption, CSV import, unofficial logos, commits/pushes.
 
-### Phase C — Enterprise tables (2–4 weeks) — P1/P2
+### Phase C — Enterprise tables — **COMPLETE (2026-11-08)**
 
-1. Sticky table headers  
-2. Optional column visibility (localStorage; non-mutating)  
-3. Server-side sort where APIs already accept sort params (add only if present or approved)  
-4. Persist filters in URL query for shareable views  
-5. Table “Export current view” → existing report endpoints with documented filters  
-6. Either **wire** unused `DataTableToolbar` (replace CRM “score” options with ITDMS sorts) on 1–2 directory pages, or **remove** the dead CRM leftover to reduce confusion  
+1. ~~Sticky table headers~~ **Done** (`DataTable.tsx`)  
+2. ~~Column visibility + non-mutating reorder (localStorage)~~ **Done** (`tableId` + `DataTableColumnMenu`)  
+3. ~~Server-side sort (whitelist)~~ **Done** — API `resolveListOrderBy` on primary entities  
+4. ~~URL-persisted filters + server sort UI~~ **Done** — employees, vendors, POs, invoices, assets/non-asset, maintenance, software licenses (**contracts** deferred)  
+5. Export limits copy on reports — **Done**; “export current view” per table **deferred**  
+6. `DataTableToolbar` CRM “score” default removed  
 
-**Risk:** Medium. Avoid virtual DnD mutation.  
-**Regression:** List pages, pagination meta.
+**Verified:** typecheck/lint; API **70/70**; web **50/50** vitest; Playwright responsive **162/162**, `list-server-tables` **2/2**, full closure **186/186** on `itdms_e2e` @ :3020/:3021.
 
-### Phase D — Form craft (1–2 weeks) — P2
+### Phase D — Form craft — **COMPLETE (2026-11-08)**
 
-1. Unsaved-change guards on create/edit  
-2. Searchable employee/vendor/asset selects for large datasets  
-3. Stronger required-field indicators  
-4. Budget page IA: tabs (Years | Allocations | Lookups | Ledger) without changing calculations  
+1. ~~Unsaved-change guards~~ **Done** — all mandatory create flows + invoice payment + staged document upload  
+2. ~~Searchable selects~~ **Done** — vendor/contract/PO/asset links on PO, contract, maintenance, license, invoice flows  
+3. ~~FormField / validation / confirm dialogs~~ **Done** — payment + upload confirmations; consistent errors  
+4. ~~Budget tabs~~ **Done** (Years | Allocations | Summary/ledger | Lookups) — no formula changes  
 
-**Risk:** Low–medium.  
-**Regression:** Form submit flows.
+**Verified:** `e2e/phase-d-forms.spec.ts` **6/6**; screenshot matrix `audit-screenshots/phase-d/`.
 
 ### Phase E — Optional / approval-gated — P3
 

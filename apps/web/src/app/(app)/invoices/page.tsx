@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Receipt } from "lucide-react";
 
@@ -16,11 +16,11 @@ import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchInvoices, type Invoice } from "@/lib/api/invoices";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
-import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { INVOICE_PAYMENT_LABELS, invoicePaymentToPill } from "@/lib/domain/invoice-ui";
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -29,35 +29,53 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: "PAID", label: "Paid" },
 ];
 
+const INVOICE_LIST_DEFAULTS = { page: 1, pageSize: 20, paymentStatus: "", sortDir: "desc" as const };
+
 export default function InvoicesPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const list = useServerListTable({ defaults: INVOICE_LIST_DEFAULTS, defaultSortBy: "invoiceId" });
+  const paymentStatus = list.extras.paymentStatus ?? "";
+
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "invoiceId",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["invoices", page, pageSize, debouncedSearch, paymentStatus],
+    queryKey: [
+      "invoices",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      paymentStatus,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
       fetchInvoices({
-        page,
-        pageSize,
-        search: debouncedSearch || undefined,
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
         paymentStatus: paymentStatus || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const columns: Column<Invoice>[] = [
     {
       key: "invoiceNumber",
       header: "Invoice #",
       sortable: true,
+      serverSortKey: "invoiceNumber",
       cell: (row) => <span className="font-medium tabular">{row.invoiceNumber}</span>,
     },
     {
@@ -69,6 +87,8 @@ export default function InvoicesPage() {
       key: "invoiceDate",
       header: "Date",
       hideOnMobile: true,
+      sortable: true,
+      serverSortKey: "invoiceDate",
       cell: (row) => row.invoiceDate?.slice(0, 10) ?? row.invoiceDate,
     },
     {
@@ -80,6 +100,8 @@ export default function InvoicesPage() {
     {
       key: "status",
       header: "Payment",
+      sortable: true,
+      serverSortKey: "paymentStatus",
       cell: (row) => (
         <StatusPill
           status={invoicePaymentToPill(row.paymentStatus)}
@@ -108,18 +130,16 @@ export default function InvoicesPage() {
       />
 
       <ListToolbar
-        search={search}
+        search={list.search}
         onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
+          list.patch({ search: value, page: 1 });
         }}
         searchPlaceholder="Search invoice # or PO number…"
         filters={
           <FilterSelect
             value={paymentStatus}
             onChange={(value) => {
-              setPaymentStatus(value);
-              setPage(1);
+              list.patch({ extras: { paymentStatus: value }, page: 1 });
             }}
             placeholder="All payment statuses"
             options={PAYMENT_STATUS_OPTIONS}
@@ -140,17 +160,22 @@ export default function InvoicesPage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="invoices"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(row) => row.invoiceId}
           loading={isLoading}
+          caption="Invoice register"
           onRowClick={(row) => router.push(`/invoices/${row.invoiceId}`)}
           empty={
             <EmptyState
               icon={Receipt}
-              title={debouncedSearch || paymentStatus ? "No matching invoices" : "No invoices yet"}
+              title={list.debouncedSearch || paymentStatus ? "No matching invoices" : "No invoices yet"}
               description={
-                debouncedSearch || paymentStatus
+                list.debouncedSearch || paymentStatus
                   ? "Try a different search or payment status filter."
                   : "Create an invoice linked to a purchase order."
               }
@@ -159,14 +184,13 @@ export default function InvoicesPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="invoices"
           />

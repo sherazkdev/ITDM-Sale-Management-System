@@ -17,7 +17,7 @@ describe("Asset issuance and returns", () => {
     const employee = await request(app)
       .post("/api/v1/employees")
       .set(sessionRequestHeaders(cookie))
-      .send({ employeeNumber: `E-${ts}`, fullName: "Holder" })
+      .send({ employeeNumber: `E-${ts}`, fullName: "Holder", department: "IT" })
       .expect(201);
     const employeeId = employee.body.data.employeeId as string;
 
@@ -84,7 +84,7 @@ describe("Asset issuance and returns", () => {
     const employee = await request(app)
       .post("/api/v1/employees")
       .set(sessionRequestHeaders(cookie))
-      .send({ employeeNumber: `E2-${ts}`, fullName: "Holder2" })
+      .send({ employeeNumber: `E2-${ts}`, fullName: "Holder2", department: "Ops" })
       .expect(201);
     const employeeId = employee.body.data.employeeId as string;
 

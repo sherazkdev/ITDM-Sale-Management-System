@@ -27,6 +27,8 @@ export type MaintenanceListParams = {
   pageSize?: number;
   status?: string;
   assetId?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 function cleanCreateBody(input: CreateMaintenanceInput) {
@@ -49,6 +51,8 @@ export function fetchMaintenanceRecords(params: MaintenanceListParams) {
       pageSize: params.pageSize ?? 20,
       status: params.status,
       assetId: params.assetId,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }

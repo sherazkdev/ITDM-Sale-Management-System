@@ -3,6 +3,8 @@ import { PermissionKeys } from "../../shared/auth/permissions.js";
 import type { AuthPrincipal } from "../../shared/auth/principal.js";
 import { AssetStatus } from "../../shared/domain/asset-status.js";
 import { BudgetTransactionType } from "../../shared/domain/financial-rules.js";
+import { computeBudgetUsdMetrics } from "../../shared/domain/budget-metrics.js";
+import { toDecimal } from "../../shared/money/decimal-math.js";
 import { MaintenanceStatus } from "../../shared/domain/maintenance-status.js";
 import type {
   DashboardExpiryWatchlistItem,
@@ -12,13 +14,13 @@ import type {
 const EXPIRING_WINDOW_DAYS_FALLBACK = 60;
 
 const NON_ASSET_COUNT_NOTE =
-  "Registered non-asset item counts only. Quantities are not summed across units of measure (e.g. feet vs kilograms).";
+  "Registered non-asset item counts only. Available quantities are tracked per item — units are not summed across measures (e.g. feet vs kilograms).";
 
 const BUDGET_SEMANTICS_NOTE =
   "Committed expenditure is recorded when an invoice is posted. Actual paid expenditure is the sum of payment amounts converted to USD using manual rates on each payment date.";
 
 const BUDGET_PROVISIONAL_NOTE =
-  "Allocation totals below are USD allocations only. Remaining-budget formulas and non-USD allocation reporting remain provisional pending full implementation of confirmed Nov 2026 client rules.";
+  "Some utilized or remaining USD totals are provisional when post-time FX is missing for non-USD posted invoices.";
 
 function startOfUtcDay(d = new Date()): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -297,7 +299,7 @@ export class DashboardService {
           const [usdAllocations, committedLines, paymentLines] = await Promise.all([
             this.prisma.budgetAllocation.findMany({
               where: { currency: "USD" },
-              select: { allocatedAmount: true },
+              include: { budgetTransactions: true },
             }),
             this.prisma.budgetTransaction.count({
               where: { transactionType: BudgetTransactionType.committedInvoice },
@@ -306,18 +308,36 @@ export class DashboardService {
               where: { transactionType: BudgetTransactionType.actualPayment },
             }),
           ]);
-          let allocated = 0;
+          let allocated = toDecimal(0);
+          let utilized = toDecimal(0);
+          let actual = toDecimal(0);
+          let provisional = false;
           for (const row of usdAllocations) {
-            allocated += Number(row.allocatedAmount);
+            const metrics = computeBudgetUsdMetrics({
+              allocatedAmount: row.allocatedAmount,
+              currency: row.currency,
+              transactions: row.budgetTransactions,
+            });
+            if (metrics.allocatedUsd) allocated = allocated.add(metrics.allocatedUsd);
+            utilized = utilized.add(metrics.utilizedUsd);
+            actual = actual.add(metrics.actualUsd);
+            if (metrics.committedUsdProvisional || metrics.provisionalNote) provisional = true;
           }
+          const remaining =
+            provisional || usdAllocations.length === 0
+              ? null
+              : allocated.sub(utilized);
           summary.budgetOverview = {
-            provisional: true,
+            provisional,
             usdAllocationCount: usdAllocations.length,
             usdAllocatedTotal: allocated.toFixed(2),
+            utilizedUsdTotal: utilized.toFixed(2),
+            actualUsdTotal: actual.toFixed(2),
+            remainingUsdTotal: remaining !== null ? remaining.toFixed(2) : null,
             committedInvoiceLedgerLines: committedLines,
             actualPaymentLedgerLines: paymentLines,
             semanticsNote: BUDGET_SEMANTICS_NOTE,
-            provisionalNote: BUDGET_PROVISIONAL_NOTE,
+            provisionalNote: provisional ? BUDGET_PROVISIONAL_NOTE : null,
           };
           summary.budgetNotice = BUDGET_PROVISIONAL_NOTE;
           sectionsIncluded.push("budgetOverview");

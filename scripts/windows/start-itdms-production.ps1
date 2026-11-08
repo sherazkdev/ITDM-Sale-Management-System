@@ -75,8 +75,13 @@ if (Test-Path $webEnvPath) {
 $env:PORT = "$WebPort"
 $webLog = Join-Path $logs "web.stdout.log"
 $webErr = Join-Path $logs "web.stderr.log"
-$webProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npx", "next", "start", "-p", "$WebPort" `
-  -WorkingDirectory (Join-Path $appRoot "apps\web") `
+$webCwd = Join-Path $appRoot "apps\web"
+$nextCli = Join-Path $appRoot "node_modules\next\dist\bin\next"
+if (-not (Test-Path $nextCli)) {
+  Write-Error "Packaged Next.js binary missing at $nextCli — re-run assemble-offline-package after npm ci && build"
+}
+$webProc = Start-Process -FilePath "node" -ArgumentList $nextCli, "start", "-p", "$WebPort" `
+  -WorkingDirectory $webCwd `
   -RedirectStandardOutput $webLog -RedirectStandardError $webErr -PassThru -WindowStyle Hidden
 $webProc.Id | Set-Content $webPidFile
 

@@ -13,13 +13,17 @@ export type MovementDocument = {
   referenceNumber: string | null;
   occurredAt: string;
   employeeId: string;
-  employee?: { employeeId: string; fullName: string; employeeNumber: string };
+  receivingDepartment?: string | null;
+  employee?: { employeeId: string; fullName: string; employeeNumber: string; department?: string | null };
   lines: MovementDocumentLine[];
 };
 
 function toMovementBody(input: IssueAssetsInput | ReturnAssetsInput) {
+  const receivingDepartment =
+    "receivingDepartment" in input ? input.receivingDepartment : undefined;
   return {
     employeeId: input.employeeId,
+    ...(receivingDepartment ? { receivingDepartment } : {}),
     referenceNumber: input.referenceNumber || undefined,
     occurredAt: input.occurredAt || undefined,
     assets: input.assets.map((a) => ({

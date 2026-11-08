@@ -1,7 +1,7 @@
 # Implementation Status — Update Only After Verified Work
 
-**Current phase:** **Premium UI Phase B VERIFIED** (dashboard analytics) on top of Phase A + Wave 6 baseline; **staging E2E BLOCKED**; **client PC / native PG / air-gap / UAT NOT VERIFIED**  
-**Last verified at:** 2026-11-06 — Phase B premium dashboard (see `docs/release/PREMIUM_UI_IMPROVEMENT_ROADMAP.md`); prior Phase A honesty fixes  
+**Current phase:** **Premium UI Phases A–D engineering COMPLETE** on Wave 6 baseline; **staging UAT E2E BLOCKED**; **client PC / UAT NOT VERIFIED**  
+**Last verified at:** 2026-11-08 — Stage 4 Windows standalone readiness (`docs/deployment/FINAL_WINDOWS_STANDALONE_READINESS.md`)  
 **Local Git:** Wave 6 + Premium UI Phase A/B on main
 
 | Phase | Status | Evidence |
@@ -28,14 +28,26 @@
 | Client Wave 4 | **COMPLETE** (premium UI; Wave 4B fidelity pass on priority screens) | `docs/frontend/WAVE4_PREMIUM_UI_REDESIGN_REPORT.md` |
 | Client Wave 5 | **COMPLETE** (requirements audit; report exports; gap matrix) | `docs/release/WAVE5_BUSINESS_CLOSURE_REPORT.md` |
 | Windows deployment prep | **COMPLETE** (Wave 5 docs + scripts) | `docs/deployment/WINDOWS_*` |
-| Windows Wave 6 offline package | **VERIFIED (engineering)** | Build/manifest/rehearsal runtime on Docker PG **VERIFIED**; native client PG + air-gap **NOT TESTED** — `WAVE6_OFFLINE_INSTALLATION_REHEARSAL.md` |
+| Windows Wave 6 offline package | **VERIFIED (engineering)** | Manifest **1084** files (2026-11-08); backup/restore rehearsal; D09/D10 migrate on `itdms_deploy_rehearsal` — `FINAL_WINDOWS_STANDALONE_READINESS.md` |
+| Stage 4 — Windows standalone deployment prep | **ENGINEERING READY (conditional)** | Package + backup + API smoke; native PG / client services / web re-smoke after fix **NOT VERIFIED** on this session |
 | Confirmed gap audit defects (search fields, non-asset PO search, PO report copy) | **VERIFIED** | Unit/API Vitest + Playwright hub — `FINAL_SOURCE_CODE_GAP_AUDIT.md` |
-| Playwright local regression (isolated `itdms_e2e`) | **VERIFIED** | Full local suite after harness fixes; staging excluded/`BLOCKED`; prep: `prepare-e2e-database.ps1` |
+| Playwright local regression (isolated `itdms_e2e`) | **VERIFIED (fresh 2026-11-08 PM)** | **315 passed / 0 failed / 216 skipped** (UI08 capture env-gated); staging excluded/`BLOCKED`; prep: `prepare-e2e-database.ps1` |
 | Playwright staging (`staging-verification`) | **BLOCKED** | Authorized UAT accounts + staging stack required (`npm run staging:e2e`) |
 | Premium UI Phase A (PO search honesty, Ctrl/Cmd+K, invoice filters, issuance asset search, Help) | **VERIFIED** | Web typecheck/lint/vitest; API invoice-list-filters vitest; Playwright workflows + a11y + responsive + po-search-hub on `itdms_e2e`; **no** stock consumption / budget formula / import |
-| Premium UI Phase B (ops analytics dashboard) | **VERIFIED** | Extended `GET /dashboard/summary` (`nonAssetStock`, `movements`, `expiryWatchlist`, `budgetOverview` provisional — **no** approved `remainingUsd`); clickable KPIs/charts; 60d watchlist; activity links; permissioned quick actions; API dashboard vitest 3/3; web vitest 49/49; Playwright `dashboard-phase-b` 2/2 + a11y 5/5 + responsive 162/162 on `itdms_e2e`; screenshots `docs/release/audit-screenshots/dashboard-phase-b-*-loaded.png`; **no** finance service formula changes / Non-Asset consumption / CSV import / commits |
-| Client rules D09 movements / D10 department on issue / Admin financial corrections | **CONFIRMED (rules) / NOT IMPLEMENTED (code)** | Recorded in `CLIENT_DECISION_REGISTER.md`; out of Phase A/B scope |
-| Nov 2026 budget rules (manual allocation, invoice commit, actual≠payment, USD + manual FX) | **CONFIRMED (client) / PARTIAL (backend)** | Dashboard shows labeled provisional values only; formula services unchanged in Phase B |
+| Premium UI Phase B (ops analytics dashboard) | **VERIFIED** | Unchanged from 2026-11-06 evidence; not re-run 2026-11-08 |
+| Premium UI Phase C (enterprise tables) | **COMPLETE (scoped)** | Server sort + URL on vendors, POs, invoices, assets, maintenance, licenses; Playwright 186/186 on `itdms_e2e` 2026-11-08 |
+| Premium UI Phase D (forms & budget IA) | **COMPLETE** | All mandatory create/upload/payment surfaces: searchable selects, unsaved guards, confirm dialogs — `phase-d-forms` + capture specs |
+| Premium UI engineering closure | **COMPLETE** | Baseline Playwright **186/186** (2026-11-08 AM) + Phase D **26/26** (forms + capture); screenshots `audit-screenshots/phase-d/` |
+| Premium UI staging visual UAT | **BLOCKED** | `staging-verification.spec.ts` — authorized staging accounts required |
+| Client rules D09 non-asset movements | **FULLY VERIFIED (local demo)** | Migration on `itdms_e2e`; Playwright `d09-inventory-workflow` **11/11**; API **76/76** incl. concurrency **2/2**; screenshots `audit-screenshots/d09/` — `NON_ASSET_INVENTORY_IMPLEMENTATION_REPORT.md` |
+| Client rules D10 employee + department on serialized issuance | **VERIFIED (Phase 3 engineering)** | Historical `receivingDepartment` on documents/transactions; UI + API + export — `BUSINESS_PHASE3_ASSET_CUSTODY_REPORT.md` |
+| Admin financial corrections (approved scope) | **VERIFIED (Phase 4 engineering)** | Draft invoice + allocation + admin ledger; audit `financial.correction` — reversals **BLOCKED** |
+| Nov 2026 budget rules (manual allocation, invoice commit, actual≠payment, USD + manual FX) | **VERIFIED (Phase 2 engineering)** | Remaining = allocated − utilized; USD-only allocation; `budget-phase2-acceptance` 5/5; API **81/81** |
+| Business Phase 2 — budget & finance closure | **COMPLETE (engineering)** | `BUSINESS_PHASE2_FINANCE_CLOSURE_REPORT.md`; wave3 finance Playwright **6/6** |
+| Business Phase 3 — asset custody (D10) | **COMPLETE (engineering)** | Migration `20261108180000_d10_asset_custody_department`; API **85/85**; Playwright D10 **3/3** + lifecycle **13/13**; screenshots `audit-screenshots/d10/` |
+| Business Phase 4 — admin financial corrections | **COMPLETE (scoped engineering)** | API **91/91** incl. `financial-corrections-phase4` **6/6**; `financial.corrections` permission — `BUSINESS_PHASE4_FINANCIAL_CORRECTIONS_REPORT.md` |
+| Business Phase 5 — final requirements closure | **COMPLETE (reconciliation)** | Matrix + privilege fix; API **91/91**; prod-ready **NO** — `FINAL_CLIENT_REQUIREMENTS_CLOSURE_REPORT.md` |
+| Prompt 2 — full regression & security closure | **COMPLETE (engineering)** | Prisma validate; typecheck/lint **PASS**; API **91/91**; Web **50/50**; Playwright **315/0/216** on `itdms_e2e` @ :3020/:3021 — `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

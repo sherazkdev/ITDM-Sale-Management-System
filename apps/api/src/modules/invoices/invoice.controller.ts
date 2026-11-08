@@ -18,8 +18,6 @@ import type { InvoiceService } from "./invoice.service.js";
 type CreateBody = z.infer<typeof createInvoiceSchema>;
 type PaymentBody = z.infer<typeof recordPaymentSchema>;
 type PostBody = z.infer<typeof postInvoiceSchema>;
-type ListQuery = z.infer<typeof listInvoicesQuerySchema>;
-
 function parseId(raw: string): bigint {
   if (!/^\d+$/.test(raw)) {
     throw new AppError(ErrorCodes.BAD_REQUEST, "Invalid invoice id", 400);
@@ -43,9 +41,14 @@ export class InvoiceController {
     if (!parsed.success) {
       throw new AppError(ErrorCodes.BAD_REQUEST, parsed.error.issues[0]?.message ?? "Invalid query", 400);
     }
-    const query = parsed.data as ListQuery;
+    const query = parsed.data;
     const result = await this.service.list(
-      { page: query.page, pageSize: query.pageSize, sortDir: "desc" },
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        sortBy: query.sortBy,
+        sortDir: query.sortDir ?? "desc",
+      },
       { search: query.search, paymentStatus: query.paymentStatus },
     );
     sendSuccess(res, toPublicJson(result.items), {
@@ -84,6 +87,23 @@ export class InvoiceController {
   listPayments = asyncHandler(async (req: Request, res: Response) => {
     const rows = await this.service.listPayments(parseId(String(req.params.id)));
     sendSuccess(res, toPublicJson(rows), { requestId: getRequestId(req) });
+  });
+
+  correctDraft = asyncHandler(async (req: Request, res: Response) => {
+    const row = await this.service.correctDraftInvoice(
+      parseId(String(req.params.id)),
+      req.body as {
+        correctionReason: string;
+        invoiceNumber?: string;
+        invoiceDate?: string;
+        invoiceAmount?: number;
+      },
+      {
+        actorUserId: req.principal?.userId,
+        requestId: getRequestId(req),
+      },
+    );
+    sendSuccess(res, toPublicJson(row), { requestId: getRequestId(req) });
   });
 
   listForPo = asyncHandler(async (req: Request, res: Response) => {

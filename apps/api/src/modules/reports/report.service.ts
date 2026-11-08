@@ -1,4 +1,5 @@
 import type { AuditService } from "../../shared/audit/audit.service.js";
+import { computeBudgetUsdMetrics } from "../../shared/domain/budget-metrics.js";
 import type { PrismaClient } from "@prisma/client";
 import {
   csvFromRows,
@@ -55,11 +56,86 @@ export class ReportService {
       n.stockCode,
       n.itemName,
       n.category.categoryName,
-      String(n.quantityOnHand),
+      String(n.quantityAvailable),
       n.unitOfMeasure,
       n.currentLocation ?? "",
     ]);
     return this.formatTabular("inventory", header, [...assetRows, ...nonAssetRows], format);
+  }
+
+  async nonAssetStockLedger(format: ExportFormat) {
+    const items = await this.prisma.nonAssetStockItem.findMany({
+      include: {
+        category: true,
+        movements: {
+          include: { employee: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { stockCode: "asc" },
+      take: 5000,
+    });
+
+    const header = [
+      "stockCode",
+      "itemName",
+      "unit",
+      "registeredReceivedQty",
+      "availableQty",
+      "movementType",
+      "movementQty",
+      "qtyBefore",
+      "qtyAfter",
+      "movementAt",
+      "employeeNumber",
+      "employeeName",
+      "department",
+      "referenceReason",
+    ];
+
+    const rows: string[][] = [];
+    for (const item of items) {
+      const registered = String(item.quantityOnHand);
+      const available = String(item.quantityAvailable);
+      if (item.movements.length === 0) {
+        rows.push([
+          item.stockCode,
+          item.itemName,
+          item.unitOfMeasure,
+          registered,
+          available,
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+        ]);
+        continue;
+      }
+      for (const m of item.movements) {
+        rows.push([
+          item.stockCode,
+          item.itemName,
+          item.unitOfMeasure,
+          registered,
+          available,
+          m.movementType,
+          String(m.quantity),
+          m.quantityBefore != null ? String(m.quantityBefore) : "",
+          m.quantityAfter != null ? String(m.quantityAfter) : "",
+          m.createdAt.toISOString(),
+          m.employee?.employeeNumber ?? "",
+          m.employee?.fullName ?? "",
+          m.department ?? m.employee?.department ?? "",
+          m.referenceReason ?? "",
+        ]);
+      }
+    }
+    return this.formatTabular("non-asset-stock-ledger", header, rows, format);
   }
 
   async assetRegister(format: ExportFormat) {
@@ -88,22 +164,28 @@ export class ReportService {
       "year",
       "category",
       "allocatedUsd",
-      "committedUsd",
-      "actualPaidUsd",
+      "utilizedUsd",
+      "actualUsd",
       "remainingUsd",
     ];
     const rows = allocations.map((a) => {
+      const metrics = computeBudgetUsdMetrics({
+        allocatedAmount: a.allocatedAmount,
+        currency: a.currency,
+        transactions: a.budgetTransactions,
+      });
       const allocatedUsd =
-        a.currency === "USD" ? String(a.allocatedAmount) : "PROVISIONAL_NON_USD_ALLOC";
-      const committed = a.budgetTransactions
-        .filter((t) => t.transactionType === "COMMITTED_INVOICE")
-        .reduce((s, t) => s + Number(t.amountUsdReporting ?? 0), 0);
-      const actual = a.budgetTransactions
-        .filter((t) => t.transactionType === "ACTUAL_PAYMENT")
-        .reduce((s, t) => s + Number(t.amountUsdReporting ?? 0), 0);
+        metrics.allocatedUsd !== null ? metrics.allocatedUsd.toString() : "PROVISIONAL_NON_USD_ALLOC";
       const remaining =
-        a.currency === "USD" ? String(Number(a.allocatedAmount) - actual) : "PROVISIONAL";
-      return [a.financialYear.yearName, a.budgetCategory, allocatedUsd, String(committed), String(actual), remaining];
+        metrics.remainingUsd !== null ? metrics.remainingUsd.toString() : "PROVISIONAL";
+      return [
+        a.financialYear.yearName,
+        a.budgetCategory,
+        allocatedUsd,
+        metrics.utilizedUsd.toString(),
+        metrics.actualUsd.toString(),
+        remaining,
+      ];
     });
     return this.formatTabular("budget-utilization", header, rows, format);
   }
@@ -199,14 +281,16 @@ export class ReportService {
       "referenceNumber",
       "occurredAt",
       "employee",
+      "receivingDepartment",
       "assetCode",
       "assetName",
     ];
-    const rows = lines.map((line) => [
+    const rows: string[][] = lines.map((line) => [
       line.document.documentType,
       line.document.referenceNumber ?? "",
       line.document.occurredAt.toISOString(),
       line.document.employee?.fullName ?? "",
+      line.document.receivingDepartment ?? "",
       line.asset.assetCode,
       line.asset.assetName,
     ]);

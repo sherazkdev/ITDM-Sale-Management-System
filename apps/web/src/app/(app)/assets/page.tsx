@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Package, Plus } from "lucide-react";
 
@@ -19,7 +19,7 @@ import { fetchAssets, type Asset } from "@/lib/api/assets";
 import { fetchNonAssetStockItems, type NonAssetStockItem } from "@/lib/api/non-asset-stock";
 import { fetchAssetCategories } from "@/lib/api/asset-categories";
 import { ASSET_STATUS_LABELS, assetStatusToPill } from "@/lib/domain/asset-status-ui";
-import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
@@ -36,17 +36,30 @@ const STATUS_OPTIONS = Object.entries(ASSET_STATUS_LABELS).map(([value, label]) 
 export default function AssetsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView: InventoryView =
-    searchParams.get("view") === "non-asset" ? "non_asset" : "assets";
-  const [inventoryView, setInventoryView] = useState<InventoryView>(initialView);
+  const initialInventory =
+    searchParams.get("view") === "non-asset" ? "non_asset" : searchParams.get("inventory") === "non_asset" ? "non_asset" : "assets";
+  const list = useServerListTable({
+    defaults: {
+      page: 1,
+      pageSize: 20,
+      inventory: initialInventory,
+      status: searchParams.get("status") ?? "",
+      categoryId: "",
+    },
+    defaultSortBy: "assetCode",
+  });
+  const inventoryView = (list.extras.inventory === "non_asset" ? "non_asset" : "assets") as InventoryView;
+  const statusFilter = list.extras.status ?? "";
+  const categoryFilter = list.extras.categoryId ?? "";
   const { hasPermission } = useAuth();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-  const initialStatus = searchParams.get("status") ?? "";
-  const [statusFilter, setStatusFilter] = useState(initialStatus);
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+
+  const sortParams = useMemo(() => {
+    const defaultSort = inventoryView === "assets" ? "assetCode" : "stockCode";
+    return {
+      sortBy: list.sortBy || defaultSort,
+      sortDir: list.sortDir,
+    };
+  }, [inventoryView, list.sortBy, list.sortDir]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["asset-categories"],
@@ -59,42 +72,65 @@ export default function AssetsPage() {
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["assets", page, pageSize, debouncedSearch, statusFilter, categoryFilter],
+    queryKey: [
+      "assets",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      statusFilter,
+      categoryFilter,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
       fetchAssets({
-        page,
-        pageSize,
-        search: debouncedSearch || undefined,
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
         status: statusFilter || undefined,
         categoryId: categoryFilter || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
     enabled: inventoryView === "assets",
   });
 
   const nonAssetQuery = useQuery({
-    queryKey: ["non-asset-stock", page, pageSize, debouncedSearch, categoryFilter],
+    queryKey: [
+      "non-asset-stock",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      categoryFilter,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
       fetchNonAssetStockItems({
-        page,
-        pageSize,
-        search: debouncedSearch || undefined,
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
         categoryId: categoryFilter || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
     enabled: inventoryView === "non_asset",
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const nonAssetRows = nonAssetQuery.data?.data ?? [];
   const nonAssetTotal = nonAssetQuery.data?.meta.total ?? 0;
-  const nonAssetTotalPages = Math.max(1, Math.ceil(nonAssetTotal / pageSize));
+  const nonAssetTotalPages = Math.max(1, Math.ceil(nonAssetTotal / list.pageSize));
 
   const nonAssetColumns: Column<NonAssetStockItem>[] = [
     {
       key: "stockCode",
       header: "Code",
+      sortable: true,
+      serverSortKey: "stockCode",
       cell: (r) => (
         <Link href={`/assets/non-asset/${r.stockItemId}`} className="font-medium tabular text-primary hover:underline">
           {r.stockCode}
@@ -129,11 +165,15 @@ export default function AssetsPage() {
     {
       key: "assetCode",
       header: "Code",
+      sortable: true,
+      serverSortKey: "assetCode",
       cell: (a) => <span className="font-medium tabular">{a.assetCode}</span>,
     },
     {
       key: "assetName",
       header: "Name",
+      sortable: true,
+      serverSortKey: "assetName",
       cell: (a) => (
         <div className="min-w-0">
           <p className="font-medium truncate">{a.assetName}</p>
@@ -199,8 +239,15 @@ export default function AssetsPage() {
             variant={inventoryView === view ? "default" : "outline"}
             className={cn(inventoryView === view && "bg-brand-gradient text-primary-foreground")}
             onClick={() => {
-              setInventoryView(view);
-              setPage(1);
+              list.patch({
+                extras: {
+                  inventory: view,
+                  status: view === "non_asset" ? "" : statusFilter,
+                  categoryId: categoryFilter,
+                },
+                page: 1,
+                sortBy: "",
+              });
             }}
           >
             {label}
@@ -209,10 +256,9 @@ export default function AssetsPage() {
       </div>
 
       <ListToolbar
-        search={search}
+        search={list.search}
         onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+          list.patch({ search: v, page: 1 });
         }}
         searchPlaceholder={
           inventoryView === "assets"
@@ -226,8 +272,7 @@ export default function AssetsPage() {
                 aria-label="Status filter"
                 value={statusFilter}
                 onChange={(v) => {
-                  setStatusFilter(v);
-                  setPage(1);
+                  list.patch({ extras: { status: v }, page: 1 });
                 }}
                 placeholder="All statuses"
                 options={STATUS_OPTIONS}
@@ -237,8 +282,7 @@ export default function AssetsPage() {
               aria-label="Category filter"
               value={categoryFilter}
               onChange={(v) => {
-                setCategoryFilter(v);
-                setPage(1);
+                list.patch({ extras: { categoryId: v }, page: 1 });
               }}
               placeholder="All categories"
               options={categoryOptions}
@@ -269,6 +313,10 @@ export default function AssetsPage() {
         {inventoryView === "assets" ? (
         <>
         <DataTable
+          tableId="assets-serialized"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(a) => a.assetId}
@@ -284,14 +332,13 @@ export default function AssetsPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="assets"
           />
@@ -300,6 +347,10 @@ export default function AssetsPage() {
         ) : (
         <>
         <DataTable
+          tableId="non-asset-stock"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={nonAssetRows}
           columns={nonAssetColumns}
           getRowId={(r) => r.stockItemId}
@@ -314,14 +365,13 @@ export default function AssetsPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={nonAssetTotalPages}
             total={nonAssetTotal}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="items"
           />

@@ -5,6 +5,7 @@ import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import { PermissionKeys } from "../../shared/auth/permissions.js";
 import { asyncHandler } from "../../shared/http/async-handler.js";
 import { paginationMeta } from "../../shared/http/pagination.schema.js";
+import { parseListPagination } from "../../shared/http/parse-list-query.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
@@ -37,17 +38,12 @@ export class LicenseController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 20);
+    const pagination = parseListPagination(req, { sortDir: "asc" });
     const before = typeof req.query.before === "string" ? req.query.before : undefined;
-    const result = await this.service.list(
-      { page, pageSize, sortDir: "asc" },
-      { expiringBefore: before },
-      canViewSecrets(req),
-    );
+    const result = await this.service.list(pagination, { expiringBefore: before }, canViewSecrets(req));
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
-      ...paginationMeta(page, pageSize, result.total),
+      ...paginationMeta(pagination.page, pagination.pageSize, result.total),
     });
   });
 

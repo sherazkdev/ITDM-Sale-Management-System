@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -38,6 +38,8 @@ import {
 } from "@/lib/validators/non-asset-stock";
 import { ApiClientError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
 
 type EntryKind = "asset" | "non_asset";
 
@@ -69,7 +71,7 @@ export default function NewAssetPage() {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<RegisterAssetInput>({
     resolver: zodResolver(registerAssetSchema),
     defaultValues: {
@@ -114,6 +116,10 @@ export default function NewAssetPage() {
   });
   const nonAssetPreview = nonAssetForm.watch();
   const nonAssetErrors = nonAssetForm.formState.errors;
+
+  useUnsavedChangesWarning(
+    (entryKind === "asset" && isDirty) || (entryKind === "non_asset" && nonAssetForm.formState.isDirty),
+  );
 
   const nonAssetMutation = useMutation({
     mutationFn: registerNonAssetStockItem,
@@ -409,14 +415,26 @@ export default function NewAssetPage() {
               </div>
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="purchaseOrderId">Purchase order (optional)</Label>
-                <NativeSelect id="purchaseOrderId" {...nonAssetForm.register("purchaseOrderId")}>
-                  <option value="">None</option>
-                  {(poPage?.data ?? []).map((po) => (
-                    <option key={po.purchaseOrderId} value={po.purchaseOrderId}>
-                      {po.poNumber}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Controller
+                  control={nonAssetForm.control}
+                  name="purchaseOrderId"
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="None"
+                      aria-label="Purchase order"
+                      options={[
+                        { value: "", label: "None" },
+                        ...(poPage?.data ?? []).map((po) => ({
+                          value: po.purchaseOrderId,
+                          label: po.poNumber,
+                          hint: po.vendor?.vendorName,
+                        })),
+                      ]}
+                    />
+                  )}
+                />
               </div>
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="na-location">Location</Label>

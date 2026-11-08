@@ -18,6 +18,7 @@ export const PermissionKeys = {
   budgetsRead: "budgets.read",
   budgetsManage: "budgets.manage",
   usersManage: "users.manage",
+  financialCorrections: "financial.corrections",
   auditRead: "audit.read",
   searchRead: "search.read",
   maintenanceRead: "maintenance.read",

@@ -131,6 +131,12 @@ export default function AssetDetailPage() {
         cell: (row) => row.transactionType.replace(/_/g, " "),
       },
       {
+        key: "department",
+        header: "Department",
+        hideOnMobile: true,
+        cell: (row) => row.receivingDepartment ?? (row.transactionType === "ISSUE" ? "—" : ""),
+      },
+      {
         key: "employee",
         header: "Employee",
         cell: (row) =>

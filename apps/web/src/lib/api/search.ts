@@ -48,7 +48,7 @@ export type PoSearchResult = {
     unitOfMeasure: string;
     /** Registered / on-hand quantity (schema: quantityOnHand). */
     quantityOnHand: string;
-    /** Equals quantityOnHand until D09 consumption is implemented. */
+    /** Available quantity from movement ledger (D09). */
     quantityAvailable: string;
     quantityAvailableNote: string;
     purchaseOrder?: { purchaseOrderId: string; poNumber: string } | null;

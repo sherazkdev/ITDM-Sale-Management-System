@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, KeyRound } from "lucide-react";
 
@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchSoftwareLicenses, type SoftwareLicense } from "@/lib/api/software-licenses";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
@@ -27,33 +28,48 @@ export default function SoftwareLicensesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { hasPermission } = useAuth();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const initialExpiringBefore = useMemo(() => {
+  const initialBefore = useMemo(() => {
     const days = Number(searchParams.get("expiringWithin") ?? "");
     if (Number.isFinite(days) && days > 0) return utcDatePlusDays(days);
-    return "";
+    return searchParams.get("before") ?? "";
   }, [searchParams]);
-  const [expiringBefore, setExpiringBefore] = useState(initialExpiringBefore);
+
+  const list = useServerListTable({
+    defaults: { page: 1, pageSize: 20, before: initialBefore },
+    defaultSortBy: "expiryDate",
+  });
+  const expiringBefore = list.extras.before ?? "";
+
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "expiryDate",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["software-licenses", page, pageSize, expiringBefore],
+    queryKey: ["software-licenses", list.page, list.pageSize, expiringBefore, sortParams],
     queryFn: () =>
       fetchSoftwareLicenses({
-        page,
-        pageSize,
+        page: list.page,
+        pageSize: list.pageSize,
         before: expiringBefore || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const columns: Column<SoftwareLicense>[] = [
     {
       key: "name",
       header: "Software",
+      sortable: true,
+      serverSortKey: "softwareName",
       cell: (r) => <span className="font-medium">{r.softwareName}</span>,
     },
     {
@@ -64,6 +80,8 @@ export default function SoftwareLicensesPage() {
     {
       key: "expiry",
       header: "Expiry",
+      sortable: true,
+      serverSortKey: "expiryDate",
       cell: (r) => r.expiryDate?.slice(0, 10),
     },
     {
@@ -106,8 +124,7 @@ export default function SoftwareLicensesPage() {
             type="date"
             value={expiringBefore}
             onChange={(e) => {
-              setExpiringBefore(e.target.value);
-              setPage(1);
+              list.patch({ extras: { before: e.target.value }, page: 1 });
             }}
           />
         </div>
@@ -124,10 +141,15 @@ export default function SoftwareLicensesPage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="software-licenses"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(r) => r.licenseId}
           loading={isLoading}
+          caption="Software license register"
           onRowClick={(r) => router.push(`/software-licenses/${r.licenseId}`)}
           empty={
             <EmptyState icon={KeyRound} title="No licenses" description="Register a software license." />
@@ -135,14 +157,13 @@ export default function SoftwareLicensesPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="licenses"
           />

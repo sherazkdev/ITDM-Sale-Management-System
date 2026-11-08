@@ -406,32 +406,39 @@ export default function DashboardPage() {
             id="budget-strip"
             className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
-            Budget overview (provisional)
+            Budget overview{data.budgetOverview.provisional ? " (provisional)" : ""}
           </h2>
-          <BudgetProvisionalNotice message={data.budgetOverview.provisionalNote} />
+          {data.budgetOverview.provisionalNote ? (
+            <BudgetProvisionalNotice message={data.budgetOverview.provisionalNote} />
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card className="p-4">
-              <p className="text-xs text-muted-foreground">USD allocations</p>
-              <p className="mt-1 text-2xl font-semibold tabular">
-                {formatNumber(data.budgetOverview.usdAllocationCount)}
-              </p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-xs text-muted-foreground">USD allocated total</p>
+              <p className="text-xs text-muted-foreground">Allocated (USD)</p>
               <p className="mt-1 text-2xl font-semibold tabular">
                 {formatCurrency(Number(data.budgetOverview.usdAllocatedTotal), "USD")}
               </p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-xs text-muted-foreground">Committed invoice ledger lines</p>
-              <p className="mt-1 text-2xl font-semibold tabular">
-                {formatNumber(data.budgetOverview.committedInvoiceLedgerLines)}
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatNumber(data.budgetOverview.usdAllocationCount)} allocation line(s)
               </p>
             </Card>
             <Card className="p-4">
-              <p className="text-xs text-muted-foreground">Actual payment ledger lines</p>
+              <p className="text-xs text-muted-foreground">Utilized (USD)</p>
               <p className="mt-1 text-2xl font-semibold tabular">
-                {formatNumber(data.budgetOverview.actualPaymentLedgerLines)}
+                {formatCurrency(Number(data.budgetOverview.utilizedUsdTotal), "USD")}
+              </p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Actual (USD)</p>
+              <p className="mt-1 text-2xl font-semibold tabular">
+                {formatCurrency(Number(data.budgetOverview.actualUsdTotal), "USD")}
+              </p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Remaining (USD)</p>
+              <p className="mt-1 text-2xl font-semibold tabular">
+                {data.budgetOverview.remainingUsdTotal !== null
+                  ? formatCurrency(Number(data.budgetOverview.remainingUsdTotal), "USD")
+                  : "Provisional"}
               </p>
             </Card>
           </div>

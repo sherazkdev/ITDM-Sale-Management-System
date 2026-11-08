@@ -12,11 +12,11 @@
 
 | Topic | Confirmed client rule | Decision IDs | Code status (do not assume complete) |
 |---|---|---|---|
-| Budget consumption | Budget is **manually allocated** to PO/contract and **consumed on invoice posting**; **actual payments** remain separately recorded | D06, D07 | Wave 2 post/pay paths exist; remaining-formula provisional notices may still apply |
-| Non-asset stock movements | Supports **withdrawals, returns, manual replenishment, write-offs**, **decimal quantities**, linked to **employee/department** | D09 | Registration/units exist; **movement/consumption workflows not implemented in Phase A** |
-| Asset issuance identity | Issuance records **employee and department** | D10 (partial supersede of “dept-only holder”) | Employee holder exists; **department capture on issuance may still be incomplete** |
+| Budget consumption | Budget is **manually allocated** to PO/contract and **consumed on invoice posting**; **actual payments** remain separately recorded | D06, D07 | **Phase 2 verified:** Remaining = allocated − utilized; `budget-phase2-acceptance` + API 81/81 — `BUSINESS_PHASE2_FINANCE_CLOSURE_REPORT.md` |
+| Non-asset stock movements | Supports **withdrawals, returns, manual replenishment, write-offs**, **decimal quantities**, linked to **employee/department** | D09 | **IMPLEMENTED 2026-11-08** — ledger + APIs + UI + report (`NON_ASSET_INVENTORY_IMPLEMENTATION_REPORT.md`) |
+| Asset issuance identity | Issuance records **employee and department** | D10 (partial supersede of “dept-only holder”) | **Phase 3 verified** — historical `receivingDepartment` on issuance; see `BUSINESS_PHASE3_ASSET_CUSTODY_REPORT.md` |
 | Budget currency | Allocations are **always USD**; foreign-currency conversion rates entered **manually** | D08 | Aligns with Wave 2 USD reporting + manual FX; non-USD allocation edge cases may remain provisional |
-| Financial corrections | **Admin-only** and **must be audited** | D01 / finance ops | Do not invent correction UI in Phase A; preserve audit expectations |
+| Financial corrections | **Admin-only** and **must be audited** | D01 / finance ops | **Phase 4/5 verified** — permission `financial.corrections` (not `users.manage` alone); posted/payment reversals **BLOCKED** — closure report |
 | Official templates | Official issuance/return templates **still awaiting client files** | D12 | Operational XLSX/CSV remain; official layouts **blocked** until files arrive |
 
 **Phase A UI note:** Premium UI Phase A does **not** implement stock consumption, budget formula changes, or financial correction workflows.
@@ -32,7 +32,7 @@
 | **D03** | **CONFIRMED / SUPERSEDES prior “enable PO workflow” proposals** | No ITDMS PO approval; SAP/manual external approval; ITDMS keeps PO records | Submit/approve/cancel stay **403**; UI explains SAP; **no** approval engine |
 | **D04** | **PARTIALLY CONFIRMED** | 60-day reminders; PO when expiry/applicable date exists | Scan uses existing `valid_until` only — **no invented dates** |
 | **D09** | **CONFIRMED (rules) / PARTIAL (code)** | Non-asset stock + decimal qty + employee/dept-linked movements (withdraw/return/replenish/write-off) | Registration exists; **movement APIs/UI still required** — see 2026-11-06 section |
-| **D10** | **PARTIALLY CONFIRMED** | Issuance records employee **and** department (not department-only custody) | Employee issuance exists; department field on movement still to verify/implement |
+| **D10** | **CONFIRMED (rules) / VERIFIED (Phase 3 code)** | Issuance records employee **and** department (not department-only custody) | Snapshot on `AssetMovementDocument` + `AssetTransaction`; UI `/asset-issuance`, history, export |
 | **D12** | **PARTIALLY CONFIRMED** | Excel reports required; official issuance/return templates awaiting files | XLSX/CSV operational exports; **official templates still blocked** |
 | **D14** | **PARTIALLY CONFIRMED** | **60 days** before expiry; in-app (email/SMS not confirmed) | `NOTIFICATION_LEAD_DAYS=60` default |
 | **D01** | **PARTIALLY CONFIRMED** | One initial full-access user | RBAC kept; see `WAVE1_INITIAL_ADMIN_SETUP.md`; matrix still needed |

@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class AssetRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -57,7 +58,11 @@ export class AssetRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { assetId: query.sortDir },
+        orderBy: resolveListOrderBy(
+          ["assetCode", "assetName", "assetStatus", "assetId"],
+          query,
+          { assetCode: "asc" },
+        ),
         include: { category: true },
       }),
       this.prisma.asset.count({ where }),

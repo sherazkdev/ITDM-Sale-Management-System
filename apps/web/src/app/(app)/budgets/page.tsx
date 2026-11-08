@@ -7,18 +7,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Wallet } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { BudgetProvisionalNotice } from "@/components/finance/BudgetProvisionalNotice";
+import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import {
   appendBudgetLedgerEntry,
+  correctBudgetAllocation,
   createBudgetAllocation,
   createFinancialYear,
   fetchBudgetAllocations,
@@ -33,9 +36,11 @@ import {
 } from "@/lib/api/budgets";
 import {
   appendLedgerEntrySchema,
+  correctBudgetAllocationSchema,
   createBudgetAllocationSchema,
   createFinancialYearSchema,
   type AppendLedgerEntryInput,
+  type CorrectBudgetAllocationInput,
   type CreateBudgetAllocationInput,
   type CreateFinancialYearInput,
 } from "@/lib/validators/budget";
@@ -56,7 +61,11 @@ export default function BudgetsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useAuth();
   const canManage = hasPermission(PermissionKeys.budgetsManage);
+  const canAdminCorrect = hasPermission(PermissionKeys.financialCorrections);
   const [selectedYearId, setSelectedYearId] = useState("");
+  const [allocCorrectionOpen, setAllocCorrectionOpen] = useState(false);
+  const [pendingAllocCorrection, setPendingAllocCorrection] =
+    useState<CorrectBudgetAllocationInput | null>(null);
   const [summaryBudgetId, setSummaryBudgetId] = useState("");
   const [lookupPoId, setLookupPoId] = useState("");
   const [lookupVendorId, setLookupVendorId] = useState("");
@@ -111,6 +120,7 @@ export default function BudgetsPage() {
   const ledgerForm = useForm<AppendLedgerEntryInput>({
     resolver: zodResolver(appendLedgerEntrySchema),
     defaultValues: {
+      correctionReason: "",
       budgetId: "",
       transactionType: "MANUAL",
       amount: undefined,
@@ -119,6 +129,20 @@ export default function BudgetsPage() {
       invoiceId: "",
       remarks: "",
     },
+  });
+
+  const allocCorrectionMutation = useMutation({
+    mutationFn: (values: CorrectBudgetAllocationInput) =>
+      correctBudgetAllocation(summaryBudgetId, values),
+    onSuccess: () => {
+      setAllocCorrectionOpen(false);
+      setPendingAllocCorrection(null);
+      toast.success("Allocation corrected");
+      void queryClient.invalidateQueries({ queryKey: ["budget-allocations"] });
+      void queryClient.invalidateQueries({ queryKey: ["budget-summary", summaryBudgetId] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiClientError ? err.message : "Allocation correction failed"),
   });
 
   const createYearMutation = useMutation({
@@ -153,6 +177,7 @@ export default function BudgetsPage() {
     onSuccess: () => {
       toast.success("Ledger entry added");
       ledgerForm.reset({
+        correctionReason: "",
         budgetId: summaryBudgetId,
         transactionType: "MANUAL",
         amount: undefined,
@@ -209,8 +234,19 @@ export default function BudgetsPage() {
 
       <BudgetProvisionalNotice />
 
+      <Tabs defaultValue="years" className="w-full">
+        <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="years">Financial years</TabsTrigger>
+          <TabsTrigger value="allocations">Allocations</TabsTrigger>
+          <TabsTrigger value="summary">Summary & ledger</TabsTrigger>
+          <TabsTrigger value="lookups">PO & vendor lookups</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="years" className="mt-0">
       <SectionCard title="Financial years">
         <DataTable
+          tableId="budget-financial-years"
+          sortMode="client"
           data={years}
           columns={yearColumns}
           getRowId={(y) => y.financialYearId}
@@ -234,7 +270,9 @@ export default function BudgetsPage() {
           </form>
         ) : null}
       </SectionCard>
+        </TabsContent>
 
+        <TabsContent value="allocations" className="mt-0">
       <SectionCard title="Budget allocations">
         <div className="mb-4 max-w-md">
           <FilterSelect
@@ -245,6 +283,8 @@ export default function BudgetsPage() {
           />
         </div>
         <DataTable
+          tableId="budget-allocations"
+          sortMode="client"
           data={allocations}
           columns={allocColumns}
           getRowId={(a) => a.budgetId}
@@ -279,7 +319,9 @@ export default function BudgetsPage() {
           </form>
         ) : null}
       </SectionCard>
+        </TabsContent>
 
+        <TabsContent value="summary" className="mt-0 space-y-6">
       {summaryBudgetId ? (
         <SectionCard title={`Budget summary · ${summaryBudgetId}`}>
           {summaryQuery.isLoading ? (
@@ -288,15 +330,87 @@ export default function BudgetsPage() {
             <BudgetSummaryView summary={summary} />
           ) : null}
         </SectionCard>
+      ) : (
+        <SectionCard title="Budget summary">
+          <p className="text-sm text-muted-foreground">
+            Select a budget ID from the Allocations tab to load committed, actual paid, and ledger detail here.
+          </p>
+        </SectionCard>
+      )}
+
+      {canAdminCorrect && summaryBudgetId ? (
+        <SectionCard
+          title="Admin allocation correction"
+          description="Adjust USD allocation metadata. Utilized/actual rows are driven by invoice post and payment — not edited here."
+        >
+          <form
+            className="grid w-full max-w-none gap-3 md:grid-cols-2 lg:max-w-3xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const parsed = correctBudgetAllocationSchema.safeParse({
+                correctionReason: String(fd.get("allocCorrectionReason") ?? ""),
+                budgetCategory: String(fd.get("allocCategory") ?? ""),
+                allocatedAmount:
+                  String(fd.get("allocAmount") ?? "") === ""
+                    ? undefined
+                    : Number(fd.get("allocAmount")),
+              });
+              if (!parsed.success) {
+                toast.error(parsed.error.errors[0]?.message ?? "Invalid correction");
+                return;
+              }
+              setPendingAllocCorrection(parsed.data);
+              setAllocCorrectionOpen(true);
+            }}
+          >
+            <Input
+              name="allocCorrectionReason"
+              placeholder="Correction reason (required)"
+              className="md:col-span-2"
+            />
+            <Input name="allocCategory" placeholder="Category (optional)" />
+            <Input name="allocAmount" type="number" step="0.01" placeholder="Allocated USD (optional)" />
+            <Button type="submit" variant="secondary" className="md:col-span-2">
+              Review allocation correction
+            </Button>
+          </form>
+          <ConfirmDialog
+            open={allocCorrectionOpen}
+            onOpenChange={setAllocCorrectionOpen}
+            title="Confirm allocation correction"
+            description={
+              pendingAllocCorrection
+                ? pendingAllocCorrection.correctionReason
+                : "Confirm correction"
+            }
+            confirmLabel="Apply correction"
+            loading={allocCorrectionMutation.isPending}
+            onConfirm={() => {
+              if (pendingAllocCorrection) allocCorrectionMutation.mutate(pendingAllocCorrection);
+            }}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            <Link href="/admin/audit" className="text-primary hover:underline">
+              Audit log
+            </Link>{" "}
+            records before/after values for each correction.
+          </p>
+        </SectionCard>
       ) : null}
 
-      {canManage && summaryBudgetId ? (
-        <SectionCard title="Manual ledger entry">
+      {canAdminCorrect && summaryBudgetId ? (
+        <SectionCard title="Admin manual ledger entry">
           <p className="mb-3 text-xs text-muted-foreground">{BUDGET_LEDGER_SEMANTICS}</p>
           <form
             className="grid w-full max-w-none gap-3 md:grid-cols-2 lg:max-w-3xl"
             onSubmit={ledgerForm.handleSubmit((v) => ledgerMutation.mutate({ ...v, budgetId: summaryBudgetId }))}
           >
+            <Input
+              placeholder="Correction reason"
+              className="md:col-span-2"
+              {...ledgerForm.register("correctionReason")}
+            />
             <Input placeholder="Transaction type" {...ledgerForm.register("transactionType")} />
             <Input type="number" step="0.01" placeholder="Amount" {...ledgerForm.register("amount")} />
             <Input type="date" {...ledgerForm.register("transactionDate")} />
@@ -309,7 +423,9 @@ export default function BudgetsPage() {
           </form>
         </SectionCard>
       ) : null}
+        </TabsContent>
 
+        <TabsContent value="lookups" className="mt-0 space-y-6">
       <SectionCard title="Budget by purchase order">
         <div className="flex flex-wrap gap-2">
           <Input
@@ -370,6 +486,8 @@ export default function BudgetsPage() {
           <p className="mt-2 text-xs text-muted-foreground">{byVendorQuery.data.semanticsNote}</p>
         ) : null}
       </SectionCard>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -395,11 +513,11 @@ function BudgetSummaryView({ summary }: { summary: BudgetSummary }) {
           value={formatCurrency(Number(summary.allocatedAmount), summary.currency)}
         />
         <DetailField
-          label={`Committed (${reporting})`}
-          value={formatCurrency(Number(summary.committedUsd), reporting)}
+          label={`Utilized (${reporting})`}
+          value={formatCurrency(Number(summary.utilizedUsd ?? summary.committedUsd), reporting)}
         />
         <DetailField
-          label={`Actual paid (${reporting})`}
+          label={`Actual (${reporting})`}
           value={formatCurrency(Number(summary.actualPaidUsd), reporting)}
         />
         <DetailField

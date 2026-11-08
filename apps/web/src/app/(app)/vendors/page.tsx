@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Building2, UserCheck } from "lucide-react";
 
@@ -16,34 +16,56 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { fetchVendors, type Vendor } from "@/lib/api/vendors";
-import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ListPageKpiBand } from "@/components/crud/ListPageKpiBand";
 import { useListMetaTotals } from "@/lib/hooks/use-list-meta";
 import { ApiClientError } from "@/lib/api/client";
 
+const VENDOR_LIST_DEFAULTS = { page: 1, pageSize: 20, active: "all" };
+
 export default function VendorsPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-  const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const list = useServerListTable({ defaults: VENDOR_LIST_DEFAULTS, defaultSortBy: "vendorName" });
+  const activeFilter = list.extras.active ?? "all";
 
   const isActive =
     activeFilter === "active" ? true : activeFilter === "inactive" ? false : undefined;
 
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "vendorName",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["vendors", page, pageSize, debouncedSearch, activeFilter],
+    queryKey: [
+      "vendors",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      activeFilter,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
-      fetchVendors({ page, pageSize, search: debouncedSearch || undefined, isActive }),
+      fetchVendors({
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
+        isActive,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
+      }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const metaTotals = useListMetaTotals(["vendors", "summary"], fetchVendors, {
     includeInactive: true,
@@ -54,6 +76,7 @@ export default function VendorsPage() {
       key: "vendorName",
       header: "Vendor",
       sortable: true,
+      serverSortKey: "vendorName",
       cell: (v) => (
         <div className="min-w-0">
           <p className="font-medium truncate">{v.vendorName}</p>
@@ -134,10 +157,9 @@ export default function VendorsPage() {
       />
 
       <ListToolbar
-        search={search}
+        search={list.search}
         onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+          list.patch({ search: v, page: 1 });
         }}
         searchPlaceholder="Search vendor name…"
         filters={
@@ -145,8 +167,7 @@ export default function VendorsPage() {
             aria-label="Status filter"
             value={activeFilter === "all" ? "" : activeFilter}
             onChange={(v) => {
-              setActiveFilter(v || "all");
-              setPage(1);
+              list.patch({ extras: { active: v || "all" }, page: 1 });
             }}
             placeholder="All statuses"
             options={[
@@ -168,10 +189,15 @@ export default function VendorsPage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="vendors"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(v) => v.vendorId}
           loading={isLoading}
+          caption="Vendor directory"
           onRowClick={(v) => router.push(`/vendors/${v.vendorId}`)}
           empty={
             <EmptyState
@@ -183,14 +209,13 @@ export default function VendorsPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="vendors"
           />

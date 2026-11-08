@@ -17,7 +17,7 @@
 | Committed expenditure | Posted invoice commitment (invoice currency on ledger row; USD via optional post rate or USD invoice) |
 | Actual expenditure (paid) | Sum of payment `amountUsd` (`ACTUAL_PAYMENT` budget rows) — **not** invoice total until fully paid |
 | Budget utilization | Derived from committed USD + actual paid USD vs USD allocation where defined |
-| Remaining budget | `allocatedUsdReporting - committedUsd - actualPaidUsd` when allocation is USD; else **null / provisional** |
+| Remaining budget | `allocatedUsdReporting - utilizedUsd` (utilized = posted invoice commitments); payments do **not** reduce remaining again; else **null / provisional** when FX missing |
 | Transaction currency | PO/invoice/payment `currency` fields |
 | USD reporting | Manual rates on payment; optional manual rate at post for non-USD commitment |
 
@@ -94,3 +94,11 @@ Do **not** remove `BudgetProvisionalNotice` until client approves formulas for t
 - Budget transactions store type, amount, currency, optional `amountUsdReporting`, links to invoice/payment
 - Invoice `postedAt`, payment `paidAt`, stored FX fields support reconstruction
 - RBAC: `invoices.manage` for post and pay; budget views under existing permissions
+
+### 6.1 Admin financial corrections (Phase 4 — 2026-11-08)
+
+- **Admin gate:** `users.manage` on `PATCH …/corrections` and admin manual ledger append
+- **Audit action:** `financial.correction` with reason, before/after, changed fields in `audit_logs.metadata`
+- **Supported:** draft invoice metadata; USD allocation category/amount; non-system manual ledger rows
+- **Blocked:** posted invoice correction, payment mutation, synthetic `COMMITTED_INVOICE` / `ACTUAL_PAYMENT` ledger inserts
+- Evidence: `financial-corrections-phase4.test.ts` (5/5) on `itdms_test`

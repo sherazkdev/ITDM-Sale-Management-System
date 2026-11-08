@@ -25,3 +25,20 @@ export const postInvoiceSchema = z.object({
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
 export type PostInvoiceInput = z.infer<typeof postInvoiceSchema>;
+
+export const correctDraftInvoiceSchema = z
+  .object({
+    correctionReason: z.string().trim().min(3, "Correction reason is required").max(2000),
+    invoiceNumber: z.string().min(1).max(64).optional().or(z.literal("")),
+    invoiceDate: dateOnly.optional().or(z.literal("")),
+    invoiceAmount: z.coerce.number().positive().optional(),
+  })
+  .refine(
+    (v) =>
+      Boolean(v.invoiceNumber?.trim()) ||
+      Boolean(v.invoiceDate?.trim()) ||
+      v.invoiceAmount !== undefined,
+    { message: "Provide at least one field to correct" },
+  );
+
+export type CorrectDraftInvoiceInput = z.infer<typeof correctDraftInvoiceSchema>;

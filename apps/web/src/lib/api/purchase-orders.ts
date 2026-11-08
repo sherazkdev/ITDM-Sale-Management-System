@@ -37,6 +37,8 @@ export type PoListParams = {
   pageSize?: number;
   search?: string;
   vendorId?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 export type InvoiceSummary = {
@@ -65,6 +67,8 @@ export function fetchPurchaseOrders(params: PoListParams) {
       pageSize: params.pageSize ?? 20,
       search: params.search,
       vendorId: params.vendorId,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }

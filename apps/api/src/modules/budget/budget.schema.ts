@@ -17,6 +17,7 @@ export const createBudgetAllocationSchema = z.object({
 });
 
 export const appendLedgerEntrySchema = z.object({
+  correctionReason: z.string().trim().min(3).max(2000),
   budgetId: z.coerce.bigint(),
   transactionType: z.string().min(1).max(64),
   amount: z.coerce.number().positive(),

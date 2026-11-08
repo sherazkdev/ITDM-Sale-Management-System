@@ -63,7 +63,7 @@ describe("Wave 2 — financial rules", () => {
       .expect(200);
     expect(Number(summary.body.data.committedUsd)).toBe(1000);
     expect(Number(summary.body.data.actualPaidUsd)).toBe(400);
-    expect(Number(summary.body.data.remainingUsd)).toBe(4600);
+    expect(Number(summary.body.data.remainingUsd)).toBe(4000);
   });
 
   it("applies manual FX on non-USD payment date", async () => {

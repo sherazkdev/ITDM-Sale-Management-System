@@ -52,8 +52,27 @@ export class BudgetController {
   });
 
   appendLedger = asyncHandler(async (req: Request, res: Response) => {
-    const row = await this.service.appendLedgerEntry(req.body as LedgerBody);
+    const row = await this.service.appendLedgerEntry(req.body as LedgerBody, {
+      actorUserId: req.principal?.userId,
+      requestId: getRequestId(req),
+    });
     sendSuccess(res, toPublicJson(row), { requestId: getRequestId(req) }, 201);
+  });
+
+  correctAllocation = asyncHandler(async (req: Request, res: Response) => {
+    const row = await this.service.correctAllocation(
+      parseId(String(req.params.budgetId)),
+      req.body as {
+        correctionReason: string;
+        budgetCategory?: string;
+        allocatedAmount?: number;
+      },
+      {
+        actorUserId: req.principal?.userId,
+        requestId: getRequestId(req),
+      },
+    );
+    sendSuccess(res, toPublicJson(row), { requestId: getRequestId(req) });
   });
 
   summary = asyncHandler(async (req: Request, res: Response) => {

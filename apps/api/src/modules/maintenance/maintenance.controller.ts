@@ -4,6 +4,7 @@ import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import { asyncHandler } from "../../shared/http/async-handler.js";
 import { paginationMeta } from "../../shared/http/pagination.schema.js";
+import { parseListPagination } from "../../shared/http/parse-list-query.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
@@ -37,17 +38,16 @@ export class MaintenanceController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 20);
+    const pagination = parseListPagination(req, { sortDir: "desc" });
     const status = typeof req.query.status === "string" ? req.query.status : undefined;
     const assetId =
       typeof req.query.assetId === "string" && /^\d+$/.test(req.query.assetId)
         ? BigInt(req.query.assetId)
         : undefined;
-    const result = await this.service.list({ page, pageSize, sortDir: "desc" }, { status, assetId });
+    const result = await this.service.list(pagination, { status, assetId });
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
-      ...paginationMeta(page, pageSize, result.total),
+      ...paginationMeta(pagination.page, pagination.pageSize, result.total),
     });
   });
 

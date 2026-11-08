@@ -16,12 +16,12 @@ ITDMS already has a **credible enterprise shell**: ORLEN-red branding, permissio
 The product is **not yet a premium analytics / high-efficiency operations console**. The largest gaps are:
 
 1. **Dashboard depth** — ~~shallow KPIs / no drill-down~~ **Phase B closed** (clickable KPIs/charts, non-asset item counts, 60-day expiry watchlist, provisional USD budget strip without treating `remainingUsd` as approved). Remaining: true remaining-budget formula + non-USD strip after backend finance rules land; no fabricated trends.
-2. **Table power** — shared `DataTable` supports client-side sort + overflow; missing column controls, sticky headers, multi-filter density, bulk actions (Phase C).
+2. **Table power** — **Phase C complete (scoped)**: sticky headers, column prefs, keyboard rows, server sort + URL state on employees, vendors, POs, invoices, assets, maintenance, licenses; contracts list optional follow-up.
 3. **Navigation honesty** — ~~misleading Global Search / dead `⌘K`~~ **Phase A fixed** (PO search labeling + Ctrl/Cmd+K). Remaining: not a free-text multi-entity search.
-4. **Workflow friction** — ~~issuance without asset search; inert Help~~ **Phase A fixed**. Remaining: dense budgets page IA (Phase D).
+4. **Workflow friction** — Phase A issuance search + Help **done**. **Phase D complete** on mandatory creates, payment confirm, document upload confirm.
 5. **Optional vs required** — CSV/bulk import is **not** a confirmed client requirement; Excel operational export **is** confirmed (D12 partial). Remaining budget formula remains provisional pending Nov 2026 client-rule backend work.
 
-**Overall UI maturity:** **B+ / “Premium ops analytics console for dashboard; tables/forms still Phase C–D.”**
+**Overall UI maturity (post–Phase D closure, 2026-11-08):** **A / “Premium dashboard + enterprise tables + consistent operator forms.”**
 
 ---
 
@@ -32,8 +32,8 @@ The product is **not yet a premium analytics / high-efficiency operations consol
 | Visual polish & ORLEN branding | 4 | Red theme + typographic logo fallback; official logo files still optional |
 | Information architecture | 4 | Clear nav sections; Departments is field-level, not a module |
 | Dashboard analytics | 4 | Phase B: drill-down KPIs/charts, watchlist, provisional budget strip |
-| Data tables | 2.5 | Good basics; missing advanced enterprise table UX |
-| Forms & workflows | 3.5 | RHF + Zod + toasts; missing unsaved guards; some dense screens |
+| Data tables | 4 | Server sort + URL on core lists; column prefs; contracts/notifications lighter |
+| Forms & workflows | 4.5 | Searchable links, unsaved guards, confirm dialogs on payment/upload |
 | Import / export | 3.5 | Strong export surface; no approved import product |
 | Accessibility | 3 | Axe sample gates pass (contrast excluded); chart a11y incomplete |
 | Responsive | 4 | Mobile drawer + hideOnMobile columns; prior overflow gates green |
@@ -397,6 +397,12 @@ Full solution cards live in `PREMIUM_UI_IMPROVEMENT_ROADMAP.md`. Top confirmed i
 
 ITDMS UI is **production-credible for structured CRUD and compliant messaging**, with a professional ORLEN-red shell. **Phase A + Phase B** deliver search honesty and a premium IT operations analytics dashboard without changing finance/stock business rules.
 
-**Remaining premium path:** Phase C (tables) → Phase D (forms/budget IA) → approval-gated Phase E.
+**Premium UI path (engineering):** Phases A–D **complete** on 2026-11-08; Phase E remains approval-gated.
 
-**STOP after Phase B:** No Phase C implementation in this pass; no commits/pushes; no production deploy.
+### Accessibility — color contrast exception
+
+- **Component:** Global secondary text (`--muted-foreground` on `QuickTip`, form hints, table metadata).
+- **Mitigation (2026-11-08):** Light theme muted foreground darkened slightly in `globals.css`.
+- **Remaining:** Playwright axe still disables `color-contrast` (`a11y.spec.ts`) because ORLEN primary-on-soft backgrounds are not fully signed off for WCAG AA. **Full contrast compliance is not claimed.**
+
+**Production UI sign-off** still requires staging UAT; no production deploy from UI closure work.

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, KeyRound } from "lucide-react";
 
@@ -24,20 +25,54 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { createSoftwareLicense, type SoftwareLicense } from "@/lib/api/software-licenses";
+import { fetchVendors } from "@/lib/api/vendors";
+import { fetchPurchaseOrders } from "@/lib/api/purchase-orders";
 import { createLicenseSchema, type CreateLicenseInput } from "@/lib/validators/software-license";
 import { ApiClientError } from "@/lib/api/client";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
+
+const NONE = "";
 
 export default function NewSoftwareLicensePage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
   const canManage = hasPermission(PermissionKeys.licensesManage);
 
+  const { data: vendorPage } = useQuery({
+    queryKey: ["vendors", "select", "license-new"],
+    queryFn: () => fetchVendors({ page: 1, pageSize: 200, isActive: true }),
+    enabled: canManage,
+  });
+
+  const { data: poPage } = useQuery({
+    queryKey: ["purchase-orders", "select", "license-new"],
+    queryFn: () => fetchPurchaseOrders({ page: 1, pageSize: 200 }),
+    enabled: canManage,
+  });
+
+  const vendorOptions = [
+    { value: NONE, label: "None" },
+    ...(vendorPage?.data ?? []).map((v) => ({ value: v.vendorId, label: v.vendorName })),
+  ];
+
+  const poOptions = [
+    { value: NONE, label: "None" },
+    ...(poPage?.data ?? []).map((po) => ({
+      value: po.purchaseOrderId,
+      label: po.poNumber,
+      hint: po.vendor?.vendorName,
+    })),
+  ];
+
   const {
     register,
     handleSubmit,
+    control,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty },
   } = useForm<CreateLicenseInput>({
+    resolver: zodResolver(createLicenseSchema),
     defaultValues: {
       softwareName: "",
       licenseKeyReference: "",
@@ -49,6 +84,8 @@ export default function NewSoftwareLicensePage() {
       status: "ACTIVE",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const preview = watch();
 
@@ -110,15 +147,7 @@ export default function NewSoftwareLicensePage() {
           </>
         }
       >
-        <form
-          onSubmit={handleSubmit((values) => {
-            const parsed = createLicenseSchema.safeParse(values);
-            if (!parsed.success) {
-              toast.error(parsed.error.issues[0]?.message ?? "Invalid form");
-              return;
-            }
-            mutation.mutate(parsed.data);
-          })}
+        <form onSubmit={handleSubmit((values) => mutation.mutate(values))}
           className="flex flex-col gap-6"
           noValidate
         >
@@ -145,12 +174,36 @@ export default function NewSoftwareLicensePage() {
                 <Input id="licenseKeyReference" {...register("licenseKeyReference")} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="vendorId">Vendor ID</Label>
-                <Input id="vendorId" {...register("vendorId")} />
+                <Label>Vendor (optional)</Label>
+                <Controller
+                  control={control}
+                  name="vendorId"
+                  render={({ field }) => (
+                    <SearchableSelect
+                      aria-label="Vendor"
+                      value={field.value ?? NONE}
+                      onChange={(v) => field.onChange(v === NONE ? "" : v)}
+                      options={vendorOptions}
+                      placeholder="Search vendors…"
+                    />
+                  )}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="purchaseOrderId">PO ID</Label>
-                <Input id="purchaseOrderId" {...register("purchaseOrderId")} />
+                <Label>Purchase order (optional)</Label>
+                <Controller
+                  control={control}
+                  name="purchaseOrderId"
+                  render={({ field }) => (
+                    <SearchableSelect
+                      aria-label="Purchase order"
+                      value={field.value ?? NONE}
+                      onChange={(v) => field.onChange(v === NONE ? "" : v)}
+                      options={poOptions}
+                      placeholder="Search POs…"
+                    />
+                  )}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="startDate" required>
@@ -195,7 +248,7 @@ export default function NewSoftwareLicensePage() {
             <Button type="button" variant="outline" size="md" asChild>
               <Link href="/software-licenses">Cancel</Link>
             </Button>
-            <Button type="submit" size="md" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+            <Button type="submit" size="md" loading={mutation.isPending}>
               Create license
             </Button>
           </CreateFormActions>

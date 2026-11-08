@@ -26,6 +26,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { createVendor, type Vendor } from "@/lib/api/vendors";
 import { createVendorSchema, type CreateVendorInput } from "@/lib/validators/vendor";
 import { ApiClientError } from "@/lib/api/client";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 
 export default function NewVendorPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function NewVendorPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateVendorInput>({
     resolver: zodResolver(createVendorSchema),
     defaultValues: {
@@ -47,6 +48,8 @@ export default function NewVendorPage() {
       address: "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const mutation = useMutation({
     mutationFn: createVendor,

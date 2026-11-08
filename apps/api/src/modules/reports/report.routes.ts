@@ -21,5 +21,6 @@ export function createReportRouter(deps: {
   router.get("/invoices", ...read, deps.reportController.invoices);
   router.get("/asset-movements", ...read, deps.reportController.assetMovements);
   router.get("/employees", ...read, deps.reportController.employees);
+  router.get("/non-asset-stock-ledger", ...read, deps.reportController.nonAssetStockLedger);
   return router;
 }

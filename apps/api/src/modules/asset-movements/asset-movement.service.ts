@@ -29,9 +29,27 @@ export class AssetMovementService {
     return [...lines.map((l) => l.assetId)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   }
 
+  private resolveReceivingDepartment(
+    explicit: string | undefined,
+    employeeDepartment: string | null,
+  ): string {
+    const fromInput = explicit?.trim();
+    const fromEmployee = employeeDepartment?.trim();
+    const resolved = (fromInput || fromEmployee || "").trim();
+    if (!resolved) {
+      throw new AppError(
+        ErrorCodes.VALIDATION_ERROR,
+        "Receiving department is required for asset issuance",
+        422,
+      );
+    }
+    return resolved;
+  }
+
   async issueAssets(
     input: {
       employeeId: bigint;
+      receivingDepartment?: string;
       referenceNumber?: string;
       occurredAt?: string;
       assets: MovementLine[];
@@ -45,6 +63,10 @@ export class AssetMovementService {
     if (!employee || !employee.isActive) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, "Employee not found or inactive", 422);
     }
+    const receivingDepartment = this.resolveReceivingDepartment(
+      input.receivingDepartment,
+      employee.department,
+    );
 
     return runInTransaction(this.prisma, async (tx) => {
       for (const assetId of this.sortedAssetIds(input.assets)) {
@@ -56,6 +78,7 @@ export class AssetMovementService {
           documentType: AssetMovementDocumentType.ISSUANCE,
           referenceNumber: input.referenceNumber,
           employeeId: input.employeeId,
+          receivingDepartment,
           processedByUserId: actor.userId,
           occurredAt,
         },
@@ -81,6 +104,7 @@ export class AssetMovementService {
             employeeId: input.employeeId,
             transactionType: AssetTransactionType.ISSUE,
             transactionDate: occurredAt,
+            receivingDepartment,
             conditionNotes: line.conditionNotes,
             referenceNumber: input.referenceNumber,
             processedByUserId: actor.userId,

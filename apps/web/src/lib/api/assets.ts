@@ -21,6 +21,7 @@ export type AssetHistoryRow = {
   transactionId: string;
   transactionType: string;
   transactionDate: string;
+  receivingDepartment?: string | null;
   employee?: { employeeId: string; fullName: string; employeeNumber: string } | null;
   movementDocument?: { documentId: string; documentNumber: string } | null;
 };
@@ -37,6 +38,8 @@ export type AssetListParams = {
   search?: string;
   status?: string;
   categoryId?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 function cleanRegisterBody(input: RegisterAssetInput) {
@@ -62,6 +65,8 @@ export function fetchAssets(params: AssetListParams) {
       search: params.search,
       status: params.status,
       categoryId: params.categoryId,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }

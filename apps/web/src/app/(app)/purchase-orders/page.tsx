@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
 
@@ -15,40 +15,57 @@ import { ListToolbar } from "@/components/crud/ListToolbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchPurchaseOrders, type PurchaseOrder } from "@/lib/api/purchase-orders";
-import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import { PO_STATUS_LABELS, poStatusToPill } from "@/lib/domain/purchase-order-ui";
 
+const PO_LIST_DEFAULTS = { page: 1, pageSize: 20, sortDir: "desc" as const };
+
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const list = useServerListTable({ defaults: PO_LIST_DEFAULTS, defaultSortBy: "purchaseOrderId" });
+
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "purchaseOrderId",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["purchase-orders", page, pageSize, debouncedSearch],
+    queryKey: [
+      "purchase-orders",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
       fetchPurchaseOrders({
-        page,
-        pageSize,
-        search: debouncedSearch || undefined,
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const columns: Column<PurchaseOrder>[] = [
     {
       key: "poNumber",
       header: "PO number",
       sortable: true,
+      serverSortKey: "poNumber",
       cell: (po) => <span className="font-medium tabular">{po.poNumber}</span>,
     },
     {
@@ -59,6 +76,8 @@ export default function PurchaseOrdersPage() {
     {
       key: "status",
       header: "Status",
+      sortable: true,
+      serverSortKey: "status",
       cell: (po) => (
         <StatusPill status={poStatusToPill(po.status)} label={PO_STATUS_LABELS[po.status] ?? po.status} dot />
       ),
@@ -66,12 +85,16 @@ export default function PurchaseOrdersPage() {
     {
       key: "totalAmount",
       header: "Total",
+      sortable: true,
+      serverSortKey: "totalAmount",
       cell: (po) => formatCurrency(Number(po.totalAmount), po.currency),
     },
     {
       key: "poDate",
       header: "Date",
       hideOnMobile: true,
+      sortable: true,
+      serverSortKey: "poDate",
       cell: (po) => po.poDate,
     },
   ];
@@ -94,10 +117,9 @@ export default function PurchaseOrdersPage() {
       />
 
       <ListToolbar
-        search={search}
+        search={list.search}
         onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+          list.patch({ search: v, page: 1 });
         }}
         searchPlaceholder="Search PO number…"
       />
@@ -113,10 +135,15 @@ export default function PurchaseOrdersPage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="purchase-orders"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(po) => po.purchaseOrderId}
           loading={isLoading}
+          caption="Purchase order register"
           onRowClick={(po) => router.push(`/purchase-orders/${po.purchaseOrderId}`)}
           empty={
             <EmptyState
@@ -128,14 +155,13 @@ export default function PurchaseOrdersPage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="purchase orders"
           />

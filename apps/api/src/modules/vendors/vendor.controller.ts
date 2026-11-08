@@ -35,7 +35,12 @@ export class VendorController {
     const isActive =
       req.query.isActive === "true" ? true : req.query.isActive === "false" ? false : undefined;
     const result = await this.service.list(
-      { page, pageSize, sortDir: "asc" },
+      {
+        page,
+        pageSize,
+        sortBy: typeof req.query.sortBy === "string" ? req.query.sortBy : undefined,
+        sortDir: req.query.sortDir === "desc" ? "desc" : "asc",
+      },
       { search, isActive },
     );
     sendSuccess(res, toPublicJson(result.items), {

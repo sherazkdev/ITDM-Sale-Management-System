@@ -31,11 +31,13 @@ export class EmployeeController {
   list = asyncHandler(async (req: Request, res: Response) => {
     const page = Number(req.query.page ?? 1);
     const pageSize = Number(req.query.pageSize ?? 20);
+    const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy : undefined;
+    const sortDir = req.query.sortDir === "desc" ? "desc" : "asc";
     const search = typeof req.query.search === "string" ? req.query.search : undefined;
     const isActive =
       req.query.isActive === "true" ? true : req.query.isActive === "false" ? false : undefined;
     const result = await this.service.list(
-      { page, pageSize, sortDir: "asc" },
+      { page, pageSize, sortBy, sortDir },
       { search, isActive },
     );
     sendSuccess(res, toPublicJson(result.items), {

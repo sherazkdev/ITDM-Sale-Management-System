@@ -59,6 +59,7 @@ describe("Gap remediation — budget, search, documents, exports", () => {
       .post("/api/v1/budget-ledger/entries")
       .set(sessionRequestHeaders(cookie))
       .send({
+        correctionReason: "Gap remediation ledger append test",
         budgetId: alloc.body.data.budgetId,
         transactionType: "manual_spend_proposed",
         amount: 1500,

@@ -14,6 +14,9 @@ import { QuickTip } from "@/components/common/QuickTip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FilterSelect } from "@/components/common/FilterSelect";
+import { FormField } from "@/components/forms/FormField";
+import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import {
@@ -92,6 +95,8 @@ export default function DocumentsPage() {
   const [lookupInput, setLookupInput] = useState("");
   const [lookupId, setLookupId] = useState("");
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [uploadConfirmOpen, setUploadConfirmOpen] = useState(false);
+  const [pendingUpload, setPendingUpload] = useState<UploadDocumentInput | null>(null);
 
   const metadataQuery = useQuery({
     queryKey: ["document-metadata", lookupId],
@@ -113,6 +118,10 @@ export default function DocumentsPage() {
       contentBase64: "",
     },
   });
+
+  const uploadDirty = uploadForm.formState.isDirty;
+
+  useUnsavedChangesWarning(uploadDirty && Boolean(uploadForm.watch("contentBase64")));
 
   const uploadMutation = useMutation({
     mutationFn: uploadDocument,
@@ -173,50 +182,82 @@ export default function DocumentsPage() {
           <form
             className="space-y-4"
             onSubmit={uploadForm.handleSubmit((values) => {
-              setUploadProgress("Uploading…");
-              uploadMutation.mutate(values);
+              setPendingUpload(values);
+              setUploadConfirmOpen(true);
             })}
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Owner type</label>
+              <FormField label="Owner type" required>
                 <FilterSelect
                   value={uploadForm.watch("ownerType")}
                   onChange={(v) =>
-                    uploadForm.setValue("ownerType", v as UploadDocumentInput["ownerType"], { shouldValidate: true })
+                    uploadForm.setValue("ownerType", v as UploadDocumentInput["ownerType"], {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
                   }
                   options={DOCUMENT_OWNER_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, " ") }))}
                   placeholder="Owner type"
                   aria-label="Owner type"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground" htmlFor="owner-id">
-                  Owner id
-                </label>
-                <Input id="owner-id" {...uploadForm.register("ownerId")} placeholder="Numeric record id" />
-              </div>
+              </FormField>
+              <FormField
+                label="Owner id"
+                htmlFor="owner-id"
+                required
+                error={uploadForm.formState.errors.ownerId?.message}
+              >
+                <Input
+                  id="owner-id"
+                  placeholder="Numeric record id"
+                  error={!!uploadForm.formState.errors.ownerId}
+                  {...uploadForm.register("ownerId")}
+                />
+              </FormField>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground" htmlFor="doc-file">
-                File (max 10MB)
-              </label>
+            <FormField label="File" htmlFor="doc-file" required hint="PDF, images, or Office formats up to 10MB">
               <Input
                 id="doc-file"
                 type="file"
                 accept={ALLOWED_UPLOAD_MIME_TYPES.join(",")}
                 onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
               />
-              {uploadForm.watch("originalFileName") && (
-                <p className="mt-1 text-xs text-muted-foreground">Selected: {uploadForm.watch("originalFileName")}</p>
-              )}
-            </div>
-            {uploadProgress && <p className="text-sm text-muted-foreground">{uploadProgress}</p>}
-            <Button type="submit" disabled={uploadMutation.isPending || !uploadForm.watch("contentBase64")}>
+              {uploadForm.watch("originalFileName") ? (
+                <p className="text-xs text-muted-foreground">Selected: {uploadForm.watch("originalFileName")}</p>
+              ) : null}
+            </FormField>
+            {uploadProgress ? <p className="text-sm text-muted-foreground" role="status">{uploadProgress}</p> : null}
+            <Button
+              type="submit"
+              loading={uploadMutation.isPending}
+              disabled={!uploadForm.watch("contentBase64")}
+            >
               <Upload className="h-4 w-4 mr-2" />
-              Upload
+              Review upload
             </Button>
           </form>
+          <ConfirmDialog
+            open={uploadConfirmOpen}
+            onOpenChange={setUploadConfirmOpen}
+            title="Upload document"
+            description={
+              pendingUpload
+                ? `Upload “${pendingUpload.originalFileName}” linked to ${pendingUpload.ownerType.replace(/_/g, " ")} #${pendingUpload.ownerId}?`
+                : "Confirm upload."
+            }
+            confirmLabel="Upload"
+            loading={uploadMutation.isPending}
+            onConfirm={() => {
+              if (!pendingUpload) return;
+              setUploadProgress("Uploading…");
+              uploadMutation.mutate(pendingUpload, {
+                onSuccess: () => {
+                  setUploadConfirmOpen(false);
+                  setPendingUpload(null);
+                },
+              });
+            }}
+          />
         </SectionCard>
       )}
 

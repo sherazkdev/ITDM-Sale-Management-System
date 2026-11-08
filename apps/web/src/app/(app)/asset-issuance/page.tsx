@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FilterSelect } from "@/components/common/FilterSelect";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/common/EmptyState";
 import { WorkflowSection } from "@/components/premium/WorkflowSection";
@@ -136,6 +138,8 @@ export default function AssetIssuancePage() {
   const [returnAssetCache, setReturnAssetCache] = useState<Record<string, Asset>>({});
   const [returnAssetSearch, setReturnAssetSearch] = useState("");
   const debouncedReturnAssetSearch = useDebouncedValue(returnAssetSearch);
+  const [issueConfirmOpen, setIssueConfirmOpen] = useState(false);
+  const [pendingIssue, setPendingIssue] = useState<IssueFormValues | null>(null);
 
   const { data: employeePage, isLoading: employeesLoading } = useQuery({
     queryKey: ["employees", "select", "issuance", employeeSearch],
@@ -153,6 +157,7 @@ export default function AssetIssuancePage() {
       (employeePage?.data ?? []).map((e) => ({
         value: e.employeeId,
         label: `${e.fullName} (${e.employeeNumber})`,
+        hint: e.department ?? undefined,
       })),
     [employeePage?.data],
   );
@@ -160,6 +165,7 @@ export default function AssetIssuancePage() {
   const issueForm = useForm<IssueFormValues>({
     defaultValues: {
       employeeId: "",
+      receivingDepartment: "",
       referenceNumber: "",
       occurredAt: "",
       assets: [],
@@ -176,7 +182,16 @@ export default function AssetIssuancePage() {
   });
 
   const issueEmployeeId = issueForm.watch("employeeId");
+  const issueDepartment = issueForm.watch("receivingDepartment");
   const returnEmployeeId = returnForm.watch("employeeId");
+
+  useEffect(() => {
+    if (!issueEmployeeId) return;
+    const emp = employeePage?.data?.find((e) => e.employeeId === issueEmployeeId);
+    if (emp?.department && !issueForm.getValues("receivingDepartment")) {
+      issueForm.setValue("receivingDepartment", emp.department, { shouldDirty: true });
+    }
+  }, [issueEmployeeId, employeePage?.data, issueForm]);
 
   const { data: inStockPage, isLoading: inStockLoading } = useQuery({
     queryKey: ["assets", "IN_STOCK", "issuance", debouncedIssueAssetSearch],
@@ -239,12 +254,15 @@ export default function AssetIssuancePage() {
   const issueMutation = useMutation({
     mutationFn: issueAssets,
     onSuccess: (doc) => {
+      setIssueConfirmOpen(false);
+      setPendingIssue(null);
       movementSuccessToast(doc.documentId, "issue");
       invalidateAfterMovement();
       setIssueSelected(new Set());
       setIssueNotes({});
       issueForm.reset({
         employeeId: issueEmployeeId,
+        receivingDepartment: issueDepartment,
         referenceNumber: "",
         occurredAt: "",
         assets: [],
@@ -324,6 +342,7 @@ export default function AssetIssuancePage() {
     }));
     const parsed = issueAssetsSchema.safeParse({
       employeeId: issueEmployeeId,
+      receivingDepartment: issueForm.getValues("receivingDepartment"),
       referenceNumber: issueForm.getValues("referenceNumber"),
       occurredAt: issueForm.getValues("occurredAt"),
       assets,
@@ -332,7 +351,8 @@ export default function AssetIssuancePage() {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid form");
       return;
     }
-    issueMutation.mutate(parsed.data);
+    setPendingIssue(parsed.data);
+    setIssueConfirmOpen(true);
   });
 
   const submitReturn = returnForm.handleSubmit(() => {
@@ -396,24 +416,46 @@ export default function AssetIssuancePage() {
               <WorkflowSection
                 step="Step 1"
                 title="Issuance details"
-                description="Choose the employee and reference for this issue transaction."
+                description="Choose the receiving employee, department snapshot, and reference for this issue."
               >
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
-                    <Label htmlFor="issue-employee">Employee</Label>
+                    <Label htmlFor="issue-employee">Receiving employee</Label>
                     <Controller
                       control={issueForm.control}
                       name="employeeId"
                       render={({ field }) => (
-                        <FilterSelect
-                          aria-label="Employee"
+                        <SearchableSelect
+                          aria-label="Receiving employee"
                           value={field.value}
-                          onChange={field.onChange}
-                          placeholder={employeesLoading ? "Loading…" : "Select employee"}
+                          onChange={(v) => {
+                            field.onChange(v);
+                            const emp = employeePage?.data?.find((e) => e.employeeId === v);
+                            if (emp?.department) {
+                              issueForm.setValue("receivingDepartment", emp.department, {
+                                shouldDirty: true,
+                              });
+                            }
+                          }}
+                          placeholder={employeesLoading ? "Loading…" : "Search employees…"}
+                          searchPlaceholder="Search by name or number"
                           options={employeeOptions}
                         />
                       )}
                     />
+                  </div>
+                  <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
+                    <Label htmlFor="issue-dept" required>
+                      Receiving department
+                    </Label>
+                    <Input
+                      id="issue-dept"
+                      placeholder="e.g. IT"
+                      {...issueForm.register("receivingDepartment", { required: true })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recorded on the issuance document and does not update the employee master record.
+                    </p>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="issue-ref">Reference number</Label>
@@ -476,12 +518,32 @@ export default function AssetIssuancePage() {
                   <Button
                     type="submit"
                     loading={issueMutation.isPending}
-                    disabled={issueMutation.isPending || issueSelected.size === 0 || !issueEmployeeId}
+                    disabled={
+                      issueMutation.isPending ||
+                      issueSelected.size === 0 ||
+                      !issueEmployeeId ||
+                      !issueDepartment?.trim()
+                    }
                   >
-                    Issue selected
+                    Review issue
                   </Button>
                 </div>
               </WorkflowSection>
+              <ConfirmDialog
+                open={issueConfirmOpen}
+                onOpenChange={setIssueConfirmOpen}
+                title="Confirm asset issuance"
+                description={
+                  pendingIssue
+                    ? `Issue ${pendingIssue.assets.length} asset(s) to ${employeeOptions.find((o) => o.value === pendingIssue.employeeId)?.label ?? "employee"} · Department: ${pendingIssue.receivingDepartment}`
+                    : "Confirm issuance"
+                }
+                confirmLabel="Issue assets"
+                loading={issueMutation.isPending}
+                onConfirm={() => {
+                  if (pendingIssue) issueMutation.mutate(pendingIssue);
+                }}
+              />
             </form>
           </TabsContent>
         ) : null}

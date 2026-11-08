@@ -1,8 +1,8 @@
-/** Shown when budget figures still depend on unresolved client rules or FX at post. */
+/** Shown when utilized/remaining USD still missing post-time FX on non-USD invoices. */
 export const BUDGET_PROVISIONAL_NOTICE =
-  "Committed USD may be provisional for non-USD invoices until a manual rate is supplied at post. Reversals, cancellations, and non-USD allocation reporting remain subject to client confirmation.";
+  "Utilized and remaining USD require manual posting-time FX for non-USD invoices. Admin may correct draft invoices and allocation metadata; posted invoice reversals, payment changes, and credit notes await client policy.";
 
 export const BUDGET_LEDGER_SEMANTICS =
-  "Committed expenditure is recorded when an invoice is posted. Actual paid expenditure is the sum of payment amounts converted to USD using manual rates on each payment date.";
+  "Utilized USD is recorded when an invoice is posted. Actual USD is the sum of payments converted using manual rates on each payment date. Remaining USD equals allocated minus utilized; payments do not reduce remaining again.";
 
 export const FINANCIAL_REPORTING_CURRENCY = "USD";

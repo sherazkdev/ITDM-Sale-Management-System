@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class NonAssetStockRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -47,7 +48,11 @@ export class NonAssetStockRepository {
           category: true,
           purchaseOrder: { select: { purchaseOrderId: true, poNumber: true, poDate: true } },
         },
-        orderBy: { stockCode: "asc" },
+        orderBy: resolveListOrderBy(
+          ["stockCode", "itemName", "quantityOnHand", "quantityAvailable", "stockItemId"],
+          query,
+          { stockCode: "asc" },
+        ),
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),

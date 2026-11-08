@@ -17,6 +17,7 @@ import {
   type ReportFormat,
   type ReportSlug,
 } from "@/lib/api/reports";
+import { REPORT_EXPORT_LIMIT_NOTE } from "@/lib/domain/report-export-limits";
 import { fetchFinancialYears } from "@/lib/api/budgets";
 import { ApiClientError } from "@/lib/api/client";
 import {
@@ -81,6 +82,7 @@ export default function ReportsPage() {
       />
 
       <ExportDisclaimerNotice />
+      <p className="text-xs text-muted-foreground -mt-2">{REPORT_EXPORT_LIMIT_NOTE}</p>
 
       <SectionCard title="Budget report filter">
         <label className="text-xs font-medium text-muted-foreground block mb-2">Financial year (budget utilization only)</label>
@@ -99,7 +101,10 @@ export default function ReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {REPORT_DEFINITIONS.map((report) => (
           <SectionCard key={report.slug} title={report.title}>
-            <p className="text-sm text-muted-foreground mb-4">{report.description}</p>
+            <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Excel/CSV downloads use the same column set as JSON preview (register cap applies).
+            </p>
             {report.inventoryAlias && (
               <p className="text-xs text-muted-foreground mb-3">
                 Inventory-style reporting uses the asset register endpoint until a separate inventory report exists.
@@ -123,6 +128,7 @@ export default function ReportsPage() {
                   size="sm"
                   variant="secondary"
                   disabled={exportMutation.isPending}
+                  aria-busy={exportMutation.isPending}
                   onClick={() => exportMutation.mutate({ slug: report.slug, format })}
                 >
                   <Download className="h-4 w-4 mr-1" />

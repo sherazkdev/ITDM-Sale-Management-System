@@ -7,13 +7,24 @@ import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
 import type { NonAssetStockRepository } from "./non-asset-stock.repository.js";
 import type { PrismaClient } from "@prisma/client";
 import { enrichNonAssetStockItem } from "./non-asset-stock.presenter.js";
+import { NonAssetStockMovementsService } from "./non-asset-stock-movements.service.js";
+import { NonAssetStockMovementType } from "@prisma/client";
+import { toDecimal } from "./non-asset-stock-quantities.js";
 
 export class NonAssetStockService {
+  private readonly movements: NonAssetStockMovementsService;
+
   constructor(
     private readonly repository: NonAssetStockRepository,
     private readonly prisma: PrismaClient,
     private readonly audit: AuditService,
-  ) {}
+  ) {
+    this.movements = new NonAssetStockMovementsService(prisma, audit);
+  }
+
+  get movementsService() {
+    return this.movements;
+  }
 
   async register(
     input: {
@@ -43,20 +54,42 @@ export class NonAssetStockService {
       input.stockReceivedDate !== undefined
         ? new Date(`${input.stockReceivedDate}T00:00:00.000Z`)
         : new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const qty = toDecimal(input.quantityOnHand);
     try {
-      const item = await this.repository.create({
-        stockCode,
-        itemName: input.itemName.trim(),
-        itemType: input.itemType?.trim() || null,
-        category: { connect: { categoryId: input.categoryId } },
-        quantityOnHand: new Prisma.Decimal(input.quantityOnHand),
-        unitOfMeasure: input.unitOfMeasure,
-        stockReceivedDate: received,
-        purchaseOrder: input.purchaseOrderId
-          ? { connect: { purchaseOrderId: input.purchaseOrderId } }
-          : undefined,
-        currentLocation: input.currentLocation?.trim(),
-        notes: input.notes?.trim(),
+      const item = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.nonAssetStockItem.create({
+          data: {
+            stockCode,
+            itemName: input.itemName.trim(),
+            itemType: input.itemType?.trim() || null,
+            category: { connect: { categoryId: input.categoryId } },
+            quantityOnHand: qty,
+            quantityAvailable: qty,
+            unitOfMeasure: input.unitOfMeasure,
+            stockReceivedDate: received,
+            purchaseOrder: input.purchaseOrderId
+              ? { connect: { purchaseOrderId: input.purchaseOrderId } }
+              : undefined,
+            currentLocation: input.currentLocation?.trim(),
+            notes: input.notes?.trim(),
+          },
+          include: {
+            category: true,
+            purchaseOrder: { select: { purchaseOrderId: true, poNumber: true, poDate: true } },
+          },
+        });
+        await tx.nonAssetStockMovement.create({
+          data: {
+            stockItemId: created.stockItemId,
+            movementType: NonAssetStockMovementType.INITIAL_STOCK,
+            quantity: qty,
+            quantityBefore: new Prisma.Decimal(0),
+            quantityAfter: qty,
+            performedByUserId: auditContext.actorUserId,
+            referenceReason: "Initial registration",
+          },
+        });
+        return created;
       });
       await this.audit.record({
         actorUserId: auditContext.actorUserId,
@@ -67,7 +100,8 @@ export class NonAssetStockService {
         requestId: auditContext.requestId,
         metadata: { stockCode, unitOfMeasure: input.unitOfMeasure },
       });
-      return enrichNonAssetStockItem(item);
+      const totals = await this.movements.aggregateTotals(item.stockItemId);
+      return enrichNonAssetStockItem(item, totals);
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
@@ -86,7 +120,8 @@ export class NonAssetStockService {
     if (!item) {
       throw new AppError(ErrorCodes.NOT_FOUND, "Non-asset stock item not found", 404);
     }
-    return enrichNonAssetStockItem(item);
+    const totals = await this.movements.aggregateTotals(stockItemId);
+    return enrichNonAssetStockItem(item, totals);
   }
 
   async list(
@@ -95,7 +130,11 @@ export class NonAssetStockService {
   ) {
     const result = await this.repository.list(query, filters);
     return {
-      items: result.items.map((item) => enrichNonAssetStockItem(item)),
+      items: await Promise.all(
+        result.items.map(async (item) =>
+          enrichNonAssetStockItem(item, await this.movements.aggregateTotals(item.stockItemId)),
+        ),
+      ),
       total: result.total,
     };
   }
@@ -124,7 +163,8 @@ export class NonAssetStockService {
         result: "success",
         requestId: auditContext.requestId,
       });
-      return enrichNonAssetStockItem(item);
+      const totals = await this.movements.aggregateTotals(stockItemId);
+      return enrichNonAssetStockItem(item, totals);
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
         throw new AppError(ErrorCodes.NOT_FOUND, "Non-asset stock item not found", 404);

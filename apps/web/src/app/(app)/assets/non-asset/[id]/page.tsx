@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchNonAssetStockItem } from "@/lib/api/non-asset-stock";
 import { ApiClientError } from "@/lib/api/client";
+import { NonAssetStockOperations } from "@/components/inventory/NonAssetStockOperations";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { PermissionKeys } from "@/lib/permissions";
 
 export default function NonAssetStockDetailPage() {
   const params = useParams();
@@ -22,6 +25,8 @@ export default function NonAssetStockDetailPage() {
     queryFn: () => fetchNonAssetStockItem(id),
   });
 
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission(PermissionKeys.assetsManage);
   const item = itemQuery.data;
 
   return (
@@ -56,18 +61,11 @@ export default function NonAssetStockDetailPage() {
           aside={
             <SectionCard title="Quantities">
               <dl className="flex flex-col gap-3">
-                <DetailField
-                  label="On hand"
-                  value={`${item.quantityOnHand} ${item.unitOfMeasure}`}
-                />
-                <DetailField
-                  label="Available"
-                  value={`${item.quantityAvailable} ${item.unitOfMeasure}`}
-                />
+                <DetailField label="Received / registered" value={`${item.quantityOnHand} ${item.unitOfMeasure}`} />
+                <DetailField label="Available" value={`${item.quantityAvailable} ${item.unitOfMeasure}`} />
+                <DetailField label="Issued (outstanding)" value={`${item.quantityIssuedOutstanding ?? 0} ${item.unitOfMeasure}`} />
+                <DetailField label="Written off" value={`${item.quantityWrittenOff ?? 0} ${item.unitOfMeasure}`} />
               </dl>
-              {item.quantityAvailableNote ? (
-                <p className="mt-3 text-xs text-muted-foreground">{item.quantityAvailableNote}</p>
-              ) : null}
             </SectionCard>
           }
         >
@@ -97,6 +95,7 @@ export default function NonAssetStockDetailPage() {
               {item.notes ? <DetailField label="Notes" value={item.notes} /> : null}
             </dl>
           </SectionCard>
+          <NonAssetStockOperations item={item} canManage={canManage} />
         </DetailRecordLayout>
       ) : null}
     </div>

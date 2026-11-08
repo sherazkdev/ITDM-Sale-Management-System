@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class PurchaseOrderRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -38,7 +39,11 @@ export class PurchaseOrderRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { purchaseOrderId: "desc" },
+        orderBy: resolveListOrderBy(
+          ["poNumber", "poDate", "status", "totalAmount", "purchaseOrderId"],
+          query,
+          { purchaseOrderId: "desc" },
+        ),
         include: { vendor: true },
       }),
       this.prisma.purchaseOrder.count({ where }),

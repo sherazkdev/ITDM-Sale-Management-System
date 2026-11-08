@@ -18,6 +18,8 @@ export const PermissionKeys = {
   budgetsRead: "budgets.read",
   budgetsManage: "budgets.manage",
   usersManage: "users.manage",
+  /** Admin-only financial metadata corrections (Phase 4/5 — separate from user admin UI). */
+  financialCorrections: "financial.corrections",
   auditRead: "audit.read",
   searchRead: "search.read",
   maintenanceRead: "maintenance.read",

@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class ContractRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -36,7 +37,11 @@ export class ContractRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { expiryDate: "asc" },
+        orderBy: resolveListOrderBy(
+          ["contractNumber", "startDate", "expiryDate", "contractId"],
+          query,
+          { expiryDate: "asc" },
+        ),
         include: { vendor: true },
       }),
       this.prisma.contract.count({ where }),

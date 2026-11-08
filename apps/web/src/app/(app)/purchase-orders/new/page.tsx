@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FilterSelect } from "@/components/common/FilterSelect";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
   CreateFormActions,
   CreateFormLayout,
@@ -62,7 +63,7 @@ export default function NewPurchaseOrderPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreatePurchaseOrderInput>({
     resolver: zodResolver(createPurchaseOrderSchema),
     defaultValues: {
@@ -74,6 +75,8 @@ export default function NewPurchaseOrderPage() {
       validUntil: "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const preview = watch();
   const vendorId = preview.vendorId;
@@ -186,11 +189,12 @@ export default function NewPurchaseOrderPage() {
                   control={control}
                   name="vendorId"
                   render={({ field }) => (
-                    <FilterSelect
+                    <SearchableSelect
                       aria-label="Vendor"
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder={vendorsLoading ? "Loading…" : "Select vendor"}
+                      placeholder={vendorsLoading ? "Loading…" : "Search or select vendor"}
+                      searchPlaceholder="Search vendors…"
                       options={vendorOptions}
                     />
                   )}
@@ -206,12 +210,14 @@ export default function NewPurchaseOrderPage() {
                   control={control}
                   name="contractId"
                   render={({ field }) => (
-                    <FilterSelect
+                    <SearchableSelect
                       aria-label="Contract"
                       value={field.value ?? ""}
                       onChange={field.onChange}
-                      placeholder={vendorId ? "No contract" : "Select vendor first"}
-                      options={contractOptions}
+                      disabled={!vendorId}
+                      placeholder={vendorId ? "Search or select contract (optional)" : "Select vendor first"}
+                      searchPlaceholder="Search contracts…"
+                      options={[{ value: "", label: "No contract" }, ...contractOptions]}
                     />
                   )}
                 />

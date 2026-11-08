@@ -34,6 +34,7 @@ describe("UI06 budget validators", () => {
   it("requires budgetId on ledger", () => {
     expect(() =>
       appendLedgerEntrySchema.parse({
+        correctionReason: "x",
         budgetId: "",
         transactionType: "MANUAL",
         amount: 10,

@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FilterSelect } from "@/components/common/FilterSelect";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
   CreateFormActions,
   CreateFormLayout,
@@ -58,7 +59,7 @@ export default function NewContractPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateContractInput>({
     resolver: zodResolver(createContractSchema),
     defaultValues: {
@@ -70,6 +71,8 @@ export default function NewContractPage() {
       renewalStatus: "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const preview = watch();
   const vendorName =
@@ -174,11 +177,12 @@ export default function NewContractPage() {
                   control={control}
                   name="vendorId"
                   render={({ field }) => (
-                    <FilterSelect
+                    <SearchableSelect
                       aria-label="Vendor"
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder={vendorsLoading ? "Loading…" : "Select vendor"}
+                      placeholder={vendorsLoading ? "Loading…" : "Search or select vendor"}
+                      searchPlaceholder="Search vendors…"
                       options={vendorOptions}
                     />
                   )}

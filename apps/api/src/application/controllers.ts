@@ -121,7 +121,7 @@ export function createApplicationControllers(
   const invoiceService = new InvoiceService(prisma, audit);
   const invoiceController = new InvoiceController(invoiceService);
 
-  const budgetService = new BudgetService(prisma);
+  const budgetService = new BudgetService(prisma, audit);
   const budgetController = new BudgetController(budgetService);
 
   const searchService = new SearchService(prisma);

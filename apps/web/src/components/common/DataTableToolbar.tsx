@@ -20,9 +20,8 @@ export function DataTableToolbar({
   sortValue = "recent",
   onSortChange,
   sortOptions = [
-    { value: "recent", label: "Recently Added" },
-    { value: "name", label: "Name" },
-    { value: "score", label: "Score" },
+    { value: "recent", label: "Recently added" },
+    { value: "name", label: "Name (A–Z)" },
   ],
   view = "list",
   onViewChange,

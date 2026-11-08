@@ -4,6 +4,7 @@ import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import { asyncHandler } from "../../shared/http/async-handler.js";
 import { paginationMeta } from "../../shared/http/pagination.schema.js";
+import { parseListPagination } from "../../shared/http/parse-list-query.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
@@ -32,21 +33,17 @@ export class ContractController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 20);
+    const pagination = parseListPagination(req, { sortDir: "asc" });
     const vendorId =
       typeof req.query.vendorId === "string" && /^\d+$/.test(req.query.vendorId)
         ? BigInt(req.query.vendorId)
         : undefined;
     const expiringBefore =
       typeof req.query.before === "string" ? req.query.before : undefined;
-    const result = await this.service.list(
-      { page, pageSize, sortDir: "asc" },
-      { vendorId, expiringBefore },
-    );
+    const result = await this.service.list(pagination, { vendorId, expiringBefore });
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
-      ...paginationMeta(page, pageSize, result.total),
+      ...paginationMeta(pagination.page, pagination.pageSize, result.total),
     });
   });
 

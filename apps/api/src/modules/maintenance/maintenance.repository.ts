@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class MaintenanceRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -36,7 +37,11 @@ export class MaintenanceRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { maintenanceId: "desc" },
+        orderBy: resolveListOrderBy(
+          ["requestDate", "status", "maintenanceType", "maintenanceId"],
+          query,
+          { requestDate: "desc" },
+        ),
         include: { asset: true, vendor: true },
       }),
       this.prisma.maintenanceRecord.count({ where }),

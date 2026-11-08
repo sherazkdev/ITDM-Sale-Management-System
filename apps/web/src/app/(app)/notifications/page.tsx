@@ -126,7 +126,13 @@ export default function NotificationsPage() {
         )}
         {rows.length > 0 && (
           <>
-            <DataTable columns={columns} data={rows} getRowId={(r) => r.notificationEventId} />
+            <DataTable
+              tableId="notifications"
+              sortMode="off"
+              columns={columns}
+              data={rows}
+              getRowId={(r) => r.notificationEventId}
+            />
             <Pagination
               className="mt-4"
               page={page}

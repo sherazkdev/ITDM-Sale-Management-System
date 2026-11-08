@@ -9,7 +9,10 @@ import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
 import {
   createNonAssetStockItemSchema,
+  listNonAssetStockMovementsQuerySchema,
   listNonAssetStockQuerySchema,
+  nonAssetStockMovementBodySchema,
+  nonAssetStockQuantityBodySchema,
   updateNonAssetStockItemSchema,
 } from "./non-asset-stock.schema.js";
 import type { NonAssetStockService } from "./non-asset-stock.service.js";
@@ -50,7 +53,7 @@ export class NonAssetStockController {
   list = asyncHandler(async (req: Request, res: Response) => {
     const q = listNonAssetStockQuerySchema.parse(req.query);
     const result = await this.service.list(
-      { page: q.page, pageSize: q.pageSize, sortDir: "asc" },
+      { page: q.page, pageSize: q.pageSize, sortBy: q.sortBy, sortDir: q.sortDir ?? "asc" },
       {
         search: q.search,
         categoryId: q.categoryId ? BigInt(q.categoryId) : undefined,
@@ -80,5 +83,75 @@ export class NonAssetStockController {
       requestId: getRequestId(req),
     });
     sendSuccess(res, toPublicJson(item), { requestId: getRequestId(req) });
+  });
+
+  listMovements = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseId(String(req.params.id));
+    const q = listNonAssetStockMovementsQuerySchema.parse(req.query);
+    const result = await this.service.movementsService.listForStockItem(
+      id,
+      { page: q.page, pageSize: q.pageSize, sortDir: "desc" },
+      q.employeeId ? BigInt(q.employeeId) : undefined,
+    );
+    sendSuccess(res, toPublicJson(result.items), {
+      requestId: getRequestId(req),
+      ...paginationMeta(q.page, q.pageSize, result.total),
+    });
+  });
+
+  issue = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseId(String(req.params.id));
+    const body = nonAssetStockMovementBodySchema.parse(req.body);
+    const result = await this.service.movementsService.issue(
+      id,
+      {
+        quantity: body.quantity,
+        employeeId: body.employeeId ? BigInt(body.employeeId) : undefined,
+        department: body.department,
+        referenceReason: body.referenceReason,
+        idempotencyKey: body.idempotencyKey,
+      },
+      { actorUserId: req.principal?.userId, requestId: getRequestId(req) },
+    );
+    sendSuccess(res, toPublicJson(result), { requestId: getRequestId(req) }, 201);
+  });
+
+  returnStock = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseId(String(req.params.id));
+    const body = nonAssetStockMovementBodySchema.parse(req.body);
+    const result = await this.service.movementsService.returnStock(
+      id,
+      {
+        quantity: body.quantity,
+        employeeId: body.employeeId ? BigInt(body.employeeId) : undefined,
+        department: body.department,
+        referenceReason: body.referenceReason,
+        idempotencyKey: body.idempotencyKey,
+      },
+      { actorUserId: req.principal?.userId, requestId: getRequestId(req) },
+    );
+    sendSuccess(res, toPublicJson(result), { requestId: getRequestId(req) }, 201);
+  });
+
+  replenish = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseId(String(req.params.id));
+    const body = nonAssetStockQuantityBodySchema.parse(req.body);
+    const result = await this.service.movementsService.replenish(
+      id,
+      body,
+      { actorUserId: req.principal?.userId, requestId: getRequestId(req) },
+    );
+    sendSuccess(res, toPublicJson(result), { requestId: getRequestId(req) }, 201);
+  });
+
+  writeOff = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseId(String(req.params.id));
+    const body = nonAssetStockQuantityBodySchema.parse(req.body);
+    const result = await this.service.movementsService.writeOff(
+      id,
+      body,
+      { actorUserId: req.principal?.userId, requestId: getRequestId(req) },
+    );
+    sendSuccess(res, toPublicJson(result), { requestId: getRequestId(req) }, 201);
   });
 }

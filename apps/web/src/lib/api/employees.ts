@@ -18,6 +18,8 @@ export type EmployeeListParams = {
   pageSize?: number;
   search?: string;
   isActive?: boolean;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 function cleanOptional(body: Record<string, unknown>) {
@@ -36,6 +38,8 @@ export function fetchEmployees(params: EmployeeListParams) {
       pageSize: params.pageSize ?? 20,
       search: params.search,
       isActive: params.isActive === undefined ? undefined : params.isActive ? "true" : "false",
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }

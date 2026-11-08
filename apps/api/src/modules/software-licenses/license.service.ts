@@ -3,6 +3,7 @@ import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import type { AuditService } from "../../shared/audit/audit.service.js";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 import type { PrismaClient } from "@prisma/client";
 
 function parseDateOnly(value: string): Date {
@@ -133,7 +134,11 @@ export class LicenseService {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { expiryDate: "asc" },
+        orderBy: resolveListOrderBy(
+          ["softwareName", "expiryDate", "startDate", "licenseId"],
+          query,
+          { expiryDate: "asc" },
+        ),
       }),
       this.prisma.softwareLicense.count({ where }),
     ]);

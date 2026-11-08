@@ -1,12 +1,17 @@
 import { Router } from "express";
 import { validateBody } from "../../shared/http/validate.js";
-import { createAuthenticate, requirePermission } from "../../shared/middleware/auth.middleware.js";
+import {
+  createAuthenticate,
+  requireFinancialCorrections,
+  requirePermission,
+} from "../../shared/middleware/auth.middleware.js";
 import { PermissionKeys } from "../../shared/auth/permissions.js";
 import {
   appendLedgerEntrySchema,
   createBudgetAllocationSchema,
   createFinancialYearSchema,
 } from "./budget.schema.js";
+import { correctBudgetAllocationSchema } from "../financial-corrections/financial-correction.schema.js";
 import type { BudgetController } from "./budget.controller.js";
 import type { AuthService } from "../auth/auth.service.js";
 
@@ -46,9 +51,16 @@ export function createBudgetRouter(deps: {
   router.post(
     "/budget-ledger/entries",
     authenticate,
-    requirePermission(PermissionKeys.budgetsManage),
+    requireFinancialCorrections(),
     validateBody(appendLedgerEntrySchema),
     deps.budgetController.appendLedger,
+  );
+  router.patch(
+    "/budget-allocations/:budgetId/corrections",
+    authenticate,
+    requireFinancialCorrections(),
+    validateBody(correctBudgetAllocationSchema),
+    deps.budgetController.correctAllocation,
   );
   router.get(
     "/budgets/:budgetId/summary",

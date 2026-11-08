@@ -1,5 +1,6 @@
 import type { RequestHandler } from "express";
 import type { AuthService } from "../../modules/auth/auth.service.js";
+import { PermissionKeys } from "../auth/permissions.js";
 import { loadEnv } from "../config/env.js";
 import { AppError } from "../errors/app-error.js";
 import { ErrorCodes } from "../errors/error-codes.js";
@@ -40,4 +41,9 @@ export function requirePermission(permission: string): RequestHandler {
     }
     next();
   };
+}
+
+/** Financial corrections require dedicated permission (seeded on full admin role only — D01/D04 Phase 5). */
+export function requireFinancialCorrections(): RequestHandler {
+  return requirePermission(PermissionKeys.financialCorrections);
 }

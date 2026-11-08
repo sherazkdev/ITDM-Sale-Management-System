@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -47,7 +48,11 @@ export class EmployeeRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { employeeId: query.sortDir },
+        orderBy: resolveListOrderBy(
+          ["employeeNumber", "fullName", "department", "employeeId"],
+          query,
+          { employeeNumber: "asc" },
+        ),
       }),
       this.prisma.employee.count({ where }),
     ]);

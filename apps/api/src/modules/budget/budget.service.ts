@@ -2,34 +2,22 @@ import { Prisma } from "@prisma/client";
 import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import { BudgetTransactionType, REPORTING_CURRENCY } from "../../shared/domain/financial-rules.js";
+import { computeBudgetUsdMetrics } from "../../shared/domain/budget-metrics.js";
 import { toDecimal, sumDecimals } from "../../shared/money/decimal-math.js";
+import { runInTransaction } from "../../shared/db/transaction.js";
+import type { AuditService } from "../../shared/audit/audit.service.js";
+import { recordFinancialCorrectionAudit } from "../../shared/audit/financial-correction-audit.js";
 import type { PrismaClient } from "@prisma/client";
 
 function parseDateOnly(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
-function sumUsdReporting(
-  txs: { amountUsdReporting: Prisma.Decimal | null; transactionType: string }[],
-  type: string,
-): { total: Prisma.Decimal; hasProvisional: boolean } {
-  let hasProvisional = false;
-  const values: Prisma.Decimal[] = [];
-  for (const t of txs) {
-    if (t.transactionType !== type) {
-      continue;
-    }
-    if (t.amountUsdReporting === null) {
-      hasProvisional = true;
-      continue;
-    }
-    values.push(toDecimal(t.amountUsdReporting));
-  }
-  return { total: sumDecimals(values), hasProvisional };
-}
-
 export class BudgetService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly audit: AuditService,
+  ) {}
 
   async createFinancialYear(input: {
     yearName: string;
@@ -69,13 +57,21 @@ export class BudgetService {
     allocatedAmount: number;
     currency: string;
   }) {
+    const currency = input.currency.toUpperCase();
+    if (currency !== REPORTING_CURRENCY) {
+      throw new AppError(
+        ErrorCodes.VALIDATION_ERROR,
+        "Annual budget allocations must be recorded in USD",
+        422,
+      );
+    }
     try {
       return await this.prisma.budgetAllocation.create({
         data: {
           financialYear: { connect: { financialYearId: input.financialYearId } },
           budgetCategory: input.budgetCategory,
           allocatedAmount: toDecimal(input.allocatedAmount),
-          currency: input.currency.toUpperCase(),
+          currency,
         },
       });
     } catch (err) {
@@ -93,28 +89,146 @@ export class BudgetService {
     });
   }
 
-  /** Manual ledger append — does not auto-classify as committed/actual. */
-  async appendLedgerEntry(input: {
-    budgetId: bigint;
-    transactionType: string;
-    amount: number;
-    transactionDate: string;
-    purchaseOrderId?: bigint;
-    invoiceId?: bigint;
-    remarks?: string;
-  }) {
-    return this.prisma.budgetTransaction.create({
-      data: {
-        budget: { connect: { budgetId: input.budgetId } },
-        transactionType: input.transactionType || BudgetTransactionType.manual,
-        amount: toDecimal(input.amount),
-        transactionDate: parseDateOnly(input.transactionDate),
-        purchaseOrder: input.purchaseOrderId
-          ? { connect: { purchaseOrderId: input.purchaseOrderId } }
-          : undefined,
-        invoice: input.invoiceId ? { connect: { invoiceId: input.invoiceId } } : undefined,
-        remarks: input.remarks,
-      },
+  /** Admin-only manual ledger append — does not replace invoice post/payment ledger rows. */
+  async appendLedgerEntry(
+    input: {
+      correctionReason: string;
+      budgetId: bigint;
+      transactionType: string;
+      amount: number;
+      transactionDate: string;
+      purchaseOrderId?: bigint;
+      invoiceId?: bigint;
+      remarks?: string;
+    },
+    auditContext: { actorUserId?: bigint; requestId?: string },
+  ) {
+    const type = (input.transactionType || BudgetTransactionType.manual).toUpperCase();
+    if (
+      type === BudgetTransactionType.committedInvoice ||
+      type === BudgetTransactionType.actualPayment
+    ) {
+      throw new AppError(
+        ErrorCodes.POLICY_NOT_APPROVED,
+        "Committed and actual ledger rows must come from invoice post and payment workflows",
+        403,
+      );
+    }
+
+    const allocation = await this.prisma.budgetAllocation.findUnique({
+      where: { budgetId: input.budgetId },
+    });
+    if (!allocation) {
+      throw new AppError(ErrorCodes.NOT_FOUND, "Budget allocation not found", 404);
+    }
+
+    return runInTransaction(this.prisma, async (tx) => {
+      const row = await tx.budgetTransaction.create({
+        data: {
+          budget: { connect: { budgetId: input.budgetId } },
+          transactionType: type,
+          amount: toDecimal(input.amount),
+          transactionDate: parseDateOnly(input.transactionDate),
+          purchaseOrder: input.purchaseOrderId
+            ? { connect: { purchaseOrderId: input.purchaseOrderId } }
+            : undefined,
+          invoice: input.invoiceId ? { connect: { invoiceId: input.invoiceId } } : undefined,
+          remarks: input.remarks,
+        },
+      });
+      await recordFinancialCorrectionAudit(this.audit, {
+        actorUserId: auditContext.actorUserId,
+        requestId: auditContext.requestId,
+        result: "success",
+        payload: {
+          entityType: "budget_transaction",
+          recordId: String(row.budgetTransactionId),
+          correctionReason: input.correctionReason,
+          actionType: "manual_ledger_append",
+          before: {},
+          after: {
+            transactionType: row.transactionType,
+            amount: row.amount.toString(),
+            transactionDate: row.transactionDate.toISOString().slice(0, 10),
+            remarks: row.remarks ?? null,
+          },
+          changedFields: ["created"],
+          relatedIds: {
+            budgetId: String(input.budgetId),
+            purchaseOrderId: input.purchaseOrderId ? String(input.purchaseOrderId) : null,
+            invoiceId: input.invoiceId ? String(input.invoiceId) : null,
+          },
+        },
+      });
+      return row;
+    });
+  }
+
+  async correctAllocation(
+    budgetId: bigint,
+    input: {
+      correctionReason: string;
+      budgetCategory?: string;
+      allocatedAmount?: number;
+    },
+    auditContext: { actorUserId?: bigint; requestId?: string },
+  ) {
+    const allocation = await this.prisma.budgetAllocation.findUnique({
+      where: { budgetId },
+    });
+    if (!allocation) {
+      throw new AppError(ErrorCodes.NOT_FOUND, "Budget allocation not found", 404);
+    }
+
+    const before = {
+      budgetCategory: allocation.budgetCategory,
+      allocatedAmount: allocation.allocatedAmount.toString(),
+      currency: allocation.currency,
+    };
+
+    const data: { budgetCategory?: string; allocatedAmount?: ReturnType<typeof toDecimal> } = {};
+    const changedFields: string[] = [];
+    if (input.budgetCategory && input.budgetCategory.trim() !== allocation.budgetCategory) {
+      data.budgetCategory = input.budgetCategory.trim();
+      changedFields.push("budgetCategory");
+    }
+    if (input.allocatedAmount !== undefined) {
+      const next = toDecimal(input.allocatedAmount);
+      if (!next.equals(toDecimal(allocation.allocatedAmount))) {
+        data.allocatedAmount = next;
+        changedFields.push("allocatedAmount");
+      }
+    }
+    if (changedFields.length === 0) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, "No changes to apply", 422);
+    }
+
+    return runInTransaction(this.prisma, async (tx) => {
+      const updated = await tx.budgetAllocation.update({
+        where: { budgetId },
+        data,
+      });
+      const after = {
+        budgetCategory: updated.budgetCategory,
+        allocatedAmount: updated.allocatedAmount.toString(),
+        currency: updated.currency,
+      };
+      await recordFinancialCorrectionAudit(this.audit, {
+        actorUserId: auditContext.actorUserId,
+        requestId: auditContext.requestId,
+        result: "success",
+        payload: {
+          entityType: "budget_allocation",
+          recordId: String(budgetId),
+          correctionReason: input.correctionReason,
+          actionType: "allocation_correction",
+          before,
+          after,
+          changedFields,
+          relatedIds: { financialYearId: String(updated.financialYearId) },
+        },
+      });
+      return updated;
     });
   }
 
@@ -128,14 +242,11 @@ export class BudgetService {
     }
 
     const allocated = toDecimal(allocation.allocatedAmount);
-    const committed = sumUsdReporting(
-      allocation.budgetTransactions,
-      BudgetTransactionType.committedInvoice,
-    );
-    const actualPaid = sumUsdReporting(
-      allocation.budgetTransactions,
-      BudgetTransactionType.actualPayment,
-    );
+    const metrics = computeBudgetUsdMetrics({
+      allocatedAmount: allocated,
+      currency: allocation.currency,
+      transactions: allocation.budgetTransactions,
+    });
 
     const manualRows = allocation.budgetTransactions.filter(
       (t) =>
@@ -144,40 +255,25 @@ export class BudgetService {
     );
     const manualLedgerTotal = sumDecimals(manualRows.map((t) => t.amount));
 
-    const allocatedUsd =
-      allocation.currency === REPORTING_CURRENCY
-        ? allocated
-        : null;
-
-    const remainingUsd =
-      allocatedUsd !== null ? allocatedUsd.sub(actualPaid.total) : null;
-
-    const utilizationPercent =
-      allocatedUsd !== null && allocatedUsd.greaterThan(0)
-        ? actualPaid.total.div(allocatedUsd).mul(100).toDecimalPlaces(2)
-        : null;
-
     return {
       budgetId: allocation.budgetId,
       budgetCategory: allocation.budgetCategory,
       currency: allocation.currency,
       reportingCurrency: REPORTING_CURRENCY,
       allocatedAmount: allocated,
-      allocatedUsdReporting: allocatedUsd,
-      committedUsd: committed.total,
-      committedUsdProvisional: committed.hasProvisional,
-      actualPaidUsd: actualPaid.total,
-      remainingUsd,
-      utilizationPercent,
+      allocatedUsdReporting: metrics.allocatedUsd,
+      utilizedUsd: metrics.utilizedUsd,
+      committedUsd: metrics.committedUsd,
+      committedUsdProvisional: metrics.committedUsdProvisional,
+      actualPaidUsd: metrics.actualPaidUsd,
+      actualUsdProvisional: metrics.actualUsdProvisional,
+      remainingUsd: metrics.remainingUsd,
+      utilizationPercent: metrics.utilizationPercent,
       manualLedgerTotal,
       financialYear: allocation.financialYear,
       transactions: allocation.budgetTransactions,
-      semanticsNote:
-        "Committed = posted invoice totals (USD when rate provided). Actual paid = payment amounts in USD at manual payment-date rates. Unpaid posted invoices are not counted as actual paid.",
-      provisionalNote:
-        committed.hasProvisional || allocatedUsd === null
-          ? "Some committed USD or allocation USD figures require manual FX or USD allocation currency."
-          : null,
+      semanticsNote: metrics.semanticsNote,
+      provisionalNote: metrics.provisionalNote,
     };
   }
 

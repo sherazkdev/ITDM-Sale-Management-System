@@ -28,6 +28,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { createEmployee, type Employee } from "@/lib/api/employees";
 import { createEmployeeSchema, type CreateEmployeeInput } from "@/lib/validators/employee";
 import { ApiClientError } from "@/lib/api/client";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function NewEmployeePage() {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
@@ -50,6 +51,8 @@ export default function NewEmployeePage() {
       email: "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const preview = watch();
 

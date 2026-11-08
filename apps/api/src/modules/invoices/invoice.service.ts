@@ -11,7 +11,9 @@ import {
 } from "../../shared/money/fx-conversion.js";
 import { toDecimal, sumDecimals } from "../../shared/money/decimal-math.js";
 import type { AuditService } from "../../shared/audit/audit.service.js";
+import { recordFinancialCorrectionAudit } from "../../shared/audit/financial-correction-audit.js";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 import type { PrismaClient } from "@prisma/client";
 
 export const InvoicePaymentStatus = {
@@ -339,6 +341,123 @@ export class InvoiceService {
     });
   }
 
+  async correctDraftInvoice(
+    invoiceId: bigint,
+    input: {
+      correctionReason: string;
+      invoiceNumber?: string;
+      invoiceDate?: string;
+      invoiceAmount?: number;
+    },
+    auditContext: { actorUserId?: bigint; requestId?: string },
+  ) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { invoiceId },
+      include: { payments: true },
+    });
+    if (!invoice) {
+      throw new AppError(ErrorCodes.NOT_FOUND, "Invoice not found", 404);
+    }
+    if (invoice.postedAt) {
+      await recordFinancialCorrectionAudit(this.audit, {
+        actorUserId: auditContext.actorUserId,
+        requestId: auditContext.requestId,
+        result: "failure",
+        errorMessage: "Posted invoices cannot be corrected without client reversal policy",
+        payload: {
+          entityType: "invoice",
+          recordId: String(invoiceId),
+          correctionReason: input.correctionReason,
+          actionType: "draft_invoice_correction",
+          before: {},
+          after: {},
+          changedFields: [],
+        },
+      });
+      throw new AppError(
+        ErrorCodes.POLICY_NOT_APPROVED,
+        "Posted invoices cannot be corrected — reversal policy not approved",
+        403,
+      );
+    }
+    if (invoice.payments.length > 0) {
+      throw new AppError(
+        ErrorCodes.CONFLICT,
+        "Invoice has payments and cannot be corrected",
+        409,
+      );
+    }
+
+    const before = {
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate.toISOString().slice(0, 10),
+      invoiceAmount: invoice.invoiceAmount.toString(),
+    };
+
+    const data: {
+      invoiceNumber?: string;
+      invoiceDate?: Date;
+      invoiceAmount?: Prisma.Decimal;
+    } = {};
+    const changedFields: string[] = [];
+    if (input.invoiceNumber && input.invoiceNumber.trim() !== invoice.invoiceNumber) {
+      data.invoiceNumber = input.invoiceNumber.trim();
+      changedFields.push("invoiceNumber");
+    }
+    if (input.invoiceDate) {
+      const next = new Date(`${input.invoiceDate}T00:00:00.000Z`);
+      if (next.toISOString().slice(0, 10) !== before.invoiceDate) {
+        data.invoiceDate = next;
+        changedFields.push("invoiceDate");
+      }
+    }
+    if (input.invoiceAmount !== undefined) {
+      const next = toDecimal(input.invoiceAmount);
+      if (!next.equals(toDecimal(invoice.invoiceAmount))) {
+        data.invoiceAmount = next;
+        changedFields.push("invoiceAmount");
+      }
+    }
+    if (changedFields.length === 0) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, "No changes to apply", 422);
+    }
+
+    try {
+      return await runInTransaction(this.prisma, async (tx) => {
+        const updated = await tx.invoice.update({
+          where: { invoiceId },
+          data,
+        });
+        const after = {
+          invoiceNumber: updated.invoiceNumber,
+          invoiceDate: updated.invoiceDate.toISOString().slice(0, 10),
+          invoiceAmount: updated.invoiceAmount.toString(),
+        };
+        await recordFinancialCorrectionAudit(this.audit, {
+          actorUserId: auditContext.actorUserId,
+          requestId: auditContext.requestId,
+          result: "success",
+          payload: {
+            entityType: "invoice",
+            recordId: String(invoiceId),
+            correctionReason: input.correctionReason,
+            actionType: "draft_invoice_correction",
+            before,
+            after,
+            changedFields,
+            relatedIds: { purchaseOrderId: String(invoice.purchaseOrderId) },
+          },
+        });
+        return updated;
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        throw new AppError(ErrorCodes.CONFLICT, "Invoice number already exists", 409);
+      }
+      throw err;
+    }
+  }
+
   async list(
     query: PaginationQuery,
     filters: { search?: string; paymentStatus?: string } = {},
@@ -361,7 +480,11 @@ export class InvoiceService {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { invoiceId: "desc" },
+        orderBy: resolveListOrderBy(
+          ["invoiceNumber", "invoiceDate", "paymentStatus", "invoiceId"],
+          query,
+          { invoiceId: "desc" },
+        ),
         include: { purchaseOrder: true },
       }),
       this.prisma.invoice.count({ where }),

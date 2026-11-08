@@ -23,10 +23,34 @@ export const updateNonAssetStockItemSchema = z.object({
   notes: z.string().max(4000).optional(),
 });
 
+const positiveQty = z.coerce.number().positive("Quantity must be greater than zero");
+
+export const nonAssetStockMovementBodySchema = z.object({
+  quantity: positiveQty,
+  employeeId: z.string().regex(/^\d+$/).optional(),
+  department: z.string().min(1).max(128).optional(),
+  referenceReason: z.string().max(255).optional(),
+  idempotencyKey: z.string().min(1).max(128).optional(),
+});
+
+export const nonAssetStockQuantityBodySchema = z.object({
+  quantity: positiveQty,
+  referenceReason: z.string().max(255).optional(),
+  idempotencyKey: z.string().min(1).max(128).optional(),
+});
+
+export const listNonAssetStockMovementsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  employeeId: z.string().regex(/^\d+$/).optional(),
+});
+
 export const listNonAssetStockQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().max(128).optional(),
   categoryId: z.string().regex(/^\d+$/).optional(),
   unitOfMeasure: z.string().max(32).optional(),
+  sortBy: z.string().max(64).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional().default("asc"),
 });

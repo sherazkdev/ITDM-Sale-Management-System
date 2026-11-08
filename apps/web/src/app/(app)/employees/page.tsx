@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, UserCheck, Users } from "lucide-react";
 
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { fetchEmployees, type Employee } from "@/lib/api/employees";
-import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ListPageKpiBand } from "@/components/crud/ListPageKpiBand";
@@ -24,27 +24,49 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { useListMetaTotals } from "@/lib/hooks/use-list-meta";
 import { ApiClientError } from "@/lib/api/client";
 
+const EMPLOYEE_LIST_DEFAULTS = { page: 1, pageSize: 20, active: "all" };
+
 export default function EmployeesPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-  const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const list = useServerListTable({ defaults: EMPLOYEE_LIST_DEFAULTS, defaultSortBy: "employeeNumber" });
+  const activeFilter = list.extras.active ?? "all";
 
   const isActive =
     activeFilter === "active" ? true : activeFilter === "inactive" ? false : undefined;
 
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "employeeNumber",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["employees", page, pageSize, debouncedSearch, activeFilter],
+    queryKey: [
+      "employees",
+      list.page,
+      list.pageSize,
+      list.debouncedSearch,
+      activeFilter,
+      sortParams.sortBy,
+      sortParams.sortDir,
+    ],
     queryFn: () =>
-      fetchEmployees({ page, pageSize, search: debouncedSearch || undefined, isActive }),
+      fetchEmployees({
+        page: list.page,
+        pageSize: list.pageSize,
+        search: list.debouncedSearch || undefined,
+        isActive,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
+      }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const metaTotals = useListMetaTotals(["employees", "summary"], fetchEmployees, {
     includeInactive: true,
@@ -55,12 +77,14 @@ export default function EmployeesPage() {
       key: "employeeNumber",
       header: "Number",
       sortable: true,
+      serverSortKey: "employeeNumber",
       cell: (e) => <span className="font-medium tabular">{e.employeeNumber}</span>,
     },
     {
       key: "fullName",
       header: "Name",
       sortable: true,
+      serverSortKey: "fullName",
       cell: (e) => (
         <div className="min-w-0">
           <p className="font-medium truncate">{e.fullName}</p>
@@ -135,10 +159,9 @@ export default function EmployeesPage() {
       />
 
       <ListToolbar
-        search={search}
+        search={list.search}
         onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
+          list.patch({ search: v, page: 1 });
         }}
         searchPlaceholder="Search name or number…"
         filters={
@@ -146,8 +169,7 @@ export default function EmployeesPage() {
             aria-label="Status filter"
             value={activeFilter === "all" ? "" : activeFilter}
             onChange={(v) => {
-              setActiveFilter(v || "all");
-              setPage(1);
+              list.patch({ extras: { active: v || "all" }, page: 1 });
             }}
             placeholder="All statuses"
             options={[
@@ -169,10 +191,15 @@ export default function EmployeesPage() {
 
       <SectionCard flush className="shadow-soft">
         <DataTable
+          tableId="employees"
           data={rows}
           columns={columns}
           getRowId={(e) => e.employeeId}
           loading={isLoading}
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
+          caption="Employee directory"
           onRowClick={(e) => router.push(`/employees/${e.employeeId}`)}
           empty={
             <EmptyState
@@ -185,14 +212,13 @@ export default function EmployeesPage() {
         />
         <div className="border-t border-border px-4 py-3 md:px-6">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="employees"
           />

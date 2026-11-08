@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { PaginationQuery } from "../../shared/http/pagination.schema.js";
+import { resolveListOrderBy } from "../../shared/http/list-sort.js";
 
 export class VendorRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -70,7 +71,11 @@ export class VendorRepository {
         where,
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
-        orderBy: { vendorId: query.sortDir },
+        orderBy: resolveListOrderBy(
+          ["vendorName", "registrationNumber", "vendorId"],
+          query,
+          { vendorName: "asc" },
+        ),
       }),
       this.prisma.vendor.count({ where }),
     ]);

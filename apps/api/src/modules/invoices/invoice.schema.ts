@@ -15,6 +15,8 @@ export const listInvoicesQuerySchema = z.object({
     .enum(["UNPAID", "PARTIAL", "PAID", ""])
     .optional()
     .transform((v) => (v ? v : undefined)),
+  sortBy: z.string().max(64).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 export const createInvoiceSchema = z.object({

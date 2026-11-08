@@ -1,8 +1,13 @@
 import { Router } from "express";
 import { validateBody } from "../../shared/http/validate.js";
-import { createAuthenticate, requirePermission } from "../../shared/middleware/auth.middleware.js";
+import {
+  createAuthenticate,
+  requireFinancialCorrections,
+  requirePermission,
+} from "../../shared/middleware/auth.middleware.js";
 import { PermissionKeys } from "../../shared/auth/permissions.js";
 import { createInvoiceSchema, postInvoiceSchema, recordPaymentSchema } from "./invoice.schema.js";
+import { correctDraftInvoiceSchema } from "../financial-corrections/financial-correction.schema.js";
 import type { InvoiceController } from "./invoice.controller.js";
 import type { AuthService } from "../auth/auth.service.js";
 
@@ -39,6 +44,12 @@ export function createInvoiceRouter(deps: {
     requirePermission(PermissionKeys.invoicesManage),
     validateBody(recordPaymentSchema),
     deps.invoiceController.recordPayment,
+  );
+  router.patch(
+    "/:id/corrections",
+    requireFinancialCorrections(),
+    validateBody(correctDraftInvoiceSchema),
+    deps.invoiceController.correctDraft,
   );
   return router;
 }

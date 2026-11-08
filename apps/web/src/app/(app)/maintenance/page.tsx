@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Wrench } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchMaintenanceRecords, type MaintenanceRecord } from "@/lib/api/maintenance";
+import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
@@ -32,31 +33,51 @@ const STATUS_FILTER = [
 export default function MaintenancePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const assetFilter = searchParams.get("assetId") ?? "";
   const { hasPermission } = useAuth();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [status, setStatus] = useState("");
+  const list = useServerListTable({
+    defaults: {
+      page: 1,
+      pageSize: 20,
+      sortDir: "desc",
+      status: "",
+      assetId: searchParams.get("assetId") ?? "",
+    },
+    defaultSortBy: "requestDate",
+  });
+  const status = list.extras.status ?? "";
+  const assetId = list.extras.assetId ?? "";
+
+  const sortParams = useMemo(
+    () => ({
+      sortBy: list.sortBy || "requestDate",
+      sortDir: list.sortDir,
+    }),
+    [list.sortBy, list.sortDir],
+  );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["maintenance-records", page, pageSize, status, assetFilter],
+    queryKey: ["maintenance-records", list.page, list.pageSize, status, assetId, sortParams],
     queryFn: () =>
       fetchMaintenanceRecords({
-        page,
-        pageSize,
+        page: list.page,
+        pageSize: list.pageSize,
         status: status || undefined,
-        assetId: assetFilter || undefined,
+        assetId: assetId || undefined,
+        sortBy: sortParams.sortBy,
+        sortDir: sortParams.sortDir,
       }),
   });
 
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
   const columns: Column<MaintenanceRecord>[] = [
     {
       key: "type",
       header: "Type",
+      sortable: true,
+      serverSortKey: "maintenanceType",
       cell: (r) => r.maintenanceType,
     },
     {
@@ -67,6 +88,8 @@ export default function MaintenancePage() {
     {
       key: "status",
       header: "Status",
+      sortable: true,
+      serverSortKey: "status",
       cell: (r) => (
         <StatusPill
           status={maintenanceStatusToPill(r.status)}
@@ -79,6 +102,8 @@ export default function MaintenancePage() {
       key: "requestDate",
       header: "Requested",
       hideOnMobile: true,
+      sortable: true,
+      serverSortKey: "requestDate",
       cell: (r) => r.requestDate?.slice(0, 10),
     },
     {
@@ -109,7 +134,7 @@ export default function MaintenancePage() {
         <FilterSelect
           aria-label="Status filter"
           value={status}
-          onChange={setStatus}
+          onChange={(v) => list.patch({ extras: { status: v, assetId }, page: 1 })}
           options={STATUS_FILTER}
           placeholder="Status"
         />
@@ -126,10 +151,15 @@ export default function MaintenancePage() {
 
       <Card className="overflow-hidden">
         <DataTable
+          tableId="maintenance"
+          sortMode="server"
+          serverSort={sortParams}
+          onServerSortChange={list.onServerSortChange}
           data={rows}
           columns={columns}
           getRowId={(r) => r.maintenanceId}
           loading={isLoading}
+          caption="Maintenance records"
           onRowClick={(r) => router.push(`/maintenance/${r.maintenanceId}`)}
           empty={
             <EmptyState icon={Wrench} title="No maintenance records" description="Create a maintenance request." />
@@ -137,14 +167,13 @@ export default function MaintenancePage() {
         />
         <div className="border-t border-border p-4">
           <Pagination
-            page={page}
+            page={list.page}
             totalPages={totalPages}
             total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
+            pageSize={list.pageSize}
+            onPageChange={(p) => list.patch({ page: p })}
             onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
+              list.patch({ pageSize: s, page: 1 });
             }}
             itemLabel="records"
           />

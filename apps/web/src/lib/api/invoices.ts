@@ -1,6 +1,10 @@
-import { apiGet, apiGetPage, apiPost } from "./client";
+import { apiGet, apiGetPage, apiPatch, apiPost } from "./client";
 import { toQueryString } from "./query-string";
-import type { CreateInvoiceInput, RecordPaymentInput } from "@/lib/validators/invoice";
+import type {
+  CorrectDraftInvoiceInput,
+  CreateInvoiceInput,
+  RecordPaymentInput,
+} from "@/lib/validators/invoice";
 
 export type Invoice = {
   invoiceId: string;
@@ -54,6 +58,8 @@ export type InvoiceListParams = {
   pageSize?: number;
   search?: string;
   paymentStatus?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 export function fetchInvoices(params: InvoiceListParams) {
@@ -63,6 +69,8 @@ export function fetchInvoices(params: InvoiceListParams) {
       pageSize: params.pageSize ?? 20,
       search: params.search,
       paymentStatus: params.paymentStatus,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }
@@ -98,6 +106,16 @@ export function postInvoice(
       ? { commitmentExchangeRateToUsd: input.commitmentExchangeRateToUsd }
       : {}),
   });
+}
+
+export function correctDraftInvoice(invoiceId: string, input: CorrectDraftInvoiceInput) {
+  const body: Record<string, unknown> = {
+    correctionReason: input.correctionReason.trim(),
+  };
+  if (input.invoiceNumber?.trim()) body.invoiceNumber = input.invoiceNumber.trim();
+  if (input.invoiceDate?.trim()) body.invoiceDate = input.invoiceDate.trim();
+  if (input.invoiceAmount !== undefined) body.invoiceAmount = input.invoiceAmount;
+  return apiPatch<Invoice>(`/invoices/${invoiceId}/corrections`, body);
 }
 
 export function recordInvoicePayment(invoiceId: string, input: RecordPaymentInput, idempotencyKey: string) {

@@ -1,7 +1,8 @@
-import { apiGet, apiPost } from "./client";
+import { apiGet, apiPatch, apiPost } from "./client";
 import { toQueryString } from "./query-string";
 import type {
   AppendLedgerEntryInput,
+  CorrectBudgetAllocationInput,
   CreateBudgetAllocationInput,
   CreateFinancialYearInput,
 } from "@/lib/validators/budget";
@@ -40,9 +41,11 @@ export type BudgetSummary = {
   reportingCurrency: string;
   allocatedAmount: string;
   allocatedUsdReporting: string | null;
+  utilizedUsd: string;
   committedUsd: string;
   committedUsdProvisional: boolean;
   actualPaidUsd: string;
+  actualUsdProvisional?: boolean;
   remainingUsd: string | null;
   utilizationPercent: string | null;
   manualLedgerTotal: string;
@@ -101,6 +104,7 @@ export function createBudgetAllocation(input: CreateBudgetAllocationInput) {
 
 export function appendBudgetLedgerEntry(input: AppendLedgerEntryInput) {
   const body: Record<string, unknown> = {
+    correctionReason: input.correctionReason.trim(),
     budgetId: input.budgetId,
     transactionType: input.transactionType.trim(),
     amount: input.amount,
@@ -110,6 +114,15 @@ export function appendBudgetLedgerEntry(input: AppendLedgerEntryInput) {
   if (input.invoiceId?.trim()) body.invoiceId = input.invoiceId.trim();
   if (input.remarks?.trim()) body.remarks = input.remarks.trim();
   return apiPost<BudgetTransaction>("/budget-ledger/entries", body);
+}
+
+export function correctBudgetAllocation(budgetId: string, input: CorrectBudgetAllocationInput) {
+  const body: Record<string, unknown> = {
+    correctionReason: input.correctionReason.trim(),
+  };
+  if (input.budgetCategory?.trim()) body.budgetCategory = input.budgetCategory.trim();
+  if (input.allocatedAmount !== undefined) body.allocatedAmount = input.allocatedAmount;
+  return apiPatch<BudgetAllocation>(`/budget-allocations/${budgetId}/corrections`, body);
 }
 
 export function fetchBudgetSummary(budgetId: string) {

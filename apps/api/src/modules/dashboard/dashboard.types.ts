@@ -64,18 +64,18 @@ export type DashboardExpiryWatchlistSection = {
   items: DashboardExpiryWatchlistItem[];
 };
 
-/**
- * Provisional finance strip — allocation totals and ledger line counts only.
- * Does not expose remainingUsd as an approved client formula.
- */
+/** Org-wide USD budget roll-up (client-approved Phase 2 semantics when `provisional` is false). */
 export type DashboardBudgetOverviewSection = {
-  provisional: true;
+  provisional: boolean;
   usdAllocationCount: number;
   usdAllocatedTotal: string;
+  utilizedUsdTotal: string;
+  actualUsdTotal: string;
+  remainingUsdTotal: string | null;
   committedInvoiceLedgerLines: number;
   actualPaymentLedgerLines: number;
   semanticsNote: string;
-  provisionalNote: string;
+  provisionalNote: string | null;
 };
 
 export type DashboardRecentActivityItem = {

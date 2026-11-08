@@ -29,7 +29,7 @@ describe("Phase 02 reliability — readiness", () => {
     const employee = await request(app)
       .post("/api/v1/employees")
       .set(sessionRequestHeaders(cookie))
-      .send({ employeeNumber: `RET-${ts}`, fullName: "Return Test" })
+      .send({ employeeNumber: `RET-${ts}`, fullName: "Return Test", department: "IT" })
       .expect(201);
     const cat = await request(app)
       .post("/api/v1/asset-categories")

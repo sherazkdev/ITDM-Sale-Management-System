@@ -97,4 +97,11 @@ export class ReportController {
     await this.service.logExport(req.principal?.userId, "employees", getRequestId(req));
     sendReport(req, res, data, format);
   });
+
+  nonAssetStockLedger = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const data = await this.service.nonAssetStockLedger(format);
+    await this.service.logExport(req.principal?.userId, "non-asset-stock-ledger", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
 }

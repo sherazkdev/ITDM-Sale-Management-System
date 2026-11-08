@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { apiGetEnvelope, apiPostEnvelope } from "./helpers/api";
+import { pickSearchableSelect } from "./helpers/searchable-select";
 import { lifecycle } from "./lifecycle-state";
 
 test.describe.configure({ mode: "serial", timeout: 120_000 });
@@ -53,7 +54,7 @@ test.describe("Connected business workflows (UI + API)", () => {
 
     await page.goto(`/contracts/new?vendor=${encodeURIComponent(lifecycle.vendorName)}`);
     await page.getByLabel(/contract number/i).fill(`LC-C-${lifecycle.ts}`);
-    await page.getByLabel(/^vendor$/i).selectOption({ label: lifecycle.vendorName });
+    await pickSearchableSelect(page, "Vendor", lifecycle.vendorName, new RegExp(lifecycle.vendorName, "i"));
     await page.getByLabel(/start date/i).fill("2026-01-01");
     await page.getByLabel(/expiry date/i).fill("2027-12-31");
     await page.getByRole("button", { name: /create contract/i }).click();
@@ -63,7 +64,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     lifecycle.poNumber = `LC-PO-${lifecycle.ts}`;
     await page.goto(`/purchase-orders/new?vendor=${encodeURIComponent(lifecycle.vendorName)}`);
     await page.getByLabel(/po number/i).fill(lifecycle.poNumber);
-    await page.getByLabel(/^vendor$/i).selectOption({ label: lifecycle.vendorName });
+    await pickSearchableSelect(page, "Vendor", lifecycle.vendorName, new RegExp(lifecycle.vendorName, "i"));
     await page.getByLabel(/po date/i).fill("2026-02-01");
     await page.getByRole("button", { name: /create draft/i }).click();
     await expect(page).toHaveURL(/\/purchase-orders\/\d+$/, { timeout: 30_000 });
@@ -81,7 +82,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     await page.goto(`/invoices/new?po=${encodeURIComponent(lifecycle.poNumber)}`);
     await expect(page.locator("#invoiceNumber")).toBeVisible({ timeout: 15_000 });
     await page.locator("#invoiceNumber").fill(`LC-INV-${lifecycle.ts}`);
-    await page.getByLabel(/^purchase order$/i).selectOption({ index: 1 });
+    await pickSearchableSelect(page, "Purchase order", lifecycle.poNumber ?? "", new RegExp(lifecycle.poNumber ?? "", "i"));
     await page.getByLabel(/invoice date/i).fill("2026-02-15");
     await page.locator("#invoiceAmount").fill("250");
     await page.getByRole("button", { name: /create invoice/i }).click();
@@ -111,7 +112,8 @@ test.describe("Connected business workflows (UI + API)", () => {
 
     await page.goto(`/invoices/${lifecycle.invoiceId}`);
     await page.locator("#amount").fill("100");
-    await page.getByRole("button", { name: /record payment/i }).click();
+    await page.getByRole("button", { name: /review payment/i }).click();
+    await page.getByRole("button", { name: /^record payment$/i }).click();
     await expect(page.getByText(/payment recorded/i)).toBeVisible({ timeout: 20_000 });
   });
 
@@ -121,7 +123,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     await page.locator('input[type="date"]').first().fill("2026-04-01");
     await page.locator('input[type="date"]').nth(1).fill("2027-03-31");
     await page.getByRole("button", { name: /add year/i }).click();
-    await expect(page.getByRole("cell", { name: `LC-FY-${lifecycle.ts}` })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`LC-FY-${lifecycle.ts}`, { exact: true })).toBeVisible({ timeout: 15_000 });
   });
 
   test("employee create and edit", async ({ page }) => {
@@ -144,7 +146,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     await page.getByRole("button", { name: /add category/i }).click();
     await page.locator("#create-name").fill(catName);
     await page.getByRole("dialog", { name: /new category/i }).getByRole("button", { name: /^create$/i }).click();
-    await expect(page.getByRole("cell", { name: catName })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(catName, { exact: true })).toBeVisible({ timeout: 15_000 });
 
     lifecycle.assetCode = `LC-AST-${lifecycle.ts}`;
     await page.goto("/assets/new");
@@ -170,6 +172,7 @@ test.describe("Connected business workflows (UI + API)", () => {
 
     const issue = await apiPostEnvelope(page, "/asset-issuances", {
       employeeId,
+      receivingDepartment: "Lifecycle IT",
       referenceNumber: `LC-ISSUE-${lifecycle.ts}`,
       assets: [{ assetId }],
     });
@@ -193,9 +196,9 @@ test.describe("Connected business workflows (UI + API)", () => {
   });
 
   test("maintenance create and complete", async ({ page }) => {
-    test.skip(!lifecycle.assetId, "asset missing");
+    test.skip(!lifecycle.assetId || !lifecycle.assetCode, "asset missing");
     await page.goto("/maintenance/new");
-    await page.locator("#assetId").fill(lifecycle.assetId);
+    await pickSearchableSelect(page, "Asset", lifecycle.assetCode!, new RegExp(lifecycle.assetCode!));
     await page.locator("#maintenanceType").fill("Preventive");
     await page.locator("#requestDate").fill("2026-03-01");
     await page.getByRole("button", { name: /create request/i }).click();
@@ -210,10 +213,10 @@ test.describe("Connected business workflows (UI + API)", () => {
   });
 
   test("software license with expiry filter", async ({ page }) => {
-    test.skip(!lifecycle.poId, "PO missing");
+    test.skip(!lifecycle.poId || !lifecycle.poNumber, "PO missing");
     await page.goto("/software-licenses/new");
     await page.locator("#softwareName").fill(`LC-LIC-${lifecycle.ts}`);
-    await page.locator("#purchaseOrderId").fill(lifecycle.poId);
+    await pickSearchableSelect(page, "Purchase order", lifecycle.poNumber!, new RegExp(lifecycle.poNumber!));
     await page.locator("#startDate").fill("2026-01-01");
     await page.locator("#expiryDate").fill("2026-12-31");
     await page.locator("#licenseQuantity").fill("1");
@@ -222,14 +225,14 @@ test.describe("Connected business workflows (UI + API)", () => {
 
     await page.goto("/software-licenses");
     await page.locator("#before").fill("2027-01-01");
-    await expect(page.getByRole("cell", { name: `LC-LIC-${lifecycle.ts}` })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`LC-LIC-${lifecycle.ts}`, { exact: true })).toBeVisible({ timeout: 15_000 });
   });
 
   test("PO search hub", async ({ page }) => {
     test.skip(!lifecycle.poNumber, "PO number missing");
     await page.goto("/search");
     await page.locator("#po-search").fill(lifecycle.poNumber);
-    await page.getByRole("button", { name: /search/i }).click();
+    await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.getByText(lifecycle.poNumber)).toBeVisible({ timeout: 15_000 });
   });
 
@@ -244,6 +247,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     });
     await expect(page.getByText(/selected:/i)).toBeVisible({ timeout: 10_000 });
     await page.locator("#owner-id").fill(lifecycle.poId);
+    await page.getByRole("button", { name: /review upload/i }).click();
     await page.getByRole("button", { name: /^upload$/i }).click();
     await expect(page.getByText(/uploaded document|#/i)).toBeVisible({ timeout: 25_000 });
   });

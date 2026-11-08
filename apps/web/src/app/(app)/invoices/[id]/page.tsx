@@ -17,7 +17,10 @@ import {
   RecordOverviewCard,
 } from "@/components/crud/DetailRecordLayout";
 import { DataTable, type Column } from "@/components/common/DataTable";
-import { FilterSelect } from "@/components/common/FilterSelect";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { FormField } from "@/components/forms/FormField";
+import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import { StatusPill } from "@/components/common/StatusPill";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +30,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { fetchBudgetAllocations } from "@/lib/api/budgets";
 import {
+  correctDraftInvoice,
   fetchInvoice,
   fetchInvoiceBalance,
   fetchInvoicePayments,
@@ -36,8 +40,10 @@ import {
 } from "@/lib/api/invoices";
 import { FINANCIAL_REPORTING_CURRENCY } from "@/lib/domain/budget-ui";
 import {
+  correctDraftInvoiceSchema,
   postInvoiceSchema,
   recordPaymentSchema,
+  type CorrectDraftInvoiceInput,
   type PostInvoiceInput,
   type RecordPaymentInput,
 } from "@/lib/validators/invoice";
@@ -51,9 +57,14 @@ export default function InvoiceDetailPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useAuth();
   const canManage = hasPermission(PermissionKeys.invoicesManage);
+  const canAdminCorrect = hasPermission(PermissionKeys.financialCorrections);
   const idempotencyRef = useRef<string | null>(null);
   const [postBudgetId, setPostBudgetId] = useState("");
   const [commitmentRate, setCommitmentRate] = useState("");
+  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<RecordPaymentInput | null>(null);
+  const [correctionConfirmOpen, setCorrectionConfirmOpen] = useState(false);
+  const [pendingCorrection, setPendingCorrection] = useState<CorrectDraftInvoiceInput | null>(null);
 
   const invoiceQuery = useQuery({
     queryKey: ["invoices", id],
@@ -86,7 +97,7 @@ export default function InvoiceDetailPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<RecordPaymentInput>({
     resolver: zodResolver(recordPaymentSchema),
     defaultValues: { amount: undefined, paidAt: "", referenceNumber: "", notes: "", exchangeRateToUsd: undefined },
@@ -107,6 +118,19 @@ export default function InvoiceDetailPage() {
     },
     onError: (err) => {
       toast.error(err instanceof ApiClientError ? err.message : "Post failed");
+    },
+  });
+
+  const correctionMutation = useMutation({
+    mutationFn: (values: CorrectDraftInvoiceInput) => correctDraftInvoice(id, values),
+    onSuccess: () => {
+      setCorrectionConfirmOpen(false);
+      setPendingCorrection(null);
+      toast.success("Draft invoice corrected");
+      void queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof ApiClientError ? err.message : "Correction failed");
     },
   });
 
@@ -166,7 +190,14 @@ export default function InvoiceDetailPage() {
     outstanding > 0 &&
     !paymentMutation.isPending;
 
+  useUnsavedChangesWarning(Boolean(isDirty && canManage && isPosted && outstanding !== null && outstanding > 0));
+
   const needsCommitmentFx = currency !== FINANCIAL_REPORTING_CURRENCY;
+
+  const budgetOptions = (allocationsQuery.data ?? []).map((b) => ({
+    value: b.budgetId,
+    label: `${b.budgetCategory} · ${formatCurrency(Number(b.allocatedAmount), b.currency)}`,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -289,20 +320,16 @@ export default function InvoiceDetailPage() {
                     postMutation.mutate(parsed.data);
                   }}
                 >
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="postBudgetId">Budget allocation</Label>
-                    <FilterSelect
+                  <FormField label="Budget allocation" required className="md:col-span-2">
+                    <SearchableSelect
                       aria-label="Budget allocation"
                       value={postBudgetId}
                       onChange={setPostBudgetId}
-                      placeholder="Select budget"
-                      options={(allocationsQuery.data ?? []).map((b) => ({
-                        value: b.budgetId,
-                        label: `${b.budgetCategory} · ${formatCurrency(Number(b.allocatedAmount), b.currency)}`,
-                      }))}
+                      placeholder="Search budget allocations…"
+                      options={budgetOptions}
                       className="w-full max-w-md"
                     />
-                  </div>
+                  </FormField>
                   {needsCommitmentFx ? (
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="commitmentRate">
@@ -326,6 +353,87 @@ export default function InvoiceDetailPage() {
                     {postMutation.isPending ? "Posting…" : "Post invoice"}
                   </Button>
                 </form>
+              </SectionCard>
+            ) : null}
+
+            {canAdminCorrect && !isPosted ? (
+              <SectionCard
+                title="Admin financial correction"
+                description="Correct draft invoice metadata before posting. Posted invoices and payments require client-approved reversal policy."
+              >
+                <form
+                  className="grid w-full gap-4 md:grid-cols-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const parsed = correctDraftInvoiceSchema.safeParse({
+                      correctionReason: (form.elements.namedItem("correctionReason") as HTMLInputElement).value,
+                      invoiceNumber: (form.elements.namedItem("corrInvoiceNumber") as HTMLInputElement).value,
+                      invoiceDate: (form.elements.namedItem("corrInvoiceDate") as HTMLInputElement).value,
+                      invoiceAmount:
+                        (form.elements.namedItem("corrInvoiceAmount") as HTMLInputElement).value === ""
+                          ? undefined
+                          : Number((form.elements.namedItem("corrInvoiceAmount") as HTMLInputElement).value),
+                    });
+                    if (!parsed.success) {
+                      toast.error(parsed.error.errors[0]?.message ?? "Invalid correction");
+                      return;
+                    }
+                    setPendingCorrection(parsed.data);
+                    setCorrectionConfirmOpen(true);
+                  }}
+                >
+                  <FormField label="Correction reason" required className="md:col-span-2">
+                    <Input id="correctionReason" name="correctionReason" placeholder="Why is this correction required?" />
+                  </FormField>
+                  <FormField label="Invoice number">
+                    <Input
+                      id="corrInvoiceNumber"
+                      name="corrInvoiceNumber"
+                      defaultValue={invoice.invoiceNumber}
+                    />
+                  </FormField>
+                  <FormField label="Invoice date">
+                    <Input
+                      id="corrInvoiceDate"
+                      name="corrInvoiceDate"
+                      type="date"
+                      defaultValue={invoice.invoiceDate?.slice(0, 10)}
+                    />
+                  </FormField>
+                  <FormField label="Invoice amount">
+                    <Input
+                      id="corrInvoiceAmount"
+                      name="corrInvoiceAmount"
+                      type="number"
+                      step="0.01"
+                      defaultValue={invoice.invoiceAmount}
+                    />
+                  </FormField>
+                  <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                    <Button type="submit" variant="secondary" disabled={correctionMutation.isPending}>
+                      Review correction
+                    </Button>
+                    <Button variant="link" className="h-auto p-0" asChild>
+                      <Link href="/admin/audit">View audit log</Link>
+                    </Button>
+                  </div>
+                </form>
+                <ConfirmDialog
+                  open={correctionConfirmOpen}
+                  onOpenChange={setCorrectionConfirmOpen}
+                  title="Confirm financial correction"
+                  description={
+                    pendingCorrection
+                      ? `Apply draft invoice correction: ${pendingCorrection.correctionReason}`
+                      : "Confirm correction"
+                  }
+                  confirmLabel="Apply correction"
+                  loading={correctionMutation.isPending}
+                  onConfirm={() => {
+                    if (pendingCorrection) correctionMutation.mutate(pendingCorrection);
+                  }}
+                />
               </SectionCard>
             ) : null}
 
@@ -357,56 +465,77 @@ export default function InvoiceDetailPage() {
                 ) : outstanding !== null && outstanding <= 0 ? (
                   <p className="text-sm text-muted-foreground">This invoice is fully paid.</p>
                 ) : (
+                  <>
                   <form
                     className="grid w-full gap-4 md:grid-cols-2"
                     onSubmit={handleSubmit((values) => {
                       if (!canPay) return;
-                      paymentMutation.mutate(values);
+                      setPendingPayment(values);
+                      setPaymentConfirmOpen(true);
                     })}
                   >
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Amount ({currency})</Label>
-                      <Input id="amount" type="number" step="0.01" min="0" {...register("amount")} />
-                      {errors.amount ? (
-                        <p className="text-xs text-destructive">{errors.amount.message}</p>
-                      ) : null}
-                    </div>
+                    <FormField
+                      label={`Amount (${currency})`}
+                      htmlFor="amount"
+                      required
+                      error={errors.amount?.message}
+                    >
+                      <Input id="amount" type="number" step="0.01" min="0" error={!!errors.amount} {...register("amount")} />
+                    </FormField>
                     {currency !== FINANCIAL_REPORTING_CURRENCY ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="exchangeRateToUsd">
-                          Manual {currency} → {FINANCIAL_REPORTING_CURRENCY} rate (payment date)
-                        </Label>
+                      <FormField
+                        label={`Manual ${currency} → ${FINANCIAL_REPORTING_CURRENCY} rate (payment date)`}
+                        htmlFor="exchangeRateToUsd"
+                        error={errors.exchangeRateToUsd?.message}
+                      >
                         <Input
                           id="exchangeRateToUsd"
                           type="number"
                           step="0.000001"
                           min="0"
+                          error={!!errors.exchangeRateToUsd}
                           {...register("exchangeRateToUsd", { valueAsNumber: true })}
                         />
-                        {errors.exchangeRateToUsd ? (
-                          <p className="text-xs text-destructive">{errors.exchangeRateToUsd.message}</p>
-                        ) : null}
-                      </div>
+                      </FormField>
                     ) : null}
-                    <div className="space-y-2">
-                      <Label htmlFor="paidAt">Paid at (optional)</Label>
+                    <FormField label="Paid at (optional)" htmlFor="paidAt">
                       <Input id="paidAt" type="datetime-local" {...register("paidAt")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="referenceNumber">Reference</Label>
+                    </FormField>
+                    <FormField label="Reference" htmlFor="referenceNumber">
                       <Input id="referenceNumber" {...register("referenceNumber")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
+                    </FormField>
+                    <FormField label="Notes" htmlFor="notes" className="md:col-span-2">
                       <Input id="notes" {...register("notes")} />
-                    </div>
+                    </FormField>
                     <Button type="submit" size="md" disabled={!canPay} className="md:col-span-2 w-fit">
-                      {paymentMutation.isPending ? "Recording…" : "Record payment"}
+                      Review payment
                     </Button>
                     <p className="text-xs text-muted-foreground md:col-span-2">
                       Only amounts paid on the invoice are recognized as actual expenditure. Overpayments are rejected.
                     </p>
                   </form>
+                  <ConfirmDialog
+                    open={paymentConfirmOpen}
+                    onOpenChange={setPaymentConfirmOpen}
+                    title="Record payment"
+                    description={
+                      pendingPayment
+                        ? `Record ${formatCurrency(Number(pendingPayment.amount), currency)} against this invoice?`
+                        : "Confirm payment details."
+                    }
+                    confirmLabel="Record payment"
+                    loading={paymentMutation.isPending}
+                    onConfirm={() => {
+                      if (!pendingPayment) return;
+                      paymentMutation.mutate(pendingPayment, {
+                        onSuccess: () => {
+                          setPaymentConfirmOpen(false);
+                          setPendingPayment(null);
+                        },
+                      });
+                    }}
+                  />
+                  </>
                 )}
               </SectionCard>
             ) : null}

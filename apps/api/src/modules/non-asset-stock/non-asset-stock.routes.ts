@@ -4,6 +4,8 @@ import { createAuthenticate, requirePermission } from "../../shared/middleware/a
 import { PermissionKeys } from "../../shared/auth/permissions.js";
 import {
   createNonAssetStockItemSchema,
+  nonAssetStockMovementBodySchema,
+  nonAssetStockQuantityBodySchema,
   updateNonAssetStockItemSchema,
 } from "./non-asset-stock.schema.js";
 import type { NonAssetStockController } from "./non-asset-stock.controller.js";
@@ -36,6 +38,40 @@ export function createNonAssetStockRouter(deps: {
     requirePermission(PermissionKeys.assetsManage),
     validateBody(updateNonAssetStockItemSchema),
     deps.nonAssetStockController.update,
+  );
+  router.get(
+    "/:id/movements",
+    authenticate,
+    requirePermission(PermissionKeys.assetsRead),
+    deps.nonAssetStockController.listMovements,
+  );
+  router.post(
+    "/:id/movements/issue",
+    authenticate,
+    requirePermission(PermissionKeys.assetsManage),
+    validateBody(nonAssetStockMovementBodySchema),
+    deps.nonAssetStockController.issue,
+  );
+  router.post(
+    "/:id/movements/return",
+    authenticate,
+    requirePermission(PermissionKeys.assetsManage),
+    validateBody(nonAssetStockMovementBodySchema),
+    deps.nonAssetStockController.returnStock,
+  );
+  router.post(
+    "/:id/movements/replenish",
+    authenticate,
+    requirePermission(PermissionKeys.assetsManage),
+    validateBody(nonAssetStockQuantityBodySchema),
+    deps.nonAssetStockController.replenish,
+  );
+  router.post(
+    "/:id/movements/write-off",
+    authenticate,
+    requirePermission(PermissionKeys.assetsManage),
+    validateBody(nonAssetStockQuantityBodySchema),
+    deps.nonAssetStockController.writeOff,
   );
   return router;
 }

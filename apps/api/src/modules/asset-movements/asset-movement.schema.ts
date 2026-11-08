@@ -7,6 +7,7 @@ const movementLineSchema = z.object({
 
 export const issueAssetsSchema = z.object({
   employeeId: z.coerce.bigint(),
+  receivingDepartment: z.string().max(128).optional(),
   referenceNumber: z.string().max(64).optional(),
   occurredAt: z.string().datetime().optional(),
   assets: z.array(movementLineSchema).min(1),

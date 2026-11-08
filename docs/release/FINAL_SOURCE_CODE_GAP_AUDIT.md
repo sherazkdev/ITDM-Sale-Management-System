@@ -18,7 +18,7 @@
 | GAP-SEARCH-04 | PO search omitted linked `nonAssetStockItems` | API includes enriched non-asset rows; UI tab displays name, UoM, registered/available qty, linked PO |
 | GAP-REPORT-01 | Reports catalog claimed “PO header and line summary” while export is header-only | Description corrected; line-level export **not** implemented (R15 matrix: report lines N/A) |
 
-**Non-asset quantities:** `quantityOnHand` (registered) and `quantityAvailable` (equals on hand via existing `enrichNonAssetStockItem` presenter). D09 consumption **not** implemented.
+**Non-asset quantities (D09):** `quantityOnHand` (received total) and `quantityAvailable` (movement-backed). Issue/return/replenish/write-off via `non_asset_stock_movements` — see `NON_ASSET_INVENTORY_IMPLEMENTATION_REPORT.md`.
 
 ---
 
@@ -117,6 +117,74 @@
 | Non-production | Default **20000** (override via env) | Local Playwright only |
 
 RBAC/CSRF/auth unchanged.
+
+### 4.5 D09 non-asset inventory — final verification (2026-11-08)
+
+| Item | Evidence |
+|------|----------|
+| E2E DB only | `prepare-e2e-database.ps1` → `itdms_e2e`; migration `20261108120000_d09_non_asset_movements` applied this session |
+| API Vitest | **76/76 PASS** on `itdms_test` (movement **4/4**, concurrency **2/2**, stock **3/3**) |
+| Web Vitest | **50/50 PASS** |
+| D09 Playwright | `e2e/d09-inventory-workflow.spec.ts` **11/11** @ API **:3020** / web **:3021** |
+| Full Playwright (local) | **296 passed / 2 failed / 216 skipped** — `rehearsal/playwright-e2e-d09-closure.log`; failures: vendor `selectOption` harness (Phase D searchable vendor), **not D09** |
+| Screenshots | `docs/release/audit-screenshots/d09/*.png` |
+| Dept module | **Not implemented** — employee `department` is free text; D09 movements accept employee and/or department string |
+
+**D09 demo on client PC:** **READY** when stack uses `itdms_e2e` + ports 3020/3021 (see implementation report). **Business Phase 2** may proceed for approved non-D09 work; production release gates unchanged.
+
+### 4.9 Business Phase 5 closure (2026-11-08)
+
+| Item | Evidence |
+|------|----------|
+| Requirements reconciliation | `FINAL_CLIENT_REQUIREMENTS_CLOSURE_REPORT.md` |
+| Correction auth | `financial.corrections` permission; delegate `users.manage` → **403** |
+| API Vitest | **91/91** on `itdms_test` |
+| Production-ready | **NO** (UAT, D12, D01, reversals, native Windows) |
+
+### 4.10 Prompt 2 — full regression (2026-11-08 PM)
+
+| Check | Result | Log |
+|-------|--------|-----|
+| API Vitest | **91/91** | `docs/release/rehearsal/phase2-api-vitest.log` |
+| Web Vitest | **50/50** | `docs/release/rehearsal/phase2-web-vitest.log` |
+| Playwright (local, excl. staging) | **315 passed / 0 failed / 216 skipped** | `docs/release/rehearsal/playwright-full-regression.log` |
+| E2E stack | API **:3020** / Web **:3021** → `itdms_e2e` | `prepare-e2e-database.ps1` |
+| Application defects fixed this prompt | **0** | — |
+| Report | `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` | — |
+
+### 4.8 Business Phase 4 financial corrections (2026-11-08)
+
+| Item | Evidence |
+|------|----------|
+| Admin gate | `financial.corrections` (+ `requireFinancialCorrections`) on correction + admin ledger routes |
+| API Vitest | **90/90** (`financial-corrections-phase4` **5/5**) |
+| Web Vitest | **50/50** |
+| Audit | `financial.correction` with before/after metadata |
+| Report | `docs/release/BUSINESS_PHASE4_FINANCIAL_CORRECTIONS_REPORT.md` |
+
+Posted invoice / payment reversal: **BLOCKED — client policy** (no invented accounting).
+
+### 4.7 Business Phase 3 asset custody D10 (2026-11-08)
+
+| Item | Evidence |
+|------|----------|
+| Migration | `20261108180000_d10_asset_custody_department` on `itdms_test` / `itdms_e2e` |
+| API Vitest | **85/85** (`asset-custody-d10` **4/4**) |
+| Web Vitest | **50/50** |
+| Playwright | `asset-custody-d10` **3/3**; `lifecycle-connected` **13/13** (document upload fixed); `wave3-finance` **6/6**; D09 **11/11** (same session, isolated stack) |
+| Screenshots | `docs/release/audit-screenshots/d10/` |
+| Report | `docs/release/BUSINESS_PHASE3_ASSET_CUSTODY_REPORT.md` |
+
+**Note:** Full Playwright inventory not re-executed in the Phase 3 closure pass; targeted regression above + prior isolated full-suite baseline.
+
+### 4.6 Business Phase 2 finance (2026-11-08)
+
+| Item | Evidence |
+|------|----------|
+| Remaining formula | `allocatedUsd − utilizedUsd` via `budget-metrics.ts` |
+| API Vitest | **81/81** (`budget-phase2-acceptance` 5/5) |
+| Playwright | `wave3-finance-verification` **6/6**; lifecycle vendor/PO/invoice/payment fixes |
+| Report | `docs/release/BUSINESS_PHASE2_FINANCE_CLOSURE_REPORT.md` |
 
 ### 4.5 Files added/changed (E2E safety closure)
 

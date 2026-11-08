@@ -113,7 +113,7 @@ describe("Finance integrity and concurrent issuance", () => {
     const employee = await request(app)
       .post("/api/v1/employees")
       .set(sessionRequestHeaders(cookie))
-      .send({ employeeNumber: `RB-${ts}`, fullName: "Rollback" })
+      .send({ employeeNumber: `RB-${ts}`, fullName: "Rollback", department: "Stores" })
       .expect(201);
     const employeeId = employee.body.data.employeeId as string;
 
@@ -172,7 +172,7 @@ describe("Finance integrity and concurrent issuance", () => {
     const employee = await request(app)
       .post("/api/v1/employees")
       .set(sessionRequestHeaders(cookie))
-      .send({ employeeNumber: `CC-${ts}`, fullName: "Concurrent" })
+      .send({ employeeNumber: `CC-${ts}`, fullName: "Concurrent", department: "Warehouse" })
       .expect(201);
     const employeeId = employee.body.data.employeeId as string;
 

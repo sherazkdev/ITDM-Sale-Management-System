@@ -17,6 +17,7 @@ export const createBudgetAllocationSchema = z.object({
 });
 
 export const appendLedgerEntrySchema = z.object({
+  correctionReason: z.string().trim().min(3, "Correction reason is required").max(2000),
   budgetId: z.string().min(1, "Budget allocation is required"),
   transactionType: z.string().min(1, "Transaction type is required").max(64),
   amount: z.coerce.number().positive("Amount must be positive"),
@@ -29,3 +30,15 @@ export const appendLedgerEntrySchema = z.object({
 export type CreateFinancialYearInput = z.infer<typeof createFinancialYearSchema>;
 export type CreateBudgetAllocationInput = z.infer<typeof createBudgetAllocationSchema>;
 export type AppendLedgerEntryInput = z.infer<typeof appendLedgerEntrySchema>;
+
+export const correctBudgetAllocationSchema = z
+  .object({
+    correctionReason: z.string().trim().min(3, "Correction reason is required").max(2000),
+    budgetCategory: z.string().min(1).max(128).optional().or(z.literal("")),
+    allocatedAmount: z.coerce.number().positive().optional(),
+  })
+  .refine((v) => (v.budgetCategory?.trim() ? true : v.allocatedAmount !== undefined), {
+    message: "Provide category and/or allocated amount",
+  });
+
+export type CorrectBudgetAllocationInput = z.infer<typeof correctBudgetAllocationSchema>;

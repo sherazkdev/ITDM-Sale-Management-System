@@ -66,13 +66,16 @@ export type DashboardExpiryWatchlistSection = {
 };
 
 export type DashboardBudgetOverviewSection = {
-  provisional: true;
+  provisional: boolean;
   usdAllocationCount: number;
   usdAllocatedTotal: string;
+  utilizedUsdTotal: string;
+  actualUsdTotal: string;
+  remainingUsdTotal: string | null;
   committedInvoiceLedgerLines: number;
   actualPaymentLedgerLines: number;
   semanticsNote: string;
-  provisionalNote: string;
+  provisionalNote: string | null;
 };
 
 export type DashboardRecentActivityItem = {

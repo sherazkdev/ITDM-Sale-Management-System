@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FilterSelect } from "@/components/common/FilterSelect";
+import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
   CreateFormActions,
   CreateFormLayout,
@@ -57,7 +58,7 @@ export default function NewInvoicePage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateInvoiceInput>({
     resolver: zodResolver(createInvoiceSchema),
     defaultValues: {
@@ -67,6 +68,8 @@ export default function NewInvoicePage() {
       invoiceAmount: "" as unknown as CreateInvoiceInput["invoiceAmount"],
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const preview = watch();
   const poLabel =
@@ -166,12 +169,12 @@ export default function NewInvoicePage() {
                   control={control}
                   name="purchaseOrderId"
                   render={({ field }) => (
-                    <FilterSelect
+                    <SearchableSelect
                       aria-label="Purchase order"
                       value={field.value}
                       onChange={field.onChange}
-                      options={poOptions}
-                      placeholder={posLoading ? "Loading POs…" : "Select PO"}
+                      options={poOptions.map((o) => ({ value: o.value, label: o.label }))}
+                      placeholder={posLoading ? "Loading POs…" : "Search or select PO"}
                     />
                   )}
                 />

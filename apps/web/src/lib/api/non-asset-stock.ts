@@ -1,4 +1,5 @@
 import { apiGet, apiGetPage, apiPatch, apiPost } from "./client";
+import { toQueryString } from "./query-string";
 
 export type NonAssetStockItem = {
   stockItemId: string;
@@ -6,9 +7,15 @@ export type NonAssetStockItem = {
   itemName: string;
   itemType: string | null;
   categoryId: string;
-  quantityOnHand: string;
-  quantityAvailable: string;
-  quantityAvailableNote?: string;
+  quantityOnHand: number | string;
+  quantityAvailable: number | string;
+  quantityTotalReceived?: number;
+  quantityIssued?: number;
+  quantityReturned?: number;
+  quantityReplenished?: number;
+  quantityWrittenOff?: number;
+  quantityIssuedOutstanding?: number;
+  quantityAvailableNote?: string | null;
   unitOfMeasure: string;
   stockReceivedDate: string;
   purchaseOrderId: string | null;
@@ -24,15 +31,20 @@ export async function fetchNonAssetStockItems(params?: {
   search?: string;
   categoryId?: string;
   unitOfMeasure?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }) {
-  const qs = new URLSearchParams();
-  if (params?.page) qs.set("page", String(params.page));
-  if (params?.pageSize) qs.set("pageSize", String(params.pageSize));
-  if (params?.search) qs.set("search", params.search);
-  if (params?.categoryId) qs.set("categoryId", params.categoryId);
-  if (params?.unitOfMeasure) qs.set("unitOfMeasure", params.unitOfMeasure);
-  const q = qs.toString();
-  return apiGetPage<NonAssetStockItem>(`/non-asset-stock-items${q ? `?${q}` : ""}`);
+  return apiGetPage<NonAssetStockItem>(
+    `/non-asset-stock-items${toQueryString({
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+      search: params?.search,
+      categoryId: params?.categoryId,
+      unitOfMeasure: params?.unitOfMeasure,
+      sortBy: params?.sortBy,
+      sortDir: params?.sortDir,
+    })}`,
+  );
 }
 
 export async function fetchNonAssetStockItem(id: string) {
@@ -72,3 +84,46 @@ export async function updateNonAssetStockItem(
 ) {
   return apiPatch<NonAssetStockItem>(`/non-asset-stock-items/${id}`, input);
 }
+
+export type NonAssetStockMovement = {
+  movementId: string;
+  stockItemId: string;
+  movementType: string;
+  quantity: number;
+  quantityBefore: number | null;
+  quantityAfter: number | null;
+  employeeId: string | null;
+  department: string | null;
+  referenceReason: string | null;
+  idempotencyKey: string | null;
+  createdAt: string;
+  employee?: { employeeId: string; employeeNumber: string; fullName: string; department: string | null };
+};
+
+type MovementPayload = {
+  quantity: number;
+  employeeId?: string;
+  department?: string;
+  referenceReason?: string;
+  idempotencyKey?: string;
+};
+
+export async function fetchNonAssetStockMovements(stockItemId: string, page = 1, pageSize = 50) {
+  return apiGetPage<NonAssetStockMovement>(
+    `/non-asset-stock-items/${stockItemId}/movements${toQueryString({ page, pageSize })}`,
+  );
+}
+
+async function postMovement(stockItemId: string, path: string, body: MovementPayload) {
+  return apiPost<{ movement: NonAssetStockMovement; item: NonAssetStockItem }>(
+    `/non-asset-stock-items/${stockItemId}/movements/${path}`,
+    body,
+  );
+}
+
+export const issueNonAssetStock = (id: string, body: MovementPayload) => postMovement(id, "issue", body);
+export const returnNonAssetStock = (id: string, body: MovementPayload) => postMovement(id, "return", body);
+export const replenishNonAssetStock = (id: string, body: Omit<MovementPayload, "employeeId" | "department">) =>
+  postMovement(id, "replenish", body);
+export const writeOffNonAssetStock = (id: string, body: Omit<MovementPayload, "employeeId" | "department">) =>
+  postMovement(id, "write-off", body);

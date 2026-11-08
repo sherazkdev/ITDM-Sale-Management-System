@@ -22,6 +22,8 @@ export type LicenseListParams = {
   pageSize?: number;
   /** ISO date — licenses expiring before this date */
   before?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 };
 
 function cleanCreateBody(input: CreateLicenseInput) {
@@ -45,6 +47,8 @@ export function fetchSoftwareLicenses(params: LicenseListParams) {
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 20,
       before: params.before,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir,
     })}`,
   );
 }
