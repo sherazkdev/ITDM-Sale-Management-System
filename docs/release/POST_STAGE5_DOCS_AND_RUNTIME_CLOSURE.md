@@ -1,11 +1,12 @@
-# Post–Stage 5 Closure (docs push & Docker diagnostics)
+# Post–Stage 5 Closure (docs push & packaged runtime)
 
-**Date:** 2026-11-08  
-**Recovery tag (unchanged):** `itdms-pre-client-uat-2026-11-08` → `5b9cf2b`
+**Date:** 2026-11-08 (final session)  
+**Recovery tag (unchanged):** `itdms-pre-client-uat-2026-11-08` → `5b9cf2b`  
+**Production-ready:** **NO**
 
 ---
 
-## Part A — Documentation commit & cloud push
+## Part A — Documentation commit & cloud push (earlier session)
 
 | Item | Result |
 |------|--------|
@@ -14,61 +15,102 @@
 | CI/CD | No `.github/workflows` — **no auto-deploy** |
 | Commit | **`7a5cea329b80ff4bdd0111fc2feeb08a0beb3ba3`** |
 | Message | `docs(release): finalize Stage 5 UAT and handover readiness` |
-| Files (5) | `CLIENT_UAT_EXECUTION_PACKAGE.md`, `FINAL_HANDOVER_READINESS_REPORT.md`, `REMAINING_CLIENT_ACTIONS.md`, `PRE_DEPLOYMENT_GAP_LIST.md`, `IMPLEMENTATION_STATUS.md` |
-| Secrets in staged diff | **None** |
 | Push | **SUCCESS** — `git ls-remote origin main` = `7a5cea3` |
 | Force push / tag rewrite | **Not performed** |
 
 ---
 
-## Part B — Docker Desktop diagnostics
+## Part B — Docker Desktop diagnostics (safe — no reset/prune/unregister)
+
+### Symptoms (prior session)
 
 | Check | Finding |
 |-------|---------|
-| `docker` client | **29.9.2** installed (`DockerDesktop\resources\bin`) |
 | Active context | `desktop-linux` → `npipe:////./pipe/dockerDesktopLinuxEngine` |
-| `docker info` | **FAIL** — pipe not found (Linux engine not running) |
-| `wsl -l -v` | `docker-desktop` distribution **Stopped** (WSL 2) |
-| Docker Desktop GUI launch | Attempted `...\Programs\DockerDesktop\Docker Desktop.exe` |
-| Wait 180s post-launch | Engine **still unavailable**; WSL VM remained **Stopped** |
-| Compose file | `docker-compose.yml` — `itdms-postgres` on **127.0.0.1:5433** |
-| Port 5433 | **Not listening** |
+| `docker info` | **FAIL** — Linux engine pipe not found |
+| `wsl -l -v` | `docker-desktop` distribution **Stopped** |
+| Port **5433** | **Not listening** — `itdms-postgres` down |
 
-### Root cause (engineering assessment)
+### Root cause
 
-The **Docker Desktop WSL2 backend** (`docker-desktop` distro) is **stopped**, so the Linux engine pipe never appears. The CLI is healthy; the **VM/engine did not start** (likely requires interactive Docker Desktop startup, WSL repair, or user sign-in to Docker Desktop).
+The **Docker Desktop WSL2 backend** distro `docker-desktop` was **Stopped**, so the Linux engine never exposed `dockerDesktopLinuxEngine`. The CLI and context were fine; the **VM/engine was not running**.
 
-### Manual steps for the user (safe)
+### Safe recovery (this session — no data loss)
 
-1. Open **Docker Desktop** from Start Menu (wait until status shows **Engine running** / green).  
-2. If stuck: **Settings → Resources → WSL integration** — enable default distro; **Apply & Restart**.  
-3. In PowerShell: `wsl -l -v` — confirm `docker-desktop` → **Running**.  
-4. `docker info` should succeed without pipe errors.  
-5. From repo root: `docker compose up -d` (starts **postgres only**; does **not** use `-v` prune).  
-6. Verify: `docker ps` shows `itdms-postgres` healthy; port **5433** listening.
+```powershell
+docker desktop start          # Docker CLI plugin — starts engine + WSL distro
+wsl -l -v                     # docker-desktop → Running
+docker info                   # succeeds (Client 29.9.2, context desktop-linux)
+docker compose up -d          # itdms-postgres only
+```
 
-**Do not run:** `docker compose down -v`, `docker system prune`, `wsl --unregister`, or database resets.
+| Post-recovery check | Result |
+|---------------------|--------|
+| `docker-desktop` WSL | **Running** (WSL 2) |
+| `itdms-postgres` | **Up (healthy)** on `127.0.0.1:5433` |
+| Volume `itdm-sale-management_itdms_pg_data` | **Present** (unchanged) |
+
+**Not performed:** `docker compose down -v`, prune, `wsl --unregister`, Docker reset, database resets.
+
+### Port 3012 collision (engineering host — not ITDMS)
+
+Unrelated container `babit-tracker-reminder-api-1` published **`127.0.0.1:3012`**, so `http://127.0.0.1:3012/login` returned **404** while ITDMS Next.js also listened on 3012 (`localhost` worked via different bind). **Safe action:** `docker stop babit-tracker-reminder-api-1` (stopped container only; no volume removal). After stop, **127.0.0.1:3012/login → 200 ITDMS**.
+
+E2E stack on **:3020/:3021** was **not** stopped.
 
 ---
 
-## Part C — Full packaged runtime
+## Part C — Full packaged runtime verification
 
-| Step | Status |
-|------|--------|
-| All Part C checks | **BLOCKED** — Docker engine unavailable |
+**Package root:** `D:\ITDM-Sale-Management\rehearsal\offline-pack`  
+**Database:** `itdms_deploy_rehearsal` on `127.0.0.1:5433` (isolated; not `itdms_dev` / staging / prod)
 
-When Docker is up, rerun (do not touch E2E **3020/3021** unless intentionally stopped):
+| Step | Command / artifact | Result |
+|------|-------------------|--------|
+| Compose PG + volume | `docker compose up -d` | **PASS** — healthy |
+| `itdms_deploy_rehearsal` migrations | `npx prisma migrate status` (D09/D10 in chain) | **PASS** — up to date (**10** migrations) |
+| `itdms_test` migrations | `migrate deploy` (earlier in session) | **PASS** — no pending |
+| Prisma Client generate | `npx prisma generate` | **PARTIAL** — **EPERM** renaming `query_engine` DLL (likely file lock); Vitest still passed |
+| Fresh API Vitest | `npm run test --workspace=@itdms/api` on `itdms_test` | **PASS 91/91** — `docs/release/rehearsal-stage5-runtime-api-vitest.log` |
+| Start packaged stack | `.\scripts\windows\start-itdms-production.ps1` | **PASS** — API :3010, Web :3012 |
+| `health/ready` | `GET http://127.0.0.1:3010/api/v1/health/ready` | **PASS** — `database: up` |
+| Web login | `GET http://127.0.0.1:3012/login` | **PASS** — **200**, ITDMS markup (after port collision cleared) |
+| `production-smoke.ps1` | health live + ready | **PASS** |
+| Login + API workflows | `verify-rehearsal-workflows.mjs` | **PASS** — login, dashboard, employees, assets, non-asset, POs, contracts, invoices, employees XLSX, web login |
+| Report exports | `verify-wave5-report-exports.mjs` | **PASS** — anonymous **401**; asset-movements / employees / invoices **XLSX** + `NON-OFFICIAL-D12`; invoices **JSON** |
+| Restart + DB persistence | `stop-itdms-production.ps1` → `start-itdms-production.ps1`; `User` count in DB | **PASS** — count **1** before and after restart |
+| Credentials (rehearsal seed) | `rehearsal.admin` / `Rehearsal-W6B-Local-Verify-Only!` | Isolated rehearsal only |
+
+### Commands reference (exact rerun)
 
 ```powershell
 cd D:\ITDM-Sale-Management
+docker desktop start
 docker compose up -d
-.\scripts\windows\ensure-rehearsal-database.mjs   # via run-offline-rehearsal env
-# migrate deploy on itdms_deploy_rehearsal + itdms_test if needed
 $env:DATABASE_URL='postgresql://itdms:itdms_dev_password@127.0.0.1:5433/itdms_test?schema=public'
 npm run test --workspace=@itdms/api
-powershell -File .\scripts\windows\start-itdms-production.ps1 -PackageRoot .\rehearsal\offline-pack
-# verify http://127.0.0.1:3012/login + production-smoke.ps1
+
+# If 127.0.0.1:3012 conflicts: docker ps and stop non-ITDMS publishers on 3012
+.\scripts\windows\start-itdms-production.ps1 -PackageRoot .\rehearsal\offline-pack
+.\scripts\windows\production-smoke.ps1
+$env:ITDMS_SMOKE_USER='rehearsal.admin'
+$env:ITDMS_SMOKE_PASSWORD='Rehearsal-W6B-Local-Verify-Only!'
+node .\scripts\windows\verify-rehearsal-workflows.mjs
+node .\scripts\windows\verify-wave5-report-exports.mjs
+.\scripts\windows\stop-itdms-production.ps1 -PackageRoot .\rehearsal\offline-pack
+.\scripts\windows\start-itdms-production.ps1 -PackageRoot .\rehearsal\offline-pack
 ```
+
+### Blocked / not re-run this session
+
+| Check | Status |
+|-------|--------|
+| Full browser UI walkthrough on rehearsal DB | **NOT TESTED** — API smokes cover finance/inventory lists + exports; rich UI paths covered by Playwright on `itdms_e2e` (315 pass, prior evidence) |
+| Native Windows PostgreSQL (no Docker) | **NOT TESTED** |
+| Air-gap / disabled NIC | **NOT TESTED** |
+| Client UAT execution + sign-off | **NOT EXECUTED** |
+| Playwright staging | **BLOCKED** — credentials / stack |
+| Git push for these doc updates | **Not performed** unless requested |
 
 ---
 
@@ -77,9 +119,12 @@ powershell -File .\scripts\windows\start-itdms-production.ps1 -PackageRoot .\reh
 | Gate | Status |
 |------|--------|
 | Stage 5 docs on cloud | **COMPLETE** (`7a5cea3`) |
-| Full packaged API+DB smoke | **BLOCKED** |
-| Fresh API Vitest | **BLOCKED** (no `:5433`) |
+| Docker engine + Compose PG | **VERIFIED** (WSL start; volume intact) |
+| Packaged API + DB + web rehearsal | **VERIFIED** (2026-11-08 PM final session) |
+| Fresh API Vitest (`itdms_test`) | **VERIFIED 91/91** |
 | **Production-ready** | **NO** |
 | **Engineering ready — client acceptance pending** | **YES** |
 
-Client dependencies: `REMAINING_CLIENT_ACTIONS.md` (unchanged).
+Client dependencies unchanged: `REMAINING_CLIENT_ACTIONS.md` (D12, D01/D02, reversal policy, native PG on client PC, backup schedule + external drive, UAT).
+
+**STOP** — verification and reporting complete; no production deployment.

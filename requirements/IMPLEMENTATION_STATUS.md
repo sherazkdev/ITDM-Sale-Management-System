@@ -1,7 +1,7 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-08 — Post–Stage 5 docs push `7a5cea3`; packaged full-stack **BLOCKED** (Docker WSL stopped) — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md`  
+**Last verified at:** 2026-11-08 PM final — Docker engine recovered (`docker desktop start`); packaged rehearsal **VERIFIED** on `itdms_deploy_rehearsal` — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md`  
 **Git recovery:** `5b9cf2b` / tag `itdms-pre-client-uat-2026-11-08` (unchanged)  
 **Local Git:** Wave 6 + Premium UI Phase A/B on main
 
@@ -49,7 +49,8 @@
 | Business Phase 4 — admin financial corrections | **COMPLETE (scoped engineering)** | API **91/91** incl. `financial-corrections-phase4` **6/6**; `financial.corrections` permission — `BUSINESS_PHASE4_FINANCIAL_CORRECTIONS_REPORT.md` |
 | Business Phase 5 — final requirements closure | **COMPLETE (reconciliation)** | Matrix + privilege fix; API **91/91**; prod-ready **NO** — `FINAL_CLIENT_REQUIREMENTS_CLOSURE_REPORT.md` |
 | Prompt 2 — full regression & security closure | **COMPLETE (engineering)** | Prisma validate; typecheck/lint **PASS**; API **91/91**; Web **50/50**; Playwright **315/0/216** on `itdms_e2e` @ :3020/:3021 — `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` |
-| Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; packaged full-stack **BLOCKED** (Docker daemon); UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
+| Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
+| Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

@@ -143,11 +143,28 @@
 | API `production-smoke.ps1` | **PASS** | `stage4-production-smoke.log` |
 | API module smoke | **PASS** (incl. non-asset after migrate) | `stage4-workflows-rerun.log` |
 | Report XLSX exports | **PASS** | `stage4-report-exports.log` |
-| Web `/login` on :3012 | **PASS (web-only, 2026-11-08 PM)** — packaged `next` binary serves ITDMS login **200**; full API+DB rehearsal **BLOCKED** without PostgreSQL `:5433` |
+| Web `/login` on :3012 | **VERIFIED (2026-11-08 PM final)** — `http://127.0.0.1:3012/login` **200** ITDMS after clearing foreign Docker bind on `127.0.0.1:3012` |
 | Full UI finance walkthrough on rehearsal DB | **NOT TESTED** (minimal data); covered by Prompt 2 Playwright on `itdms_e2e` |
-| Restart persistence | **PARTIAL** — prior Wave 6B; not re-run after Docker stop |
+| Restart persistence | **VERIFIED (2026-11-08 PM final)** — `User` count **1** before/after `stop`/`start-itdms-production.ps1` |
 
-**Concurrent dev stacks:** E2E may use **:3020/:3021**; rehearsal package uses **:3010/:3012** — avoid port collisions.
+**Concurrent dev stacks:** E2E may use **:3020/:3021**; rehearsal package uses **:3010/:3012** — avoid port collisions (see §13 for foreign `127.0.0.1:3012` bind).
+
+---
+
+## 13. Stage 5 packaged runtime (2026-11-08 PM final)
+
+| Step | Result | Evidence |
+|------|--------|----------|
+| Docker engine recovery | **PASS** — `docker desktop start`; `docker-desktop` WSL **Running** | `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` §B |
+| `itdms-postgres` + volume | **PASS** — `127.0.0.1:5433`, volume `itdm-sale-management_itdms_pg_data` | `docker ps` / `docker volume ls` |
+| Migrations `itdms_deploy_rehearsal` | **PASS** — 10 migrations, D09/D10 applied | `prisma migrate status` |
+| API Vitest `itdms_test` | **PASS 91/91** | `docs/release/rehearsal-stage5-runtime-api-vitest.log` |
+| `start-itdms-production.ps1` | **PASS** — packaged Next CLI on :3012 | `rehearsal/offline-pack/logs/web.stdout.log` |
+| `production-smoke.ps1` | **PASS** | This session |
+| `verify-rehearsal-workflows.mjs` | **PASS** — login, dashboard, inventory/finance APIs, web `/login` | This session |
+| `verify-wave5-report-exports.mjs` | **PASS** — XLSX + JSON exports | This session |
+| `prisma generate` | **PARTIAL** — EPERM on engine DLL (lock); tests OK | Documented only |
+| **Production-ready** | **NO** | Client UAT, D12, native PG, etc. |
 
 ---
 
@@ -186,7 +203,7 @@ Unchanged release gates — see `PRE_DEPLOYMENT_GAP_LIST.md` **B1–B3, B6–B7,
 | Item | Owner |
 |------|--------|
 | Native PostgreSQL Windows service + `pg_dump` on PATH without Docker | Client IT |
-| Re-verify packaged web `/login` after `start-itdms-production.ps1` fix | Engineering (when Postgres available) |
+| Packaged web `/login` on `127.0.0.1:3012` | **VERIFIED** — ensure no other service binds `127.0.0.1:3012` on shared dev hosts |
 | Task Scheduler weekly backup + external drive procedure on client PC | Client IT |
 | UAT + staging credentials | Client |
 
