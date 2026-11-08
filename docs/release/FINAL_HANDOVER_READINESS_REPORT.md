@@ -139,3 +139,14 @@ Unchanged — `PRE_DEPLOYMENT_GAP_LIST.md` **B1–B3, B6–B7, B11–B15**
 5. Sign acceptance or file defects.
 
 **STOP** — Stage 5 complete; Stage 6 not started.
+
+---
+
+## Post–Stage 5 addendum (2026-11-08 PM)
+
+| Item | Result |
+|------|--------|
+| Docs commit | `7a5cea3` on `origin/main` (Stage 5 UAT/handover package) |
+| Docker WSL `docker-desktop` | **Stopped** → Linux engine **BLOCKED** |
+| Full packaged runtime (Part C) | **BLOCKED** |
+| Details | `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
