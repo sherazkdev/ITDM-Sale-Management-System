@@ -131,3 +131,19 @@ Side-by-side screenshots at 390/768/1440/1920: **deferred** to client UAT / Phas
 - **Production-ready: NO** — client UAT, D12, native PG, staging sign-off unchanged.
 
 **STOP** — Phase 7 engineering delivery documented; Phase 8 (departments / dynamic RBAC) not started.
+
+---
+
+## 11. Addendum — Phase 7+8 checkpoint regression (2026-11-08 PM)
+
+| Check | Result |
+|-------|--------|
+| Local commit | **501575b** (not pushed) |
+| Migration `20261108213000_phase7_user_profile_theme` on `itdms_test` / `itdms_e2e` | **Applied** |
+| API Vitest incl. `tabular-pdf.test.ts` | **2/2 PASS** (full API **95/95**) |
+| Web Vitest | **50/50 PASS** |
+| Playwright (indirect Phase 7 UI) | Full suite **315/0/216** after employee-form harness fix — see `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md` |
+
+**Phase 7 status remains PARTIAL** — §10 gaps unchanged (preview/confirm, export rollout, asset-category import, KPI filters, CRM screenshots).
+
+**Production-ready: NO**

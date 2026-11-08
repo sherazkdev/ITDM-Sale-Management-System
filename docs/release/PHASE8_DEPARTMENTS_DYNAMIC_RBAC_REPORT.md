@@ -11,7 +11,7 @@
 | Item | State |
 |------|--------|
 | Cloud HEAD (unchanged push) | `6e84fda` + tag `itdms-pre-crm-enhancements-2026-11-08` |
-| Local working tree | **Phase 7 + Phase 8 uncommitted** (no force push; no new remote push) |
+| Local working tree | Checkpoint **501575b** local only; post-checkpoint harness/doc fixes **uncommitted** |
 | Recovery | Existing tags preserved |
 
 **Recommendation:** Create a local commit checkpoint before client UAT (not pushed unless authorized).
@@ -116,3 +116,22 @@
 Unchanged: D12 templates, D01/D02 matrix approval, native Windows PG, UAT sign-off, air-gap client install.
 
 **STOP** — Phase 8 engineering foundation delivered; **PARTIAL** until regression matrix is green and completion gate items verified.
+
+---
+
+## 11. Addendum — Phase 7+8 checkpoint regression (2026-11-08 PM)
+
+| Check | Result |
+|-------|--------|
+| Local commit | **501575b** (includes Phase 8 tree; report §1 pre-checkpoint note superseded for Git state) |
+| Migration `20261108220000_phase8_departments_dynamic_rbac` | **Applied** on `itdms_test` (already current) and `itdms_e2e` (2 migrations applied this session) |
+| `phase8-departments-rbac.test.ts` | **2/2 PASS** (duplicate explicit `departmentCode` → 409; custom role cannot hold `financial.corrections`) |
+| D10 / D09 API regression | **PASS** (custody + movements suites in full **95/95**) |
+| Playwright employee create | **FAIL then FIX** — `workflows.spec.ts` updated for `DepartmentSelect` (uncommitted post-**501575b**) |
+| Dedicated Web Vitest for `/departments`, `/settings/roles` | **NOT ADDED** — completion gate **OPEN** |
+
+**`it_admin_proposed`:** Dev seed system role only — see `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md` §6.
+
+**Phase 8 status remains PARTIAL.**
+
+**Production-ready: NO**

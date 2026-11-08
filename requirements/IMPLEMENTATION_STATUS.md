@@ -1,9 +1,9 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-08 — Phase 7 CRM/settings/import foundation + PDF fix — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md`  
-**Git recovery:** `5b9cf2b` / tag `itdms-pre-client-uat-2026-11-08` (unchanged)  
-**Local Git:** Wave 6 + Premium UI Phase A/B on main
+**Last verified at:** 2026-11-08 (PM) — Phase 7+8 checkpoint, migrations, full regression — `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md`  
+**Git recovery:** tag `itdms-pre-crm-enhancements-2026-11-08` @ `3e41a51` (unchanged); remote `main` @ `6e84fda` (unchanged)  
+**Local Git:** checkpoint `501575b` on `main` (not pushed)
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -32,7 +32,7 @@
 | Windows Wave 6 offline package | **VERIFIED (engineering)** | Manifest **1084** files (2026-11-08); backup/restore rehearsal; D09/D10 migrate on `itdms_deploy_rehearsal` — `FINAL_WINDOWS_STANDALONE_READINESS.md` |
 | Stage 4 — Windows standalone deployment prep | **ENGINEERING READY (conditional)** | Package + backup + API smoke; native PG / client services / web re-smoke after fix **NOT VERIFIED** on this session |
 | Confirmed gap audit defects (search fields, non-asset PO search, PO report copy) | **VERIFIED** | Unit/API Vitest + Playwright hub — `FINAL_SOURCE_CODE_GAP_AUDIT.md` |
-| Playwright local regression (isolated `itdms_e2e`) | **VERIFIED (fresh 2026-11-08 PM)** | **315 passed / 0 failed / 216 skipped** (UI08 capture env-gated); staging excluded/`BLOCKED`; prep: `prepare-e2e-database.ps1` |
+| Playwright local regression (isolated `itdms_e2e`) | **VERIFIED (fresh 2026-11-08 PM, post Phase 7+8)** | **315 passed / 0 failed / 216 skipped** after `workflows.spec.ts` DepartmentSelect harness fix; log: `rehearsal/playwright-phase78-regression.log` |
 | Playwright staging (`staging-verification`) | **BLOCKED** | Authorized UAT accounts + staging stack required (`npm run staging:e2e`) |
 | Premium UI Phase A (PO search honesty, Ctrl/Cmd+K, invoice filters, issuance asset search, Help) | **VERIFIED** | Web typecheck/lint/vitest; API invoice-list-filters vitest; Playwright workflows + a11y + responsive + po-search-hub on `itdms_e2e`; **no** stock consumption / budget formula / import |
 | Premium UI Phase B (ops analytics dashboard) | **VERIFIED** | Unchanged from 2026-11-06 evidence; not re-run 2026-11-08 |
@@ -48,11 +48,12 @@
 | Business Phase 3 — asset custody (D10) | **COMPLETE (engineering)** | Migration `20261108180000_d10_asset_custody_department`; API **85/85**; Playwright D10 **3/3** + lifecycle **13/13**; screenshots `audit-screenshots/d10/` |
 | Business Phase 4 — admin financial corrections | **COMPLETE (scoped engineering)** | API **91/91** incl. `financial-corrections-phase4` **6/6**; `financial.corrections` permission — `BUSINESS_PHASE4_FINANCIAL_CORRECTIONS_REPORT.md` |
 | Business Phase 5 — final requirements closure | **COMPLETE (reconciliation)** | Matrix + privilege fix; API **91/91**; prod-ready **NO** — `FINAL_CLIENT_REQUIREMENTS_CLOSURE_REPORT.md` |
-| Prompt 2 — full regression & security closure | **COMPLETE (engineering)** | Prisma validate; typecheck/lint **PASS**; API **91/91**; Web **50/50**; Playwright **315/0/216** on `itdms_e2e` @ :3020/:3021 — `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` |
+| Prompt 2 — full regression & security closure | **COMPLETE (engineering)** | Prior baseline — `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md` |
+| Phase 7+8 checkpoint regression | **COMPLETE (engineering, scoped)** | Local commit **501575b**; API **95/95**; Web **50/50**; Playwright **315/0/216**; Phases **PARTIAL** — `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md` |
 | Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
 | Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
-| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Recovery tag `itdms-pre-crm-enhancements-2026-11-08`; tabular PDF/XLSX fix; `/users/me` profile/avatar/password/theme; employees/vendors import; Settings + Import/Export UI; full module matrix + Playwright capture **pending** — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md` |
-| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Department master + legacy labels migration; `/departments` + `/roles` API; CRM roles UI; employee department FK; financial.corrections escalation guard; completion gate + full regression **pending** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
+| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Checkpoint **501575b**; migrations on test DBs; API **95/95** incl. PDF; Playwright indirect; preview/confirm + full export rollout **OPEN** — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md` |
+| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | 12 migrations on `itdms_test`/`itdms_e2e`; `phase8-departments-rbac` **2/2**; E2E employee dept harness fixed; settings/roles dedicated Vitest **OPEN** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

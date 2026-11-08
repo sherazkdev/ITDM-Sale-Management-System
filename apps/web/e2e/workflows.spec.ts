@@ -1,12 +1,21 @@
 import { test, expect } from "@playwright/test";
+import { apiPostEnvelope } from "./helpers/api";
+import { pickSearchableSelect } from "./helpers/searchable-select";
 
 test.describe("Employee lifecycle (UI)", () => {
   test("create employee and see in list", async ({ page }) => {
+    const deptName = `E2E IT ${Date.now()}`;
+    const deptRes = await apiPostEnvelope<{ departmentId: string }>(page, "/departments", {
+      departmentName: deptName,
+      departmentCode: `E2EIT${Date.now()}`,
+    });
+    expect(deptRes.status).toBe(201);
+
     const code = `E2E-${Date.now()}`;
     await page.goto("/employees/new");
     await page.getByLabel(/employee number/i).fill(code);
     await page.getByLabel(/full name/i).fill("E2E QA Employee");
-    await page.getByLabel(/department/i).fill("IT");
+    await pickSearchableSelect(page, "Department", deptName, new RegExp(deptName, "i"));
     await page.getByLabel(/designation/i).fill("QA Tester");
     await page.getByRole("button", { name: /create employee/i }).click();
     await expect(page).toHaveURL(/\/employees\//, { timeout: 30_000 });
