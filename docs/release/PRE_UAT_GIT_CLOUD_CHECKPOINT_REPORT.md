@@ -55,9 +55,48 @@ Business Phases 2–5, Premium UI A–D, D09/D10 migrations, financial correctio
 
 ---
 
-## 5–10. Git and cloud (filled after push)
+## 5. Git branch and commit
 
-See commit footer in this file’s git history section below after push completes.
+| Field | Value |
+|-------|--------|
+| Branch | `main` |
+| Commit SHA | `5b9cf2b60ba4efa03a7382dfa73bb206e2306103` |
+| Parent | `867f549` |
+
+## 6. Recovery tag
+
+| Tag | Points to |
+|-----|-----------|
+| `itdms-pre-client-uat-2026-11-08` | `5b9cf2b60ba4efa03a7382dfa73bb206e2306103` (annotated) |
+
+## 7. Cloud push result
+
+| Item | Result |
+|------|--------|
+| Remote | `origin` → `https://github.com/sherazkdev/ITDM-Sale-Management-System.git` |
+| `git push origin main` | **SUCCESS** (`867f549..5b9cf2b`) |
+| `git push origin itdms-pre-client-uat-2026-11-08` | **SUCCESS** (new tag) |
+| GitHub Actions | **None** in repository (no auto-deploy workflows) |
+| `gh` CLI | Not installed — privacy confirmed via user remote URL only |
+
+## 8. Remote verification
+
+```text
+git ls-remote origin main → 5b9cf2b60ba4efa03a7382dfa73bb206e2306103
+git ls-remote --tags origin itdms-pre-client-uat-2026-11-08 → tag present
+```
+
+## 9. Working tree after checkpoint
+
+Clean after follow-up doc commit (this section).
+
+## 10. Readiness for Stage 5
+
+| Gate | Status |
+|------|--------|
+| Source cloud backup | **COMPLETE** |
+| Packaged full-stack rehearsal | **BLOCKED** — start Docker + `127.0.0.1:5433` before client install dry-run |
+| Client UAT execution | **READY to schedule** (credentials + templates still client-owned) |
 
 ---
 
