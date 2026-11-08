@@ -82,4 +82,6 @@
 
 **Stage 4 addendum (2026-11-08):** Offline manifest **1084** files; backup/rotation + isolated restore **VERIFIED**; D09/D10 migrations applied on `itdms_deploy_rehearsal`; **`start-itdms-production.ps1`** web launcher fixed (wrong `npx` app on port). **Native Windows PostgreSQL**, client Task Scheduler, and packaged web re-smoke **NOT VERIFIED** (Docker stopped late session). See `docs/deployment/FINAL_WINDOWS_STANDALONE_READINESS.md`. **Production-ready: NO.**
 
+**Stage 5 addendum (2026-11-08):** **`ENGINEERING READY — CLIENT ACCEPTANCE PENDING`**. UAT execution package published; client UAT **NOT RUN**; full packaged API+DB rehearsal **BLOCKED** (Docker engine pipe). Client actions: `REMAINING_CLIENT_ACTIONS.md`. Handover: `FINAL_HANDOVER_READINESS_REPORT.md`.
+
 **Next step for client:** Supply D12 templates; sign D01/D02/D17; authorize staging UAT; confirm reversal policy before B6 work.
