@@ -1,7 +1,7 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **Premium UI Phases A–D engineering COMPLETE** on Wave 6 baseline; **staging UAT E2E BLOCKED**; **client PC / UAT NOT VERIFIED**  
-**Last verified at:** 2026-11-08 — Stage 4 Windows standalone readiness (`docs/deployment/FINAL_WINDOWS_STANDALONE_READINESS.md`)  
+**Last verified at:** 2026-11-08 — Pre-UAT git checkpoint `5b9cf2b` / tag `itdms-pre-client-uat-2026-11-08` — `PRE_UAT_GIT_CLOUD_CHECKPOINT_REPORT.md`  
 **Local Git:** Wave 6 + Premium UI Phase A/B on main
 
 | Phase | Status | Evidence |
