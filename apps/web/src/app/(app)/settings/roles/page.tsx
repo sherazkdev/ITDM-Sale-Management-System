@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, Lock, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Check, Lock, Pencil, Plus, Search, ShieldCheck, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -55,6 +56,20 @@ export default function RolesSettingsPage() {
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<RoleAdminItem | null>(null);
   const [deleting, setDeleting] = useState<RoleAdminItem | null>(null);
+  const [roleQuery, setRoleQuery] = useState("");
+
+  const filterRole = useCallback((r: RoleAdminItem) => {
+    const q = roleQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      r.displayName.toLowerCase().includes(q) ||
+      r.roleKey.toLowerCase().includes(q) ||
+      (r.description?.toLowerCase().includes(q) ?? false)
+    );
+  }, [roleQuery]);
+
+  const filteredSystemRoles = useMemo(() => systemRoles.filter(filterRole), [systemRoles, filterRole]);
+  const filteredCustomRoles = useMemo(() => customRoles.filter(filterRole), [customRoles, filterRole]);
 
   const selectedRole = useMemo(() => {
     const id = selection?.roleId ?? systemRoles[0]?.roleId ?? customRoles[0]?.roleId;
@@ -120,19 +135,40 @@ export default function RolesSettingsPage() {
   const mutable = selectedRole ? isRoleMutable(selectedRole) : false;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+    <div className="flex flex-col gap-6">
+      <Card className="shadow-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Roles &amp; permissions</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Review system and custom roles, inspect effective permissions, and tailor access for your organization.
+            Financial corrections remain on the protected Admin role only.
+          </p>
+        </CardHeader>
+      </Card>
+
+    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
       <div className="flex flex-col gap-4">
-        <Card>
-          <CardHeader>
+        <Card className="shadow-card">
+          <CardHeader className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" /> Roles
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Role directory
               </CardTitle>
               {canManage ? (
                 <Button size="sm" variant="soft" onClick={openCreate}>
                   <Plus className="h-4 w-4" /> New
                 </Button>
               ) : null}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={roleQuery}
+                onChange={(e) => setRoleQuery(e.target.value)}
+                placeholder="Search roles…"
+                className="pl-8 h-9"
+                aria-label="Search roles"
+              />
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-1">
@@ -141,10 +177,10 @@ export default function RolesSettingsPage() {
             </p>
             {isLoading ? (
               <Skeleton className="h-9 rounded-lg mx-1" />
-            ) : systemRoles.length === 0 ? (
+            ) : filteredSystemRoles.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">No system roles loaded.</p>
             ) : (
-              systemRoles.map((r) => {
+              filteredSystemRoles.map((r) => {
                 const active = selectedRole?.roleId === r.roleId;
                 return (
                   <button
@@ -162,8 +198,14 @@ export default function RolesSettingsPage() {
                       </Badge>
                       {active ? <span className="text-xs text-primary ml-auto">Selected</span> : null}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {r.description ?? `${rolePermissionKeys(r).length} permissions`}
+                    <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span>{rolePermissionKeys(r).length} permissions</span>
+                      {typeof r._count?.userRoles === "number" ? (
+                        <span className="inline-flex items-center gap-0.5">
+                          <Users className="h-3 w-3" />
+                          {r._count.userRoles}
+                        </span>
+                      ) : null}
                     </p>
                   </button>
                 );
@@ -178,12 +220,12 @@ export default function RolesSettingsPage() {
                 <Skeleton className="h-9 rounded-lg" />
                 <Skeleton className="h-9 rounded-lg" />
               </div>
-            ) : customRoles.length === 0 ? (
+            ) : filteredCustomRoles.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">
                 No custom roles yet.{canManage ? " Create one to tailor access." : ""}
               </p>
             ) : (
-              customRoles.map((r) => {
+              filteredCustomRoles.map((r) => {
                 const active = selectedRole?.roleId === r.roleId;
                 return (
                   <button
@@ -211,8 +253,14 @@ export default function RolesSettingsPage() {
                       </span>
                       {active ? <span className="text-xs text-primary ml-auto">Selected</span> : null}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {r.description ?? `${rolePermissionKeys(r).length} permissions`}
+                    <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span>{rolePermissionKeys(r).length} permissions</span>
+                      {typeof r._count?.userRoles === "number" ? (
+                        <span className="inline-flex items-center gap-0.5">
+                          <Users className="h-3 w-3" />
+                          {r._count.userRoles}
+                        </span>
+                      ) : null}
                     </p>
                   </button>
                 );
@@ -223,7 +271,7 @@ export default function RolesSettingsPage() {
       </div>
 
       <div className="flex flex-col gap-6 min-w-0">
-        <Card>
+        <Card className="shadow-card">
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -331,6 +379,7 @@ export default function RolesSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }

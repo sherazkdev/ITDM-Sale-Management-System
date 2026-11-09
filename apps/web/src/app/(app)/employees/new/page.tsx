@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
 import { UserAvatar } from "@/components/ui/avatar";
 import {
   CreateFormActions,
@@ -41,8 +41,9 @@ export default function NewEmployeePage() {
     handleSubmit,
     watch,
     control,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreateEmployeeInput>({
+    mode: "onTouched",
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
       employeeNumber: "",
@@ -145,30 +146,46 @@ export default function NewEmployeePage() {
               <span className="text-xs font-medium text-destructive">* Required</span>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="employeeNumber" required>
-                  Employee number
-                </Label>
+              <FormField
+                className="md:col-span-2"
+                label="Employee number"
+                htmlFor="employeeNumber"
+                required
+                description="Enter your organization's unique identifier for this employee."
+                error={
+                  (touchedFields.employeeNumber || isSubmitted) && errors.employeeNumber
+                    ? errors.employeeNumber.message
+                    : undefined
+                }
+              >
                 <Input
                   id="employeeNumber"
-                  error={!!errors.employeeNumber}
+                  error={!!errors.employeeNumber && (touchedFields.employeeNumber || isSubmitted)}
                   {...register("employeeNumber")}
                 />
-                {errors.employeeNumber ? (
-                  <p className="text-xs text-destructive">{errors.employeeNumber.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="fullName" required>
-                  Full name
-                </Label>
-                <Input id="fullName" error={!!errors.fullName} {...register("fullName")} />
-                {errors.fullName ? (
-                  <p className="text-xs text-destructive">{errors.fullName.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Department</Label>
+              </FormField>
+              <FormField
+                className="md:col-span-2"
+                label="Full name"
+                htmlFor="fullName"
+                required
+                description="Enter the employee's official full name as used in company records."
+                error={
+                  (touchedFields.fullName || isSubmitted) && errors.fullName
+                    ? errors.fullName.message
+                    : undefined
+                }
+              >
+                <Input
+                  id="fullName"
+                  error={!!errors.fullName && (touchedFields.fullName || isSubmitted)}
+                  {...register("fullName")}
+                />
+              </FormField>
+              <FormField
+                label="Department"
+                description="Select the department currently associated with this employee."
+              >
                 <Controller
                   name="departmentId"
                   control={control}
@@ -176,22 +193,32 @@ export default function NewEmployeePage() {
                     <DepartmentSelect value={field.value ?? ""} onChange={field.onChange} />
                   )}
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="designation">Designation</Label>
+              </FormField>
+              <FormField label="Designation" htmlFor="designation" description="Job title or role label (optional).">
                 <Input id="designation" {...register("designation")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="contactNumber">Contact number</Label>
+              </FormField>
+              <FormField
+                label="Contact number"
+                htmlFor="contactNumber"
+                description="Work phone or extension, if applicable."
+              >
                 <Input id="contactNumber" {...register("contactNumber")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" error={!!errors.email} {...register("email")} />
-                {errors.email ? (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                ) : null}
-              </div>
+              </FormField>
+              <FormField
+                label="Email"
+                htmlFor="email"
+                description="Enter a valid work email address if applicable."
+                error={
+                  (touchedFields.email || isSubmitted) && errors.email ? errors.email.message : undefined
+                }
+              >
+                <Input
+                  id="email"
+                  type="email"
+                  error={!!errors.email && (touchedFields.email || isSubmitted)}
+                  {...register("email")}
+                />
+              </FormField>
             </CardContent>
           </Card>
 

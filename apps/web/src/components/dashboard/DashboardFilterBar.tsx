@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { fetchDepartmentSelectOptions } from "@/lib/api/departments";
 import { fetchFinancialYears } from "@/lib/api/budgets";
 import { fetchAssetCategories } from "@/lib/api/asset-categories";
@@ -95,11 +96,26 @@ const PO_STATUS_OPTIONS = [
   { value: "CANCELLED", label: "Cancelled" },
 ] as const;
 
+export function countDashboardActiveFilters(
+  params: URLSearchParams,
+  range: DashboardDateRange,
+): number {
+  return [
+    params.get("departmentId"),
+    params.get("financialYearId"),
+    params.get("poStatus"),
+    params.get("assetCategoryId"),
+    params.get("assetStatus"),
+    range.preset !== "current_month" ? "range" : null,
+  ].filter(Boolean).length;
+}
+
 export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const range = useDashboardDateRange();
+  const [expanded, setExpanded] = useState(true);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments", "select-options"],
@@ -116,14 +132,8 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
     queryFn: fetchAssetCategories,
     staleTime: 60_000,
   });
-  const activeFilterCount = [
-    searchParams.get("departmentId"),
-    searchParams.get("financialYearId"),
-    searchParams.get("poStatus"),
-    searchParams.get("assetCategoryId"),
-    searchParams.get("assetStatus"),
-    range.preset !== "current_month" ? "range" : null,
-  ].filter(Boolean).length;
+
+  const activeFilterCount = countDashboardActiveFilters(searchParams, range);
 
   const patchParams = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -148,40 +158,139 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
     });
   };
 
+  const chips = useMemo(() => {
+    const list: { key: string; label: string; clear: () => void }[] = [];
+    const deptId = searchParams.get("departmentId");
+    if (deptId) {
+      const label = departments.find((d) => d.value === deptId)?.label ?? "Department";
+      list.push({ key: "departmentId", label, clear: () => patchParams({ departmentId: undefined }) });
+    }
+    const fy = searchParams.get("financialYearId");
+    if (fy) {
+      const label = financialYears.find((f) => f.financialYearId === fy)?.yearName ?? "Financial year";
+      list.push({ key: "financialYearId", label, clear: () => patchParams({ financialYearId: undefined }) });
+    }
+    const po = searchParams.get("poStatus");
+    if (po) {
+      const label = PO_STATUS_OPTIONS.find((o) => o.value === po)?.label ?? po;
+      list.push({ key: "poStatus", label, clear: () => patchParams({ poStatus: undefined }) });
+    }
+    const cat = searchParams.get("assetCategoryId");
+    if (cat) {
+      const label = categories.find((c) => c.categoryId === cat)?.categoryName ?? "Category";
+      list.push({ key: "assetCategoryId", label, clear: () => patchParams({ assetCategoryId: undefined }) });
+    }
+    const ast = searchParams.get("assetStatus");
+    if (ast) {
+      const label = ASSET_STATUS_OPTIONS.find((o) => o.value === ast)?.label ?? ast;
+      list.push({ key: "assetStatus", label, clear: () => patchParams({ assetStatus: undefined }) });
+    }
+    if (range.preset !== "current_month") {
+      const presetLabel = PRESET_OPTIONS.find((p) => p.value === range.preset)?.label ?? "Date range";
+      list.push({
+        key: "range",
+        label: presetLabel,
+        clear: () => patchParams({ range: undefined, from: undefined, to: undefined }),
+      });
+    }
+    return list;
+  }, [categories, departments, financialYears, patchParams, range.preset, searchParams]);
+
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-card sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-card",
         className,
       )}
     >
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <CalendarRange className="h-4 w-4 shrink-0" />
-        <span>
-          {range.from} → {range.to}
-          {activeFilterCount > 0 ? (
-            <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
-              {activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active
-            </span>
-          ) : null}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <SlidersHorizontal className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Overview filters</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+              <CalendarRange className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Activity {range.from} → {range.to}
+              </span>
+              {activeFilterCount > 0 ? (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium">
+                  {activeFilterCount} active
+                </Badge>
+              ) : null}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+          >
+            {expanded ? "Hide" : "Show"} filters
+            <ChevronDown
+              className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")}
+            />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.replace(pathname, { scroll: false })}
+          >
+            Reset all
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+
+      {chips.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map((chip) => (
+            <Badge
+              key={chip.key}
+              variant="outline"
+              className="gap-1 pr-1 font-normal text-xs"
+            >
+              {chip.label}
+              <button
+                type="button"
+                className="rounded p-0.5 hover:bg-muted"
+                aria-label={`Clear ${chip.label} filter`}
+                onClick={chip.clear}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6",
+          !expanded && "hidden lg:grid",
+        )}
+      >
         <FilterSelect
           aria-label="Dashboard date preset"
           value={range.preset}
           onChange={onPresetChange}
           options={[...PRESET_OPTIONS]}
-          className="min-w-[160px]"
+          className="w-full min-w-0"
         />
         {range.preset === "custom" ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-2">
             <Input
               type="date"
               aria-label="From date"
               value={searchParams.get("from") ?? range.from}
               onChange={(e) => patchParams({ from: e.target.value, range: "custom" })}
-              className="w-[150px]"
+              className="h-9 w-full min-w-[140px] sm:w-[150px]"
             />
             <span className="text-muted-foreground text-sm">to</span>
             <Input
@@ -189,7 +298,7 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
               aria-label="To date"
               value={searchParams.get("to") ?? range.to}
               onChange={(e) => patchParams({ to: e.target.value, range: "custom" })}
-              className="w-[150px]"
+              className="h-9 w-full min-w-[140px] sm:w-[150px]"
             />
           </div>
         ) : null}
@@ -198,7 +307,7 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
           value={searchParams.get("departmentId") ?? ""}
           onChange={(v) => patchParams({ departmentId: v || undefined })}
           options={[{ value: "", label: "All departments" }, ...departments]}
-          className="min-w-[160px]"
+          className="w-full min-w-0"
         />
         <FilterSelect
           aria-label="Financial year filter"
@@ -211,14 +320,14 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
               label: fy.yearName,
             })),
           ]}
-          className="min-w-[160px]"
+          className="w-full min-w-0"
         />
         <FilterSelect
           aria-label="Purchase order status filter"
           value={searchParams.get("poStatus") ?? ""}
           onChange={(v) => patchParams({ poStatus: v || undefined })}
           options={[...PO_STATUS_OPTIONS]}
-          className="min-w-[140px]"
+          className="w-full min-w-0"
         />
         <FilterSelect
           aria-label="Asset category filter"
@@ -228,25 +337,15 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
             { value: "", label: "All categories" },
             ...categories.map((c) => ({ value: c.categoryId, label: c.categoryName })),
           ]}
-          className="min-w-[150px]"
+          className="w-full min-w-0"
         />
         <FilterSelect
           aria-label="Asset status filter"
           value={searchParams.get("assetStatus") ?? ""}
           onChange={(v) => patchParams({ assetStatus: v || undefined })}
           options={[...ASSET_STATUS_OPTIONS]}
-          className="min-w-[150px]"
+          className="w-full min-w-0"
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            router.replace(pathname, { scroll: false })
-          }
-        >
-          Reset filters
-        </Button>
       </div>
     </div>
   );

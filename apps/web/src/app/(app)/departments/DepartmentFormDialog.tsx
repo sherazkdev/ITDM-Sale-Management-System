@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FormField } from "@/components/forms/FormField";
 import type { Department } from "@/lib/api/departments";
 
 const departmentFormSchema = z.object({
@@ -39,6 +39,7 @@ type Props = {
 export function DepartmentFormDialog({ open, onOpenChange, mode, initial, submitting, onSubmit }: Props) {
   const form = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentFormSchema),
+    mode: "onTouched",
     defaultValues: {
       departmentName: "",
       departmentCode: "",
@@ -68,42 +69,57 @@ export function DepartmentFormDialog({ open, onOpenChange, mode, initial, submit
           className="flex flex-col gap-4"
           noValidate
         >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dept-name" required>
-              Department name
-            </Label>
+          <FormField
+            label="Department name"
+            htmlFor="dept-name"
+            required
+            description="Enter the official department name used by your organization."
+            error={
+              (form.formState.touchedFields.departmentName || form.formState.isSubmitted) &&
+              form.formState.errors.departmentName
+                ? form.formState.errors.departmentName.message
+                : undefined
+            }
+            maxLength={255}
+            currentLength={form.watch("departmentName")?.length ?? 0}
+          >
             <Input
               id="dept-name"
               error={!!form.formState.errors.departmentName}
               {...form.register("departmentName")}
             />
-            {form.formState.errors.departmentName ? (
-              <p className="text-xs text-destructive">{form.formState.errors.departmentName.message}</p>
-            ) : null}
-          </div>
+          </FormField>
           {mode === "create" ? (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dept-code">Code (optional)</Label>
-              <Input id="dept-code" placeholder="Auto-generated from name if empty" {...form.register("departmentCode")} />
-            </div>
+            <FormField
+              label="Department code"
+              htmlFor="dept-code"
+              description="Use a short unique identifier, or leave blank to auto-generate from the name."
+              maxLength={64}
+              currentLength={form.watch("departmentCode")?.length ?? 0}
+            >
+              <Input id="dept-code" placeholder="Auto-generated if empty" {...form.register("departmentCode")} />
+            </FormField>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <Label>Code</Label>
+            <FormField label="Department code" description="Codes are fixed after creation.">
               <Input value={initial?.departmentCode ?? ""} disabled readOnly className="bg-muted" />
-            </div>
+            </FormField>
           )}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dept-desc">Description</Label>
+          <FormField label="Description" htmlFor="dept-desc" description="Optional internal summary.">
             <Input id="dept-desc" {...form.register("description")} />
-          </div>
+          </FormField>
           {mode === "edit" ? (
-            <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
-              <span className="text-sm font-medium">Active</span>
-              <Switch
-                checked={form.watch("isActive") ?? true}
-                onCheckedChange={(v) => form.setValue("isActive", v, { shouldDirty: true })}
-              />
-            </label>
+            <FormField
+              label="Status"
+              description="Active departments can be selected for new employee assignments."
+            >
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                <span className="text-sm font-medium">Active</span>
+                <Switch
+                  checked={form.watch("isActive") ?? true}
+                  onCheckedChange={(v) => form.setValue("isActive", v, { shouldDirty: true })}
+                />
+              </label>
+            </FormField>
           ) : null}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>

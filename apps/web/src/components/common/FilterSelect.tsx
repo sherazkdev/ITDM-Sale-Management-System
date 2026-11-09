@@ -1,5 +1,7 @@
-import { ChevronDown } from "lucide-react";
+"use client";
+
 import { cn } from "@/lib/utils";
+import { AppSelect, type SearchableSelectOption } from "@/components/forms/SearchableSelect";
 
 type FilterSelectOption = { value: string; label: string };
 
@@ -10,9 +12,13 @@ type FilterSelectProps = {
   placeholder?: string;
   className?: string;
   "aria-label"?: string;
+  searchable?: boolean;
+  size?: "sm" | "md";
 };
 
-/** Figma-style filter dropdown (bordered pill control). */
+/**
+ * Toolbar / list-page filter control — premium floating select (replaces native `<select>`).
+ */
 export function FilterSelect({
   value,
   onChange,
@@ -20,27 +26,33 @@ export function FilterSelect({
   placeholder = "All",
   className,
   "aria-label": ariaLabel,
+  searchable,
+  size = "sm",
 }: FilterSelectProps) {
+  const normalized: SearchableSelectOption[] = options.map((o) => ({
+    value: o.value,
+    label: o.label,
+  }));
+
+  const resolvedValue = value;
+  const selected = normalized.find((o) => o.value === resolvedValue);
+  const triggerPlaceholder =
+    selected?.label ??
+    (normalized.find((o) => o.value === "")?.label || placeholder);
+
   return (
-    <div className={cn("relative inline-flex", className)}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+    <div className={cn("inline-flex min-w-[8rem]", className)}>
+      <AppSelect
+        value={resolvedValue}
+        onChange={onChange}
+        options={normalized}
+        placeholder={triggerPlaceholder}
+        searchPlaceholder="Filter…"
         aria-label={ariaLabel}
-        className={cn(
-          "h-10 appearance-none rounded-lg border border-input bg-card pl-3 pr-9 text-sm shadow-card",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
-          "cursor-pointer",
-        )}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        searchable={searchable ?? normalized.length > 6}
+        size={size}
+        className="w-full"
+      />
     </div>
   );
 }
