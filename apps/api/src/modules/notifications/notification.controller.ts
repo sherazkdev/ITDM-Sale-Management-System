@@ -8,6 +8,7 @@ import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
 import type { NotificationService } from "./notification.service.js";
 import type { AppEnv } from "../../shared/config/env.js";
+import { notificationListQuerySchema } from "./notification-list.query.js";
 
 function parseId(raw: string): bigint {
   if (!/^\d+$/.test(raw)) {
@@ -23,13 +24,15 @@ export class NotificationController {
   ) {}
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 20);
-    const unreadOnly = req.query.unread === "true";
-    const result = await this.service.list(page, pageSize, unreadOnly);
+    const parsed = notificationListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new AppError(ErrorCodes.BAD_REQUEST, parsed.error.message, 400);
+    }
+    const query = parsed.data;
+    const result = await this.service.list(query);
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
-      ...paginationMeta(page, pageSize, result.total),
+      ...paginationMeta(query.page, query.pageSize, result.total),
     });
   });
 

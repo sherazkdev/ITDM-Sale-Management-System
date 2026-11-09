@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
 import {
   CreateFormActions,
   CreateFormLayout,
@@ -27,6 +27,7 @@ import { createVendor, type Vendor } from "@/lib/api/vendors";
 import { createVendorSchema, type CreateVendorInput } from "@/lib/validators/vendor";
 import { ApiClientError } from "@/lib/api/client";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 
 export default function NewVendorPage() {
   const router = useRouter();
@@ -36,9 +37,10 @@ export default function NewVendorPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreateVendorInput>({
     resolver: zodResolver(createVendorSchema),
+    mode: "onTouched",
     defaultValues: {
       vendorName: "",
       registrationNumber: "",
@@ -115,43 +117,57 @@ export default function NewVendorPage() {
               <CardTitle className="text-base">Vendor details</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vendorName">Vendor name</Label>
-            <Input id="vendorName" error={!!errors.vendorName} {...register("vendorName")} />
-            {errors.vendorName ? (
-              <p className="text-xs text-destructive">{errors.vendorName.message}</p>
-            ) : null}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="registrationNumber">Registration number</Label>
-              <Input id="registrationNumber" {...register("registrationNumber")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="contactPerson">Contact person</Label>
-              <Input id="contactPerson" {...register("contactPerson")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" {...register("phone")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" error={!!errors.email} {...register("email")} />
-              {errors.email ? <p className="text-xs text-destructive">{errors.email.message}</p> : null}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" {...register("address")} />
-          </div>
+              <FormField
+                label="Vendor name"
+                htmlFor="vendorName"
+                required
+                description="Legal or trading name used on contracts and purchase orders."
+                error={fieldErrorMessage("vendorName", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="vendorName"
+                  error={fieldHasError("vendorName", touchedFields, isSubmitted, errors)}
+                  {...register("vendorName")}
+                />
+              </FormField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  label="Registration number"
+                  htmlFor="registrationNumber"
+                  description="Company registration or tax identifier, if recorded."
+                >
+                  <Input id="registrationNumber" {...register("registrationNumber")} />
+                </FormField>
+                <FormField label="Contact person" htmlFor="contactPerson" description="Primary vendor liaison.">
+                  <Input id="contactPerson" {...register("contactPerson")} />
+                </FormField>
+                <FormField label="Phone" htmlFor="phone" description="Business phone number.">
+                  <Input id="phone" {...register("phone")} />
+                </FormField>
+                <FormField
+                  label="Email"
+                  htmlFor="email"
+                  description="Vendor billing or operations email."
+                  error={fieldErrorMessage("email", touchedFields, isSubmitted, errors)}
+                >
+                  <Input
+                    id="email"
+                    type="email"
+                    error={fieldHasError("email", touchedFields, isSubmitted, errors)}
+                    {...register("email")}
+                  />
+                </FormField>
+              </div>
+              <FormField label="Address" htmlFor="address" description="Postal or office address (optional).">
+                <Input id="address" {...register("address")} />
+              </FormField>
             </CardContent>
           </Card>
           <CreateFormActions>
             <Button type="button" variant="outline" size="md" asChild>
               <Link href="/vendors">Cancel</Link>
             </Button>
-            <Button type="submit" size="md" loading={mutation.isPending}>
+            <Button type="submit" size="md" loading={mutation.isPending} disabled={mutation.isPending}>
               Create vendor
             </Button>
           </CreateFormActions>

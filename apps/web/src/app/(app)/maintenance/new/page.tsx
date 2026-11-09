@@ -90,6 +90,7 @@ export default function NewMaintenancePage() {
     formState: { errors, isDirty },
   } = useForm<CreateMaintenanceInput>({
     resolver: zodResolver(createMaintenanceSchema),
+    mode: "onTouched",
     defaultValues: {
       assetId: searchParams.get("assetId") ?? "",
       contractId: "",

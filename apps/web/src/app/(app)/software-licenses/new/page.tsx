@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import {
   CreateFormActions,
   CreateFormLayout,
@@ -70,9 +72,10 @@ export default function NewSoftwareLicensePage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreateLicenseInput>({
     resolver: zodResolver(createLicenseSchema),
+    mode: "onTouched",
     defaultValues: {
       softwareName: "",
       licenseKeyReference: "",
@@ -161,13 +164,19 @@ export default function NewSoftwareLicensePage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="softwareName" required>
-                  Software name
-                </Label>
-                <Input id="softwareName" error={!!errors.softwareName} {...register("softwareName")} />
-                {errors.softwareName ? (
-                  <p className="text-xs text-destructive">{errors.softwareName.message}</p>
-                ) : null}
+                <FormField
+                  label="Software name"
+                  htmlFor="softwareName"
+                  required
+                  description="Product name as shown on the license certificate."
+                  error={fieldErrorMessage("softwareName", touchedFields, isSubmitted, errors)}
+                >
+                  <Input
+                    id="softwareName"
+                    error={fieldHasError("softwareName", touchedFields, isSubmitted, errors)}
+                    {...register("softwareName")}
+                  />
+                </FormField>
               </div>
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="licenseKeyReference">Key reference</Label>
@@ -215,13 +224,20 @@ export default function NewSoftwareLicensePage() {
                 ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="expiryDate" required>
-                  Expiry
-                </Label>
-                <Input id="expiryDate" type="date" error={!!errors.expiryDate} {...register("expiryDate")} />
-                {errors.expiryDate ? (
-                  <p className="text-xs text-destructive">{errors.expiryDate.message}</p>
-                ) : null}
+                <FormField
+                  label="License expiry date"
+                  htmlFor="expiryDate"
+                  required
+                  description="Select the date this license expires."
+                  error={fieldErrorMessage("expiryDate", touchedFields, isSubmitted, errors)}
+                >
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    error={fieldHasError("expiryDate", touchedFields, isSubmitted, errors)}
+                    {...register("expiryDate")}
+                  />
+                </FormField>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="licenseQuantity">Quantity</Label>

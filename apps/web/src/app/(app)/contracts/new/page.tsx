@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
@@ -59,9 +61,10 @@ export default function NewContractPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreateContractInput>({
     resolver: zodResolver(createContractSchema),
+    mode: "onTouched",
     defaultValues: {
       contractNumber: "",
       vendorId: "",
@@ -155,19 +158,20 @@ export default function NewContractPage() {
               <span className="text-xs font-medium text-destructive">* Required</span>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="contractNumber" required>
-                  Contract number
-                </Label>
+              <FormField
+                className="md:col-span-2"
+                label="Contract number"
+                htmlFor="contractNumber"
+                required
+                description="Official contract or agreement reference."
+                error={fieldErrorMessage("contractNumber", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="contractNumber"
-                  error={!!errors.contractNumber}
+                  error={fieldHasError("contractNumber", touchedFields, isSubmitted, errors)}
                   {...register("contractNumber")}
                 />
-                {errors.contractNumber ? (
-                  <p className="text-xs text-destructive">{errors.contractNumber.message}</p>
-                ) : null}
-              </div>
+              </FormField>
 
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="vendorId" required>

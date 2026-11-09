@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -110,6 +111,26 @@ function kpiGridClass(count: number): string {
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-stack">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </div>
+        </div>
+      }
+    >
+      <DashboardPageContent />
+    </Suspense>
+  );
+}
+
+function DashboardPageContent() {
   const router = useRouter();
   const { session, hasPermission, serviceUnavailable } = useAuth();
   const dateRange = useDashboardDateRange();

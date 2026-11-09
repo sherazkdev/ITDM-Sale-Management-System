@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
@@ -63,9 +65,10 @@ export default function NewPurchaseOrderPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreatePurchaseOrderInput>({
     resolver: zodResolver(createPurchaseOrderSchema),
+    mode: "onTouched",
     defaultValues: {
       poNumber: "",
       vendorId: "",
@@ -171,15 +174,20 @@ export default function NewPurchaseOrderPage() {
               <span className="text-xs font-medium text-destructive">* Required</span>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="poNumber" required>
-                  PO number
-                </Label>
-                <Input id="poNumber" error={!!errors.poNumber} {...register("poNumber")} />
-                {errors.poNumber ? (
-                  <p className="text-xs text-destructive">{errors.poNumber.message}</p>
-                ) : null}
-              </div>
+              <FormField
+                className="md:col-span-2"
+                label="PO number"
+                htmlFor="poNumber"
+                required
+                description="Enter the official PO reference recorded by the company."
+                error={fieldErrorMessage("poNumber", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="poNumber"
+                  error={fieldHasError("poNumber", touchedFields, isSubmitted, errors)}
+                  {...register("poNumber")}
+                />
+              </FormField>
 
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="vendorId" required>

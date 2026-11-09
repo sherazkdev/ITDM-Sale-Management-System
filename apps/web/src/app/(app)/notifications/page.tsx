@@ -1,35 +1,84 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
-import { SectionCard } from "@/components/common/SectionCard";
-import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
-import { StatusPill } from "@/components/common/StatusPill";
-import { Button } from "@/components/ui/button";
-import { fetchNotifications, markNotificationRead, type NotificationEvent } from "@/lib/api/notifications";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  NotificationFilterBar,
+  useNotificationFilterParams,
+} from "@/components/notifications/NotificationFilterBar";
+import { NotificationCard } from "@/components/notifications/NotificationCard";
+import { fetchNotifications, markNotificationRead } from "@/lib/api/notifications";
 import { ApiClientError } from "@/lib/api/client";
 
-function eventLabel(row: NotificationEvent) {
-  const payload = row.payload as Record<string, unknown> | null;
-  if (payload && typeof payload.message === "string") return payload.message;
-  return `${row.eventType} — ${row.entityType} ${row.entityId}`;
+export default function NotificationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-stack">
+          <Skeleton className="h-12 w-full max-w-md" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </div>
+      }
+    >
+      <NotificationsPageContent />
+    </Suspense>
+  );
 }
 
-export default function NotificationsPage() {
+function NotificationsPageContent() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const filters = useNotificationFilterParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
   const [pageSize, setPageSize] = useState(20);
-  const [unreadOnly, setUnreadOnly] = useState(false);
+
+  const queryKey = useMemo(
+    () => [
+      "notifications",
+      page,
+      pageSize,
+      filters.read,
+      filters.expiringSoon,
+      filters.eventType,
+      filters.search,
+      filters.dueFrom,
+      filters.dueTo,
+    ],
+    [
+      page,
+      pageSize,
+      filters.read,
+      filters.expiringSoon,
+      filters.eventType,
+      filters.search,
+      filters.dueFrom,
+      filters.dueTo,
+    ],
+  );
 
   const listQuery = useQuery({
-    queryKey: ["notifications", page, pageSize, unreadOnly],
-    queryFn: () => fetchNotifications({ page, pageSize, unreadOnly }),
+    queryKey,
+    queryFn: () =>
+      fetchNotifications({
+        page,
+        pageSize,
+        read: filters.read,
+        expiringSoon: filters.expiringSoon,
+        eventType: filters.eventType || undefined,
+        search: filters.search || undefined,
+        dueFrom: filters.dueFrom || undefined,
+        dueTo: filters.dueTo || undefined,
+      }),
   });
 
   const markReadMutation = useMutation({
@@ -45,74 +94,29 @@ export default function NotificationsPage() {
   const total = listQuery.data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const columns: Column<NotificationEvent>[] = [
-    {
-      key: "status",
-      header: "",
-      cell: (r) =>
-        r.readAt ? (
-          <span className="text-xs text-muted-foreground">Read</span>
-        ) : (
-          <StatusPill status="pending" label="Unread" />
-        ),
-    },
-    {
-      key: "due",
-      header: "Due",
-      cell: (r) => r.dueOn,
-    },
-    {
-      key: "type",
-      header: "Type",
-      cell: (r) => r.eventType,
-    },
-    {
-      key: "summary",
-      header: "Summary",
-      cell: (r) => eventLabel(r),
-    },
-    {
-      key: "actions",
-      header: "",
-      cell: (r) =>
-        !r.readAt ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={markReadMutation.isPending}
-            onClick={() => markReadMutation.mutate(r.notificationEventId)}
-          >
-            Mark read
-          </Button>
-        ) : null,
-    },
-  ];
+  const hasFilters =
+    filters.read !== "all" ||
+    filters.expiringSoon ||
+    Boolean(filters.eventType || filters.search || filters.dueFrom || filters.dueTo);
 
   return (
     <div className="page-stack">
       <PageHeader
         title="Notifications"
-        description="Contract, license, and PO expiry alerts from scheduled backend scans — not editable here."
+        description="Contract, license, and purchase-order expiry reminders from scheduled scans."
       />
 
-      <SectionCard title="Inbox">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button
-            type="button"
-            variant={unreadOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setUnreadOnly((v) => !v);
-              setPage(1);
-            }}
-          >
-            {unreadOnly ? "Showing unread" : "Show unread only"}
-          </Button>
-        </div>
+      <NotificationFilterBar />
 
-        {listQuery.isLoading && <p className="text-sm text-muted-foreground">Loading notifications…</p>}
-        {listQuery.isError && (
+      <section className="space-y-3" aria-label="Notification inbox">
+        {listQuery.isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+        ) : null}
+
+        {listQuery.isError ? (
           <EmptyState
             icon={Bell}
             title="Could not load notifications"
@@ -120,35 +124,49 @@ export default function NotificationsPage() {
               listQuery.error instanceof ApiClientError ? listQuery.error.message : "Try again later."
             }
           />
-        )}
-        {!listQuery.isLoading && !listQuery.isError && rows.length === 0 && (
-          <EmptyState icon={Bell} title="No notifications" description="Expiry alerts appear when the backend job creates them." />
-        )}
-        {rows.length > 0 && (
-          <>
-            <DataTable
-              tableId="notifications"
-              sortMode="off"
-              columns={columns}
-              data={rows}
-              getRowId={(r) => r.notificationEventId}
-            />
-            <Pagination
-              className="mt-4"
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
-              itemLabel="notifications"
-            />
-          </>
-        )}
-      </SectionCard>
+        ) : null}
+
+        {!listQuery.isLoading && !listQuery.isError && rows.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title={hasFilters ? "No notifications match filters" : "No notifications"}
+            description={
+              hasFilters
+                ? "Try resetting filters or broadening the date range."
+                : "Expiry alerts appear when the backend job creates them."
+            }
+          />
+        ) : null}
+
+        {rows.map((row) => (
+          <NotificationCard
+            key={row.notificationEventId}
+            row={row}
+            marking={markReadMutation.isPending}
+            onMarkRead={(id) => markReadMutation.mutate(id)}
+          />
+        ))}
+      </section>
+
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={(p) => {
+            const sp = new URLSearchParams(searchParams.toString());
+            if (p <= 1) sp.delete("page");
+            else sp.set("page", String(p));
+            const qs = sp.toString();
+            router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+          }}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+          }}
+          itemLabel="notifications"
+        />
+      ) : null}
     </div>
   );
 }

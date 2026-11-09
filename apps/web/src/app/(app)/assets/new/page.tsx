@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   CreateFormActions,
@@ -71,9 +73,10 @@ export default function NewAssetPage() {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<RegisterAssetInput>({
     resolver: zodResolver(registerAssetSchema),
+    mode: "onTouched",
     defaultValues: {
       assetCode: "",
       assetName: "",
@@ -101,6 +104,7 @@ export default function NewAssetPage() {
 
   const nonAssetForm = useForm<RegisterNonAssetStockInput>({
     resolver: zodResolver(registerNonAssetStockSchema),
+    mode: "onTouched",
     defaultValues: {
       stockCode: "",
       itemName: "",
@@ -229,13 +233,19 @@ export default function NewAssetPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="assetCode" required>
-                  Asset code
-                </Label>
-                <Input id="assetCode" error={!!errors.assetCode} {...register("assetCode")} />
-                {errors.assetCode ? (
-                  <p className="text-xs text-destructive">{errors.assetCode.message}</p>
-                ) : null}
+                <FormField
+                  label="Asset code"
+                  htmlFor="assetCode"
+                  required
+                  description="Unique identifier for this asset in the register."
+                  error={fieldErrorMessage("assetCode", touchedFields, isSubmitted, errors)}
+                >
+                  <Input
+                    id="assetCode"
+                    error={fieldHasError("assetCode", touchedFields, isSubmitted, errors)}
+                    {...register("assetCode")}
+                  />
+                </FormField>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="categoryId" required>
@@ -270,8 +280,13 @@ export default function NewAssetPage() {
                 ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="serialNumber">Serial number</Label>
-                <Input id="serialNumber" {...register("serialNumber")} />
+                <FormField
+                  label="Serial number"
+                  htmlFor="serialNumber"
+                  description="Enter the manufacturer's serial number for this device."
+                >
+                  <Input id="serialNumber" {...register("serialNumber")} />
+                </FormField>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="currentLocation">Location</Label>

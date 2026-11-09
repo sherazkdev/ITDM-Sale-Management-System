@@ -12,7 +12,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import {
@@ -58,9 +59,10 @@ export default function NewInvoicePage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, touchedFields, isSubmitted },
   } = useForm<CreateInvoiceInput>({
     resolver: zodResolver(createInvoiceSchema),
+    mode: "onTouched",
     defaultValues: {
       invoiceNumber: "",
       purchaseOrderId: "",
@@ -153,18 +155,28 @@ export default function NewInvoicePage() {
               <span className="text-xs font-medium text-destructive">* Required</span>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="invoiceNumber" required>
-                  Invoice number
-                </Label>
-                <Input id="invoiceNumber" error={!!errors.invoiceNumber} {...register("invoiceNumber")} />
-                {errors.invoiceNumber ? (
-                  <p className="text-xs text-destructive">{errors.invoiceNumber.message}</p>
-                ) : null}
-              </div>
+              <FormField
+                className="md:col-span-2"
+                label="Invoice number"
+                htmlFor="invoiceNumber"
+                required
+                description="Enter the vendor invoice reference linked to this purchase order."
+                error={fieldErrorMessage("invoiceNumber", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="invoiceNumber"
+                  error={fieldHasError("invoiceNumber", touchedFields, isSubmitted, errors)}
+                  {...register("invoiceNumber")}
+                />
+              </FormField>
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label required>Purchase order</Label>
+              <FormField
+                className="md:col-span-2"
+                label="Purchase order"
+                required
+                description="Select the purchase order this invoice fulfills."
+                error={fieldErrorMessage("purchaseOrderId", touchedFields, isSubmitted, errors)}
+              >
                 <Controller
                   control={control}
                   name="purchaseOrderId"
@@ -178,36 +190,38 @@ export default function NewInvoicePage() {
                     />
                   )}
                 />
-                {errors.purchaseOrderId ? (
-                  <p className="text-xs text-destructive">{errors.purchaseOrderId.message}</p>
-                ) : null}
-              </div>
+              </FormField>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="invoiceDate" required>
-                  Invoice date
-                </Label>
-                <Input id="invoiceDate" type="date" error={!!errors.invoiceDate} {...register("invoiceDate")} />
-                {errors.invoiceDate ? (
-                  <p className="text-xs text-destructive">{errors.invoiceDate.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="invoiceAmount" required>
-                  Amount
-                </Label>
+              <FormField
+                label="Invoice date"
+                htmlFor="invoiceDate"
+                required
+                description="Date printed on the vendor invoice."
+                error={fieldErrorMessage("invoiceDate", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="invoiceDate"
+                  type="date"
+                  error={fieldHasError("invoiceDate", touchedFields, isSubmitted, errors)}
+                  {...register("invoiceDate")}
+                />
+              </FormField>
+              <FormField
+                label="Invoice amount"
+                htmlFor="invoiceAmount"
+                required
+                description="Enter the invoice amount in the original transaction currency."
+                error={fieldErrorMessage("invoiceAmount", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="invoiceAmount"
                   type="number"
                   step="0.01"
                   min="0"
-                  error={!!errors.invoiceAmount}
+                  error={fieldHasError("invoiceAmount", touchedFields, isSubmitted, errors)}
                   {...register("invoiceAmount")}
                 />
-                {errors.invoiceAmount ? (
-                  <p className="text-xs text-destructive">{errors.invoiceAmount.message}</p>
-                ) : null}
-              </div>
+              </FormField>
             </CardContent>
           </Card>
 

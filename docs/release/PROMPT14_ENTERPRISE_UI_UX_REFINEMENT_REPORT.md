@@ -4,6 +4,8 @@
 **Production-ready:** **NO**  
 **Post-implementation GitHub push:** **NOT AUTHORIZED** (per Prompt #14 — local commits only)
 
+**Follow-up:** Prompt #15 extended forms + notifications — see `PROMPT15_FINAL_FORMS_NOTIFICATIONS_UX_REPORT.md`.
+
 ---
 
 ## 1. Pre-change Git checkpoint
