@@ -86,6 +86,8 @@
 
 **Stage 5 addendum (2026-11-08):** **`ENGINEERING READY — CLIENT ACCEPTANCE PENDING`**. UAT execution package published; client UAT **NOT RUN**; full packaged API+DB rehearsal **BLOCKED** (Docker engine pipe). Client actions: `REMAINING_CLIENT_ACTIONS.md`. Handover: `FINAL_HANDOVER_READINESS_REPORT.md`.
 
+**Prompt #12 addendum (2026-11-09):** Full regression on Docker PG — API **98/98**, Web **58/58**, Playwright **315/0/216** (`itdms_e2e`, :3020/:3021). Engineering cloud checkpoint pushed to `origin/main` with tag `itdms-phase78-engineering-verified-2026-11-09`. Phase 7/8 remain **PARTIAL** for client acceptance. See `FINAL_PHASE7_PHASE8_ENGINEERING_CLOSURE.md`. **Production-ready: NO**.
+
 **Prompt #11 addendum (2026-11-09):** Local **`ccfaac5`** (Prompt #10). Added report exports for maintenance, licenses, document metadata, audit logs; PO list status filter; settings validators tests. Web Vitest **58/58**; Docker PG still down — full API/Playwright/visual capture **BLOCKED**. See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md`. **Production-ready: NO**.
 
 **Prompt #10 addendum (2026-11-09):** Next.js production build **PASS** after clearing stale `apps/web/.next` (root cause: corrupt build cache, not App Router `Html` misuse). Dashboard asset/movement filters + partial list export rollout (**uncommitted**). API Vitest + Playwright **NOT RUN** — Docker Desktop stopped, `127.0.0.1:5433` unreachable. See `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md`. **Production-ready: NO**.

@@ -1,6 +1,6 @@
 # Final Handover Readiness Report (Stage 5)
 
-**Date:** 2026-11-08  
+**Date:** 2026-11-08 (engineering regression refreshed **2026-11-09** — see `FINAL_PHASE7_PHASE8_ENGINEERING_CLOSURE.md`)  
 **Project:** `D:\ITDM-Sale-Management`  
 **Git recovery:** `5b9cf2b` · tag `itdms-pre-client-uat-2026-11-08` (unchanged)
 

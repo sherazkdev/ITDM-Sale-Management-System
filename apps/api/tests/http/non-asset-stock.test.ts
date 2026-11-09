@@ -36,13 +36,12 @@ describe("Wave 1 — non-asset stock inventory", () => {
     expect(created.body.data.unitOfMeasure).toBe("FEET");
     expect(Number(created.body.data.quantityOnHand)).toBe(100);
 
+    const code = `CABLE-${ts}`;
     const list = await request(app)
-      .get("/api/v1/non-asset-stock-items?search=CABLE")
+      .get(`/api/v1/non-asset-stock-items?search=${encodeURIComponent(code)}&pageSize=50`)
       .set(sessionRequestHeaders(cookie))
       .expect(200);
-    expect(list.body.data.some((r: { stockCode: string }) => r.stockCode === `CABLE-${ts}`)).toBe(
-      true,
-    );
+    expect(list.body.data.some((r: { stockCode: string }) => r.stockCode === code)).toBe(true);
   });
 
   it("rejects duplicate stock codes", async () => {
