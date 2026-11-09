@@ -37,6 +37,7 @@ import {
 import { ImportModal } from "@/components/data-management/ImportModal";
 import { ExportMenu } from "@/components/data-management/ExportMenu";
 import { ApiClientError } from "@/lib/api/client";
+import { assetCategoryListCell } from "@/lib/list-entity-cells";
 
 type CategoryFormValues = CreateAssetCategoryInput;
 
@@ -100,7 +101,7 @@ export default function AssetCategoriesPage() {
     {
       key: "categoryName",
       header: "Name",
-      cell: (c) => <span className="font-medium">{c.categoryName}</span>,
+      cell: (c) => assetCategoryListCell(c),
     },
     {
       key: "description",

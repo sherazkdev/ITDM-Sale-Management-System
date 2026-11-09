@@ -44,7 +44,7 @@ export function Topbar() {
   }, [router]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 min-w-0 items-center gap-3 border-b border-border bg-background/90 px-4 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 grid h-16 min-w-0 grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-border bg-background/90 px-3 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur sm:gap-3 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
       <Button
         variant="ghost"
         size="icon"
@@ -65,7 +65,7 @@ export function Topbar() {
         <PanelLeft className="h-5 w-5" />
       </Button>
 
-      <div className="hidden md:block flex-1 max-w-xl min-w-0">
+      <div className="col-span-3 hidden min-w-0 max-w-xl justify-self-center md:col-span-1 md:block lg:max-w-2xl">
         <Input
           placeholder="Search purchase order number…"
           leftIcon={<Search />}
@@ -88,7 +88,7 @@ export function Topbar() {
         />
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-1">
+      <div className="col-start-3 flex shrink-0 items-center justify-end gap-0.5 sm:gap-1">
         <Button
           variant="ghost"
           size="icon"

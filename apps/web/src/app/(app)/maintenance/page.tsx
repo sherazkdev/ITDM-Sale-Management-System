@@ -9,7 +9,6 @@ import { Plus, Wrench } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
-import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
-import { MAINTENANCE_STATUS_LABELS, maintenanceStatusToPill } from "@/lib/domain/maintenance-ui";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
+import { maintenanceListCell } from "@/lib/list-entity-cells";
 
 const STATUS_FILTER = [
   { value: "", label: "All statuses" },
@@ -76,28 +75,10 @@ export default function MaintenancePage() {
   const columns: Column<MaintenanceRecord>[] = [
     {
       key: "type",
-      header: "Type",
+      header: "Request",
       sortable: true,
       serverSortKey: "maintenanceType",
-      cell: (r) => r.maintenanceType,
-    },
-    {
-      key: "asset",
-      header: "Asset",
-      cell: (r) => r.asset?.assetCode ?? (r.assetId ? r.assetId : "—"),
-    },
-    {
-      key: "status",
-      header: "Status",
-      sortable: true,
-      serverSortKey: "status",
-      cell: (r) => (
-        <StatusPill
-          status={maintenanceStatusToPill(r.status)}
-          label={MAINTENANCE_STATUS_LABELS[r.status] ?? r.status}
-          dot
-        />
-      ),
+      cell: (r) => maintenanceListCell(r),
     },
     {
       key: "requestDate",

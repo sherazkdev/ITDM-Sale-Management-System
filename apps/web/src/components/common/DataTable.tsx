@@ -222,7 +222,7 @@ export function DataTable<T>({
       <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
         <table
           ref={tableRef}
-          className="w-full min-w-[640px] text-sm border-collapse"
+          className="enterprise-table w-full min-w-[640px] text-sm border-collapse"
           role="grid"
           aria-rowcount={loading ? skeletonRows : sortedData.length}
           onKeyDown={onKeyDown}

@@ -9,9 +9,10 @@ import { FileText, Plus } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
-import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { purchaseOrderListCell } from "@/lib/list-entity-cells";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,7 +22,6 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
-import { PO_STATUS_LABELS, poStatusToPill } from "@/lib/domain/purchase-order-ui";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const PO_STATUS_FILTER = [
@@ -73,27 +73,34 @@ export default function PurchaseOrdersPage() {
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (statusFilter) {
+      const statusLabel =
+        PO_STATUS_FILTER.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+      chips.push({
+        id: "status",
+        label: `Status: ${statusLabel}`,
+        onRemove: () => list.patch({ extras: { status: "" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [list, statusFilter]);
+
   const columns: Column<PurchaseOrder>[] = [
     {
       key: "poNumber",
       header: "PO number",
       sortable: true,
       serverSortKey: "poNumber",
-      cell: (po) => <span className="font-medium tabular">{po.poNumber}</span>,
-    },
-    {
-      key: "vendor",
-      header: "Vendor",
-      cell: (po) => po.vendor?.vendorName ?? <span className="text-muted-foreground">—</span>,
-    },
-    {
-      key: "status",
-      header: "Status",
-      sortable: true,
-      serverSortKey: "status",
-      cell: (po) => (
-        <StatusPill status={poStatusToPill(po.status)} label={PO_STATUS_LABELS[po.status] ?? po.status} dot />
-      ),
+      cell: (po) => purchaseOrderListCell(po),
     },
     {
       key: "totalAmount",
@@ -152,6 +159,14 @@ export default function PurchaseOrdersPage() {
             placeholder="Status"
             className="w-[160px]"
           />
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: { status: "" },
+            page: 1,
+          })
         }
       />
 

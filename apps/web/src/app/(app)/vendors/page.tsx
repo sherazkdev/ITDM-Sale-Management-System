@@ -15,6 +15,8 @@ import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { vendorListCell } from "@/lib/list-entity-cells";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
@@ -74,38 +76,38 @@ export default function VendorsPage() {
     includeInactive: true,
   });
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (activeFilter !== "all") {
+      chips.push({
+        id: "active",
+        label: activeFilter === "active" ? "Status: Active" : "Status: Archived",
+        onRemove: () => list.patch({ extras: { active: "all" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [activeFilter, list]);
+
   const columns: Column<Vendor>[] = [
     {
       key: "vendorName",
       header: "Vendor",
       sortable: true,
       serverSortKey: "vendorName",
-      cell: (v) => (
-        <div className="min-w-0">
-          <p className="font-medium truncate">{v.vendorName}</p>
-          {v.registrationNumber ? (
-            <p className="text-xs text-muted-foreground truncate">{v.registrationNumber}</p>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      key: "contactPerson",
-      header: "Contact",
-      hideOnMobile: true,
-      cell: (v) => v.contactPerson ?? <span className="text-muted-foreground">—</span>,
+      cell: (v) => vendorListCell(v),
     },
     {
       key: "phone",
       header: "Phone",
       hideOnMobile: true,
       cell: (v) => v.phone ?? <span className="text-muted-foreground">—</span>,
-    },
-    {
-      key: "email",
-      header: "Email",
-      hideOnMobile: true,
-      cell: (v) => v.email ?? <span className="text-muted-foreground">—</span>,
     },
     {
       key: "isActive",
@@ -178,6 +180,14 @@ export default function VendorsPage() {
               { value: "inactive", label: "Archived" },
             ]}
           />
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: { active: "all" },
+            page: 1,
+          })
         }
       />
 

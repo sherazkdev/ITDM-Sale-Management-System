@@ -18,6 +18,7 @@ import { fetchVendors } from "@/lib/api/vendors";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
+import { contractListCell } from "@/lib/list-entity-cells";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 
@@ -81,12 +82,7 @@ export default function ContractsPage() {
       key: "contractNumber",
       header: "Contract",
       sortable: true,
-      cell: (c) => <span className="font-medium tabular">{c.contractNumber}</span>,
-    },
-    {
-      key: "vendor",
-      header: "Vendor",
-      cell: (c) => c.vendor?.vendorName ?? <span className="text-muted-foreground">—</span>,
+      cell: (c) => contractListCell(c),
     },
     {
       key: "startDate",
@@ -109,12 +105,6 @@ export default function ContractsPage() {
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
-    },
-    {
-      key: "renewalStatus",
-      header: "Renewal",
-      hideOnMobile: true,
-      cell: (c) => c.renewalStatus ?? <span className="text-muted-foreground">—</span>,
     },
   ];
 

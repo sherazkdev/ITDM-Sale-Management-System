@@ -9,9 +9,10 @@ import { Plus, Receipt } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
-import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { invoiceListCell } from "@/lib/list-entity-cells";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,7 +22,6 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
-import { INVOICE_PAYMENT_LABELS, invoicePaymentToPill } from "@/lib/domain/invoice-ui";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -71,18 +71,34 @@ export default function InvoicesPage() {
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (paymentStatus) {
+      const label =
+        PAYMENT_STATUS_OPTIONS.find((o) => o.value === paymentStatus)?.label ?? paymentStatus;
+      chips.push({
+        id: "paymentStatus",
+        label: `Payment: ${label}`,
+        onRemove: () => list.patch({ extras: { paymentStatus: "" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [list, paymentStatus]);
+
   const columns: Column<Invoice>[] = [
     {
       key: "invoiceNumber",
-      header: "Invoice #",
+      header: "Invoice",
       sortable: true,
       serverSortKey: "invoiceNumber",
-      cell: (row) => <span className="font-medium tabular">{row.invoiceNumber}</span>,
-    },
-    {
-      key: "po",
-      header: "PO",
-      cell: (row) => row.purchaseOrder?.poNumber ?? "—",
+      cell: (row) => invoiceListCell(row),
     },
     {
       key: "invoiceDate",
@@ -97,19 +113,6 @@ export default function InvoicesPage() {
       header: "Amount",
       cell: (row) =>
         formatCurrency(Number(row.invoiceAmount), row.purchaseOrder?.currency ?? "USD"),
-    },
-    {
-      key: "status",
-      header: "Payment",
-      sortable: true,
-      serverSortKey: "paymentStatus",
-      cell: (row) => (
-        <StatusPill
-          status={invoicePaymentToPill(row.paymentStatus)}
-          label={INVOICE_PAYMENT_LABELS[row.paymentStatus] ?? row.paymentStatus}
-          dot
-        />
-      ),
     },
   ];
 
@@ -158,6 +161,14 @@ export default function InvoicesPage() {
             aria-label="Filter by payment status"
             className="w-full sm:w-48"
           />
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: { paymentStatus: "" },
+            page: 1,
+          })
         }
       />
 

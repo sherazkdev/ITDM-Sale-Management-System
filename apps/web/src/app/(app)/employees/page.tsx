@@ -15,6 +15,8 @@ import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { employeeListCell } from "@/lib/list-entity-cells";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
@@ -86,37 +88,41 @@ export default function EmployeesPage() {
     includeInactive: true,
   });
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (departmentFilter) {
+      const deptLabel =
+        departmentOptions.find((o) => o.value === departmentFilter)?.label ?? departmentFilter;
+      chips.push({
+        id: "department",
+        label: `Department: ${deptLabel}`,
+        onRemove: () => list.patch({ extras: { departmentId: "" }, page: 1 }),
+      });
+    }
+    if (activeFilter !== "all") {
+      chips.push({
+        id: "active",
+        label: activeFilter === "active" ? "Status: Active" : "Status: Inactive",
+        onRemove: () => list.patch({ extras: { active: "all" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [activeFilter, departmentFilter, departmentOptions, list]);
+
   const columns: Column<Employee>[] = [
     {
-      key: "employeeNumber",
-      header: "Number",
+      key: "fullName",
+      header: "Employee",
       sortable: true,
       serverSortKey: "employeeNumber",
-      cell: (e) => <span className="font-medium tabular">{e.employeeNumber}</span>,
-    },
-    {
-      key: "fullName",
-      header: "Name",
-      sortable: true,
-      serverSortKey: "fullName",
-      cell: (e) => (
-        <div className="min-w-0">
-          <p className="font-medium truncate">{e.fullName}</p>
-          {e.email ? <p className="text-xs text-muted-foreground truncate">{e.email}</p> : null}
-        </div>
-      ),
-    },
-    {
-      key: "department",
-      header: "Department",
-      hideOnMobile: true,
-      cell: (e) => e.department ?? <span className="text-muted-foreground">—</span>,
-    },
-    {
-      key: "designation",
-      header: "Designation",
-      hideOnMobile: true,
-      cell: (e) => e.designation ?? <span className="text-muted-foreground">—</span>,
+      cell: (e) => employeeListCell(e),
     },
     {
       key: "isActive",
@@ -203,6 +209,14 @@ export default function EmployeesPage() {
               ]}
             />
           </>
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: { active: "all", departmentId: "" },
+            page: 1,
+          })
         }
       />
 

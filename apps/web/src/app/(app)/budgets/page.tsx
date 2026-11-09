@@ -280,20 +280,10 @@ export default function BudgetsPage() {
         </TabsList>
 
         <TabsContent value="years" className="mt-0">
-      <SectionCard title="Financial years">
-        <DataTable
-          tableId="budget-financial-years"
-          sortMode="client"
-          data={years}
-          columns={yearColumns}
-          getRowId={(y) => y.financialYearId}
-          loading={yearsQuery.isLoading}
-          onRowClick={(y) => setSelectedYearId(y.financialYearId)}
-          empty={<p className="p-4 text-sm text-muted-foreground">No financial years yet.</p>}
-        />
+      <SectionCard title="Financial years" description="Select a year to filter allocations and summaries.">
         {canManage ? (
           <form
-            className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2 lg:grid-cols-5"
+            className="panel-muted mb-5 grid gap-3 md:grid-cols-2 lg:grid-cols-5"
             onSubmit={yearHandleSubmit((v) => createYearMutation.mutate(v))}
             noValidate
           >
@@ -353,14 +343,24 @@ export default function BudgetsPage() {
                 {...yearRegister("status")}
               />
             </FormField>
-            <div className="flex items-end">
+            <div className="flex items-end lg:col-span-5">
               <Button type="submit" size="md" loading={createYearMutation.isPending}>
                 <Plus className="h-4 w-4" />
-                Add year
+                Add financial year
               </Button>
             </div>
           </form>
         ) : null}
+        <DataTable
+          tableId="budget-financial-years"
+          sortMode="client"
+          data={years}
+          columns={yearColumns}
+          getRowId={(y) => y.financialYearId}
+          loading={yearsQuery.isLoading}
+          onRowClick={(y) => setSelectedYearId(y.financialYearId)}
+          empty={<p className="p-4 text-sm text-muted-foreground">No financial years yet.</p>}
+        />
       </SectionCard>
         </TabsContent>
 
@@ -374,20 +374,9 @@ export default function BudgetsPage() {
             placeholder="Filter by financial year"
           />
         </div>
-        <DataTable
-          tableId="budget-allocations"
-          sortMode="client"
-          data={allocations}
-          columns={allocColumns}
-          getRowId={(a) => a.budgetId}
-          loading={allocationsQuery.isLoading}
-          empty={
-            <EmptyBudget icon={Wallet} message="No allocations for this filter." />
-          }
-        />
         {canManage ? (
           <form
-            className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2 lg:grid-cols-5"
+            className="panel-muted mb-5 grid gap-3 md:grid-cols-2 lg:grid-cols-5"
             onSubmit={allocHandleSubmit((v) => createAllocMutation.mutate(v))}
             noValidate
           >
@@ -471,13 +460,24 @@ export default function BudgetsPage() {
                 {...allocRegister("currency")}
               />
             </FormField>
-            <div className="flex items-end">
+            <div className="flex items-end lg:col-span-5">
               <Button type="submit" size="md" loading={createAllocMutation.isPending}>
                 Add allocation
               </Button>
             </div>
           </form>
         ) : null}
+        <DataTable
+          tableId="budget-allocations"
+          sortMode="client"
+          data={allocations}
+          columns={allocColumns}
+          getRowId={(a) => a.budgetId}
+          loading={allocationsQuery.isLoading}
+          empty={
+            <EmptyBudget icon={Wallet} message="No allocations for this filter." />
+          }
+        />
       </SectionCard>
         </TabsContent>
 

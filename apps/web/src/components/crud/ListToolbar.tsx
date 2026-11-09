@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { ActiveFilterChips, type ActiveFilterChip } from "@/components/common/ActiveFilterChips";
 import { cn } from "@/lib/utils";
 
 type ListToolbarProps = {
@@ -10,6 +11,9 @@ type ListToolbarProps = {
   searchPlaceholder?: string;
   filters?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Active filter chips shown below the search row. */
+  activeFilterChips?: ActiveFilterChip[];
+  onResetFilters?: () => void;
   className?: string;
 };
 
@@ -19,10 +23,12 @@ export function ListToolbar({
   searchPlaceholder = "Search…",
   filters,
   actions,
+  activeFilterChips,
+  onResetFilters,
   className,
 }: ListToolbarProps) {
   return (
-    <div className={cn("list-toolbar-panel", className)}>
+    <div className={cn("list-toolbar-panel space-y-3", className)}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full min-w-0 flex-1 max-w-xl">
@@ -31,7 +37,7 @@ export function ListToolbar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="pl-9"
+            className="pl-9 h-10"
             aria-label="Search"
           />
         </div>
@@ -39,6 +45,7 @@ export function ListToolbar({
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
+      <ActiveFilterChips chips={activeFilterChips ?? []} onResetAll={onResetFilters} />
     </div>
   );
 }

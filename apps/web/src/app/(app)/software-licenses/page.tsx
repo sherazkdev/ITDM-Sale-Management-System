@@ -24,6 +24,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { LICENSE_RENEW_BLOCKED_MESSAGE } from "@/lib/domain/license-ui";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
+import { licenseListCell } from "@/lib/list-entity-cells";
 
 export default function SoftwareLicensesPage() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function SoftwareLicensesPage() {
       header: "Software",
       sortable: true,
       serverSortKey: "softwareName",
-      cell: (r) => <span className="font-medium">{r.softwareName}</span>,
+      cell: (r) => licenseListCell(r),
     },
     {
       key: "vendor",
@@ -90,11 +91,6 @@ export default function SoftwareLicensesPage() {
       header: "Qty",
       hideOnMobile: true,
       cell: (r) => r.licenseQuantity,
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (r) => r.status,
     },
   ];
 

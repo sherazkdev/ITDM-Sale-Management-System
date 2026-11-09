@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { departmentListCell } from "@/lib/list-entity-cells";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
@@ -89,16 +91,30 @@ export default function DepartmentsPage() {
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (activeFilter !== "all") {
+      chips.push({
+        id: "active",
+        label: activeFilter === "active" ? "Status: Active" : "Status: Inactive",
+        onRemove: () => list.patch({ extras: { active: "all" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [activeFilter, list]);
+
   const columns: Column<Department>[] = [
     {
       key: "departmentName",
       header: "Department",
-      cell: (d) => (
-        <div className="min-w-0">
-          <p className="font-medium truncate">{d.departmentName}</p>
-          <p className="text-xs text-muted-foreground truncate">{d.departmentCode}</p>
-        </div>
-      ),
+      cell: (d) => departmentListCell(d),
     },
     {
       key: "description",
@@ -187,6 +203,14 @@ export default function DepartmentsPage() {
               { value: "inactive", label: "Inactive" },
             ]}
           />
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: { active: "all" },
+            page: 1,
+          })
         }
       />
 

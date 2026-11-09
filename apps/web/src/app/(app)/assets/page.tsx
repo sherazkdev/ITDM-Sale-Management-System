@@ -12,6 +12,8 @@ import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
+import { assetListCell, nonAssetStockListCell } from "@/lib/list-entity-cells";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterSelect } from "@/components/common/FilterSelect";
@@ -126,27 +128,47 @@ export default function AssetsPage() {
   const nonAssetTotal = nonAssetQuery.data?.meta.total ?? 0;
   const nonAssetTotalPages = Math.max(1, Math.ceil(nonAssetTotal / list.pageSize));
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (list.search.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${list.search.trim()}`,
+        onRemove: () => list.patch({ search: "", page: 1 }),
+      });
+    }
+    if (inventoryView === "assets" && statusFilter) {
+      const statusLabel = STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+      chips.push({
+        id: "status",
+        label: `Status: ${statusLabel}`,
+        onRemove: () => list.patch({ extras: { status: "" }, page: 1 }),
+      });
+    }
+    if (categoryFilter) {
+      const categoryLabel = categoryOptions.find((o) => o.value === categoryFilter)?.label ?? categoryFilter;
+      chips.push({
+        id: "category",
+        label: `Category: ${categoryLabel}`,
+        onRemove: () => list.patch({ extras: { categoryId: "" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [categoryFilter, categoryOptions, inventoryView, list, statusFilter]);
+
   const nonAssetColumns: Column<NonAssetStockItem>[] = [
     {
-      key: "stockCode",
-      header: "Code",
+      key: "itemName",
+      header: "Item",
       sortable: true,
       serverSortKey: "stockCode",
-      cell: (r) => (
-        <Link href={`/assets/non-asset/${r.stockItemId}`} className="font-medium tabular text-primary hover:underline">
-          {r.stockCode}
-        </Link>
-      ),
-    },
-    { key: "itemName", header: "Name", cell: (r) => r.itemName },
-    {
-      key: "qty",
-      header: "Qty",
-      cell: (r) => (
-        <span className="tabular">
-          {r.quantityOnHand} {r.unitOfMeasure}
-        </span>
-      ),
+      cell: (r) =>
+        nonAssetStockListCell({
+          stockCode: r.stockCode,
+          itemName: r.itemName,
+          quantityAvailable: Number(r.quantityAvailable ?? r.quantityOnHand),
+          unitOfMeasure: r.unitOfMeasure,
+        }),
     },
     {
       key: "category",
@@ -164,25 +186,11 @@ export default function AssetsPage() {
 
   const columns: Column<Asset>[] = [
     {
-      key: "assetCode",
-      header: "Code",
+      key: "assetName",
+      header: "Asset",
       sortable: true,
       serverSortKey: "assetCode",
-      cell: (a) => <span className="font-medium tabular">{a.assetCode}</span>,
-    },
-    {
-      key: "assetName",
-      header: "Name",
-      sortable: true,
-      serverSortKey: "assetName",
-      cell: (a) => (
-        <div className="min-w-0">
-          <p className="font-medium truncate">{a.assetName}</p>
-          {a.serialNumber ? (
-            <p className="text-xs text-muted-foreground truncate">S/N {a.serialNumber}</p>
-          ) : null}
-        </div>
-      ),
+      cell: (a) => assetListCell(a),
     },
     {
       key: "category",
@@ -200,12 +208,6 @@ export default function AssetsPage() {
           dot
         />
       ),
-    },
-    {
-      key: "currentLocation",
-      header: "Location",
-      hideOnMobile: true,
-      cell: (a) => a.currentLocation ?? <span className="text-muted-foreground">—</span>,
     },
   ];
 
@@ -297,6 +299,18 @@ export default function AssetsPage() {
               options={categoryOptions}
             />
           </>
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            search: "",
+            extras: {
+              inventory: inventoryView,
+              status: "",
+              categoryId: "",
+            },
+            page: 1,
+          })
         }
       />
 
