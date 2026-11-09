@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "db:refresh-sample": "tsx prisma/refresh-dev-sample-data.ts",
+    "db:purge-business-domain": "tsx prisma/purge-itdms-dev-business-domain.ts",
+    "db:seed-walkthrough": "tsx prisma/seed-client-walkthrough.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
