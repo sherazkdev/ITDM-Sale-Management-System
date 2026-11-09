@@ -18,6 +18,8 @@ import { ReportListExportMenu } from "@/components/data-management/ReportListExp
 import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import {
@@ -110,6 +112,7 @@ export default function BudgetsPage() {
 
   const allocForm = useForm<CreateBudgetAllocationInput>({
     resolver: zodResolver(createBudgetAllocationSchema),
+    mode: "onTouched",
     defaultValues: {
       financialYearId: "",
       budgetCategory: "",
@@ -117,6 +120,17 @@ export default function BudgetsPage() {
       currency: "USD",
     },
   });
+
+  const {
+    register: allocRegister,
+    handleSubmit: allocHandleSubmit,
+    control: allocControl,
+    formState: {
+      errors: allocErrors,
+      touchedFields: allocTouched,
+      isSubmitted: allocSubmitted,
+    },
+  } = allocForm;
 
   const ledgerForm = useForm<AppendLedgerEntryInput>({
     resolver: zodResolver(appendLedgerEntrySchema),
@@ -308,26 +322,94 @@ export default function BudgetsPage() {
         {canManage ? (
           <form
             className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2 lg:grid-cols-5"
-            onSubmit={allocForm.handleSubmit((v) => createAllocMutation.mutate(v))}
+            onSubmit={allocHandleSubmit((v) => createAllocMutation.mutate(v))}
+            noValidate
           >
-            <Controller
-              control={allocForm.control}
-              name="financialYearId"
-              render={({ field }) => (
-                <FilterSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={yearOptions}
-                  placeholder="Financial year"
-                />
+            <FormField
+              label="Financial year"
+              required
+              description="Open year receiving this budget line."
+              error={fieldErrorMessage(
+                "financialYearId",
+                allocTouched,
+                allocSubmitted,
+                allocErrors,
               )}
-            />
-            <Input placeholder="Category" {...allocForm.register("budgetCategory")} />
-            <Input type="number" step="0.01" placeholder="Allocated" {...allocForm.register("allocatedAmount")} />
-            <Input placeholder="Currency" maxLength={3} {...allocForm.register("currency")} />
-            <Button type="submit" size="md" disabled={createAllocMutation.isPending}>
-              Add allocation
-            </Button>
+            >
+              <Controller
+                control={allocControl}
+                name="financialYearId"
+                render={({ field }) => (
+                  <FilterSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={yearOptions}
+                    placeholder="Financial year"
+                    aria-label="Financial year"
+                  />
+                )}
+              />
+            </FormField>
+            <FormField
+              label="Category"
+              htmlFor="budgetCategory"
+              required
+              description="Department or spend category code."
+              error={fieldErrorMessage(
+                "budgetCategory",
+                allocTouched,
+                allocSubmitted,
+                allocErrors,
+              )}
+            >
+              <Input
+                id="budgetCategory"
+                placeholder="e.g. IT hardware"
+                error={fieldHasError("budgetCategory", allocTouched, allocSubmitted, allocErrors)}
+                {...allocRegister("budgetCategory")}
+              />
+            </FormField>
+            <FormField
+              label="Allocated amount"
+              htmlFor="allocatedAmount"
+              required
+              description="Approved ceiling for this category in the selected year."
+              error={fieldErrorMessage(
+                "allocatedAmount",
+                allocTouched,
+                allocSubmitted,
+                allocErrors,
+              )}
+            >
+              <Input
+                id="allocatedAmount"
+                type="number"
+                step="0.01"
+                min={0}
+                error={fieldHasError("allocatedAmount", allocTouched, allocSubmitted, allocErrors)}
+                {...allocRegister("allocatedAmount", { valueAsNumber: true })}
+              />
+            </FormField>
+            <FormField
+              label="Currency"
+              htmlFor="allocCurrency"
+              required
+              description="ISO 4217 code (default USD)."
+              error={fieldErrorMessage("currency", allocTouched, allocSubmitted, allocErrors)}
+            >
+              <Input
+                id="allocCurrency"
+                maxLength={3}
+                className="uppercase"
+                error={fieldHasError("currency", allocTouched, allocSubmitted, allocErrors)}
+                {...allocRegister("currency")}
+              />
+            </FormField>
+            <div className="flex items-end">
+              <Button type="submit" size="md" loading={createAllocMutation.isPending}>
+                Add allocation
+              </Button>
+            </div>
           </form>
         ) : null}
       </SectionCard>

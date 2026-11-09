@@ -12,7 +12,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/forms/FormField";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
@@ -173,10 +172,14 @@ export default function NewContractPage() {
                 />
               </FormField>
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="vendorId" required>
-                  Vendor
-                </Label>
+              <FormField
+                className="md:col-span-2"
+                label="Vendor"
+                htmlFor="vendorId"
+                required
+                description="Supplier or service provider party to this agreement."
+                error={fieldErrorMessage("vendorId", touchedFields, isSubmitted, errors)}
+              >
                 <Controller
                   control={control}
                   name="vendorId"
@@ -191,43 +194,58 @@ export default function NewContractPage() {
                     />
                   )}
                 />
-                {errors.vendorId ? (
-                  <p className="text-xs text-destructive">{errors.vendorId.message}</p>
-                ) : null}
-              </div>
+              </FormField>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="startDate" required>
-                  Start date
-                </Label>
-                <Input id="startDate" type="date" error={!!errors.startDate} {...register("startDate")} />
-                {errors.startDate ? (
-                  <p className="text-xs text-destructive">{errors.startDate.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="expiryDate" required>
-                  Expiry date
-                </Label>
-                <Input id="expiryDate" type="date" error={!!errors.expiryDate} {...register("expiryDate")} />
-                {errors.expiryDate ? (
-                  <p className="text-xs text-destructive">{errors.expiryDate.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="contractValue">Contract value</Label>
+              <FormField
+                label="Start date"
+                htmlFor="startDate"
+                required
+                description="First day the contract obligations are effective."
+                error={fieldErrorMessage("startDate", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="startDate"
+                  type="date"
+                  error={fieldHasError("startDate", touchedFields, isSubmitted, errors)}
+                  {...register("startDate")}
+                />
+              </FormField>
+              <FormField
+                label="Expiry date"
+                htmlFor="expiryDate"
+                required
+                description="Last day of coverage — drives renewal notifications."
+                error={fieldErrorMessage("expiryDate", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  error={fieldHasError("expiryDate", touchedFields, isSubmitted, errors)}
+                  {...register("expiryDate")}
+                />
+              </FormField>
+              <FormField
+                label="Contract value"
+                htmlFor="contractValue"
+                description="Total contract amount for budgeting (optional)."
+                error={fieldErrorMessage("contractValue", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="contractValue"
                   type="number"
                   min={0}
                   step="0.01"
+                  error={fieldHasError("contractValue", touchedFields, isSubmitted, errors)}
                   {...register("contractValue")}
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="renewalStatus">Renewal status</Label>
+              </FormField>
+              <FormField
+                label="Renewal status"
+                htmlFor="renewalStatus"
+                description="Pipeline label such as Pending, Renewed, or Cancelled (optional)."
+              >
                 <Input id="renewalStatus" {...register("renewalStatus")} />
-              </div>
+              </FormField>
             </CardContent>
           </Card>
 

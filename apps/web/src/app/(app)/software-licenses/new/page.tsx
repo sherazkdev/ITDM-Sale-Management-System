@@ -12,7 +12,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/forms/FormField";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import {
@@ -178,12 +177,18 @@ export default function NewSoftwareLicensePage() {
                   />
                 </FormField>
               </div>
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="licenseKeyReference">Key reference</Label>
+              <FormField
+                className="md:col-span-2"
+                label="Key reference"
+                htmlFor="licenseKeyReference"
+                description="Store a reference or vault key ID — never paste raw license keys."
+              >
                 <Input id="licenseKeyReference" {...register("licenseKeyReference")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Vendor (optional)</Label>
+              </FormField>
+              <FormField
+                label="Vendor"
+                description="Supplier tied to procurement records (optional)."
+              >
                 <Controller
                   control={control}
                   name="vendorId"
@@ -197,9 +202,11 @@ export default function NewSoftwareLicensePage() {
                     />
                   )}
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Purchase order (optional)</Label>
+              </FormField>
+              <FormField
+                label="Purchase order"
+                description="PO that funded this license (optional)."
+              >
                 <Controller
                   control={control}
                   name="purchaseOrderId"
@@ -213,16 +220,21 @@ export default function NewSoftwareLicensePage() {
                     />
                   )}
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="startDate" required>
-                  Start
-                </Label>
-                <Input id="startDate" type="date" error={!!errors.startDate} {...register("startDate")} />
-                {errors.startDate ? (
-                  <p className="text-xs text-destructive">{errors.startDate.message}</p>
-                ) : null}
-              </div>
+              </FormField>
+              <FormField
+                label="Start date"
+                htmlFor="startDate"
+                required
+                description="Coverage start date on the certificate."
+                error={fieldErrorMessage("startDate", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="startDate"
+                  type="date"
+                  error={fieldHasError("startDate", touchedFields, isSubmitted, errors)}
+                  {...register("startDate")}
+                />
+              </FormField>
               <div className="flex flex-col gap-1.5">
                 <FormField
                   label="License expiry date"
@@ -239,24 +251,34 @@ export default function NewSoftwareLicensePage() {
                   />
                 </FormField>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="licenseQuantity">Quantity</Label>
+              <FormField
+                label="License quantity"
+                htmlFor="licenseQuantity"
+                description="Seat or instance count purchased."
+                error={fieldErrorMessage("licenseQuantity", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="licenseQuantity"
                   type="number"
                   min={1}
+                  error={fieldHasError("licenseQuantity", touchedFields, isSubmitted, errors)}
                   {...register("licenseQuantity", { valueAsNumber: true })}
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="renewalCost">Renewal cost</Label>
+              </FormField>
+              <FormField
+                label="Renewal cost"
+                htmlFor="renewalCost"
+                description="Expected annual renewal (optional)."
+                error={fieldErrorMessage("renewalCost", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="renewalCost"
                   type="number"
                   step="0.01"
+                  error={fieldHasError("renewalCost", touchedFields, isSubmitted, errors)}
                   {...register("renewalCost", { setValueAs: (v) => (v === "" ? undefined : Number(v)) })}
                 />
-              </div>
+              </FormField>
             </CardContent>
           </Card>
 

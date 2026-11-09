@@ -13,7 +13,8 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import {
   Dialog,
   DialogContent,
@@ -54,11 +55,13 @@ export default function AssetCategoriesPage() {
 
   const createForm = useForm<CategoryFormValues>({
     resolver: zodResolver(createAssetCategorySchema),
+    mode: "onTouched",
     defaultValues: { categoryName: "", description: "" },
   });
 
   const editForm = useForm<CategoryFormValues>({
     resolver: zodResolver(createAssetCategorySchema),
+    mode: "onTouched",
     values: editCategory
       ? {
           categoryName: editCategory.categoryName,
@@ -182,23 +185,36 @@ export default function AssetCategoriesPage() {
             className="flex flex-col gap-4"
             noValidate
           >
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="create-name">Name</Label>
+            <FormField
+              label="Name"
+              htmlFor="create-name"
+              required
+              description="Short label used in asset registers and filters."
+              error={fieldErrorMessage(
+                "categoryName",
+                createForm.formState.touchedFields,
+                createForm.formState.isSubmitted,
+                createForm.formState.errors,
+              )}
+            >
               <Input
                 id="create-name"
-                error={!!createForm.formState.errors.categoryName}
+                error={fieldHasError(
+                  "categoryName",
+                  createForm.formState.touchedFields,
+                  createForm.formState.isSubmitted,
+                  createForm.formState.errors,
+                )}
                 {...createForm.register("categoryName")}
               />
-              {createForm.formState.errors.categoryName ? (
-                <p className="text-xs text-destructive">
-                  {createForm.formState.errors.categoryName.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="create-desc">Description</Label>
+            </FormField>
+            <FormField
+              label="Description"
+              htmlFor="create-desc"
+              description="Optional context for auditors and asset managers."
+            >
               <Input id="create-desc" {...createForm.register("description")} />
-            </div>
+            </FormField>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
@@ -224,14 +240,36 @@ export default function AssetCategoriesPage() {
               className="flex flex-col gap-4"
               noValidate
             >
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit-name">Name</Label>
-                <Input id="edit-name" {...editForm.register("categoryName")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit-desc">Description</Label>
+              <FormField
+                label="Name"
+                htmlFor="edit-name"
+                required
+                description="Short label used in asset registers and filters."
+                error={fieldErrorMessage(
+                  "categoryName",
+                  editForm.formState.touchedFields,
+                  editForm.formState.isSubmitted,
+                  editForm.formState.errors,
+                )}
+              >
+                <Input
+                  id="edit-name"
+                  error={fieldHasError(
+                    "categoryName",
+                    editForm.formState.touchedFields,
+                    editForm.formState.isSubmitted,
+                    editForm.formState.errors,
+                  )}
+                  {...editForm.register("categoryName")}
+                />
+              </FormField>
+              <FormField
+                label="Description"
+                htmlFor="edit-desc"
+                description="Optional context for auditors and asset managers."
+              >
                 <Input id="edit-desc" {...editForm.register("description")} />
-              </div>
+              </FormField>
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button type="button" variant="outline" onClick={() => setEditCategory(null)}>
                   Cancel

@@ -123,6 +123,7 @@ function NotificationsPageContent() {
             description={
               listQuery.error instanceof ApiClientError ? listQuery.error.message : "Try again later."
             }
+            action={{ label: "Retry", onClick: () => void listQuery.refetch() }}
           />
         ) : null}
 

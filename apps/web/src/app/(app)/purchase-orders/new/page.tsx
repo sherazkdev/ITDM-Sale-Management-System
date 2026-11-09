@@ -12,7 +12,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/forms/FormField";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
@@ -189,10 +188,14 @@ export default function NewPurchaseOrderPage() {
                 />
               </FormField>
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="vendorId" required>
-                  Vendor
-                </Label>
+              <FormField
+                className="md:col-span-2"
+                label="Vendor"
+                htmlFor="vendorId"
+                required
+                description="Approved supplier this PO is issued against."
+                error={fieldErrorMessage("vendorId", touchedFields, isSubmitted, errors)}
+              >
                 <Controller
                   control={control}
                   name="vendorId"
@@ -207,13 +210,14 @@ export default function NewPurchaseOrderPage() {
                     />
                   )}
                 />
-                {errors.vendorId ? (
-                  <p className="text-xs text-destructive">{errors.vendorId.message}</p>
-                ) : null}
-              </div>
+              </FormField>
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="contractId">Contract (optional)</Label>
+              <FormField
+                className="md:col-span-2"
+                label="Contract"
+                htmlFor="contractId"
+                description="Link an active vendor contract when the PO is covered by one."
+              >
                 <Controller
                   control={control}
                   name="contractId"
@@ -229,36 +233,45 @@ export default function NewPurchaseOrderPage() {
                     />
                   )}
                 />
-              </div>
+              </FormField>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="poDate" required>
-                  PO date
-                </Label>
-                <Input id="poDate" type="date" error={!!errors.poDate} {...register("poDate")} />
-                {errors.poDate ? (
-                  <p className="text-xs text-destructive">{errors.poDate.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="currency" required>
-                  Currency
-                </Label>
+              <FormField
+                label="PO date"
+                htmlFor="poDate"
+                required
+                description="Document date printed on the purchase order."
+                error={fieldErrorMessage("poDate", touchedFields, isSubmitted, errors)}
+              >
+                <Input
+                  id="poDate"
+                  type="date"
+                  error={fieldHasError("poDate", touchedFields, isSubmitted, errors)}
+                  {...register("poDate")}
+                />
+              </FormField>
+              <FormField
+                label="Currency"
+                htmlFor="currency"
+                required
+                description="Three-letter ISO code for PO amounts (default USD)."
+                error={fieldErrorMessage("currency", touchedFields, isSubmitted, errors)}
+              >
                 <Input
                   id="currency"
                   maxLength={3}
                   className="uppercase"
-                  error={!!errors.currency}
+                  error={fieldHasError("currency", touchedFields, isSubmitted, errors)}
                   {...register("currency")}
                 />
-                {errors.currency ? (
-                  <p className="text-xs text-destructive">{errors.currency.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="validUntil">Valid until (optional)</Label>
+              </FormField>
+              <FormField
+                className="md:col-span-2"
+                label="Valid until"
+                htmlFor="validUntil"
+                description="Last date vendors may fulfill this PO (optional)."
+              >
                 <Input id="validUntil" type="date" {...register("validUntil")} />
-              </div>
+              </FormField>
             </CardContent>
           </Card>
 

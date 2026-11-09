@@ -13,6 +13,9 @@ import { DataTable, type Column } from "@/components/common/DataTable";
 import { StatusPill } from "@/components/common/StatusPill";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FormField } from "@/components/forms/FormField";
+import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
   Dialog,
@@ -53,6 +56,7 @@ export default function AdminPage() {
 
   const createForm = useForm<CreateAdminUserInput>({
     resolver: zodResolver(createAdminUserSchema),
+    mode: "onTouched",
     defaultValues: {
       username: "",
       displayName: "",
@@ -61,6 +65,21 @@ export default function AdminPage() {
       roleKeys: [],
     },
   });
+
+  const {
+    register: createRegister,
+    handleSubmit: createHandleSubmit,
+    control: createControl,
+    formState: {
+      errors: createErrors,
+      touchedFields: createTouched,
+      isSubmitted: createSubmitted,
+    },
+  } = createForm;
+
+  const createScalarTouched = createTouched as Partial<
+    Record<"username" | "displayName" | "password" | "email", boolean>
+  >;
 
   const createMutation = useMutation({
     mutationFn: createAdminUser,
@@ -149,26 +168,90 @@ export default function AdminPage() {
               </DialogHeader>
               <form
                 className="space-y-3"
-                onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
+                onSubmit={createHandleSubmit((values) => createMutation.mutate(values))}
+                noValidate
               >
-                <Input placeholder="Username" {...createForm.register("username")} />
-                <Input placeholder="Display name" {...createForm.register("displayName")} />
-                <Input type="email" placeholder="Email (optional)" {...createForm.register("email")} />
-                <Input type="password" placeholder="Password (min 12 chars)" {...createForm.register("password")} />
-                <Controller
-                  control={createForm.control}
-                  name="roleKeys"
-                  render={({ field }) => (
-                    <FilterSelect
-                      value={field.value[0] ?? ""}
-                      onChange={(v) => field.onChange(v ? [v] : [])}
-                      options={roleOptions}
-                      placeholder="Initial role"
-                      aria-label="Initial role"
-                    />
-                  )}
-                />
-                <Button type="submit" disabled={createMutation.isPending}>
+                <FormField
+                  label="Username"
+                  htmlFor="admin-username"
+                  required
+                  description="Sign-in identifier; must be unique."
+                  error={fieldErrorMessage("username", createScalarTouched, createSubmitted, createErrors)}
+                >
+                  <Input
+                    id="admin-username"
+                    autoComplete="username"
+                    error={fieldHasError("username", createScalarTouched, createSubmitted, createErrors)}
+                    {...createRegister("username")}
+                  />
+                </FormField>
+                <FormField
+                  label="Display name"
+                  htmlFor="admin-displayName"
+                  required
+                  description="Name shown in audit trails and assignments."
+                  error={fieldErrorMessage("displayName", createScalarTouched, createSubmitted, createErrors)}
+                >
+                  <Input
+                    id="admin-displayName"
+                    error={fieldHasError("displayName", createScalarTouched, createSubmitted, createErrors)}
+                    {...createRegister("displayName")}
+                  />
+                </FormField>
+                <FormField
+                  label="Email"
+                  htmlFor="admin-email"
+                  description="Optional recovery and notification address."
+                  error={fieldErrorMessage("email", createScalarTouched, createSubmitted, createErrors)}
+                >
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    autoComplete="email"
+                    error={fieldHasError("email", createScalarTouched, createSubmitted, createErrors)}
+                    {...createRegister("email")}
+                  />
+                </FormField>
+                <FormField
+                  label="Password"
+                  htmlFor="admin-password"
+                  required
+                  description="Minimum 12 characters; dev-only policies apply in seeded environments."
+                  error={fieldErrorMessage("password", createScalarTouched, createSubmitted, createErrors)}
+                >
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    autoComplete="new-password"
+                    error={fieldHasError("password", createScalarTouched, createSubmitted, createErrors)}
+                    {...createRegister("password")}
+                  />
+                </FormField>
+                <FormField
+                  label="Initial role"
+                  required
+                  description="At least one role is required; server enforces RBAC."
+                  error={
+                    createSubmitted || createTouched.roleKeys
+                      ? (createErrors.roleKeys?.message as string | undefined)
+                      : undefined
+                  }
+                >
+                  <Controller
+                    control={createControl}
+                    name="roleKeys"
+                    render={({ field }) => (
+                      <FilterSelect
+                        value={field.value[0] ?? ""}
+                        onChange={(v) => field.onChange(v ? [v] : [])}
+                        options={roleOptions}
+                        placeholder="Initial role"
+                        aria-label="Initial role"
+                      />
+                    )}
+                  />
+                </FormField>
+                <Button type="submit" loading={createMutation.isPending}>
                   Create
                 </Button>
               </form>
@@ -241,6 +324,7 @@ function EditUserForm({
 }) {
   const form = useForm<UpdateAdminUserInput>({
     resolver: zodResolver(updateAdminUserSchema),
+    mode: "onTouched",
     defaultValues: {
       displayName: user.displayName,
       email: user.email,
@@ -249,17 +333,71 @@ function EditUserForm({
     },
   });
 
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, touchedFields, isSubmitted },
+  } = form;
+
   return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register("displayName")} />
-      <Input type="email" {...form.register("email")} />
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...form.register("isActive")} /> Active
-      </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...form.register("isLocked")} /> Locked
-      </label>
-      <Button type="submit" disabled={pending}>
+    <form className="space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <FormField
+        label="Display name"
+        htmlFor="edit-displayName"
+        description="Name shown in audit trails and assignments."
+        error={fieldErrorMessage("displayName", touchedFields, isSubmitted, errors)}
+      >
+        <Input
+          id="edit-displayName"
+          error={fieldHasError("displayName", touchedFields, isSubmitted, errors)}
+          {...register("displayName")}
+        />
+      </FormField>
+      <FormField
+        label="Email"
+        htmlFor="edit-email"
+        description="Leave blank to clear the address on the server."
+        error={fieldErrorMessage("email", touchedFields, isSubmitted, errors)}
+      >
+        <Input
+          id="edit-email"
+          type="email"
+          error={fieldHasError("email", touchedFields, isSubmitted, errors)}
+          {...register("email")}
+        />
+      </FormField>
+      <FormField label="Account status" description="Active users may sign in; locked accounts cannot.">
+        <div className="flex flex-col gap-2 pt-1">
+          <Controller
+            control={control}
+            name="isActive"
+            render={({ field }) => (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={field.value ?? false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
+                Active
+              </label>
+            )}
+          />
+          <Controller
+            control={control}
+            name="isLocked"
+            render={({ field }) => (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={field.value ?? false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
+                Locked
+              </label>
+            )}
+          />
+        </div>
+      </FormField>
+      <Button type="submit" loading={pending}>
         Save
       </Button>
     </form>
