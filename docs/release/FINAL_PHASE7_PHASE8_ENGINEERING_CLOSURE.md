@@ -15,7 +15,7 @@
 | Prompt #11 checkpoint | `425fa3d` |
 | Prompt #12 release commit | **`80e2874`** — `chore(release): verify phase 7 and phase 8 engineering closure` |
 | Post-push doc sync | **`799dabf`** — `docs(release): sync prompt 12 closure report push record` |
-| Current `origin/main` | **`2366e36`** |
+| Current `origin/main` | Latest on `main` (doc-only commits may trail tagged checkpoint `80e2874`) |
 | Recovery tags preserved | `itdms-pre-crm-enhancements-2026-11-08`, `itdms-pre-client-uat-2026-11-08` |
 | New engineering tag (post-push) | `itdms-phase78-engineering-verified-2026-11-09` |
 
@@ -149,7 +149,7 @@ See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md` §4. All list exports wir
 | Item | Value |
 |------|--------|
 | Verified engineering checkpoint (tag) | **`80e2874`** — `itdms-phase78-engineering-verified-2026-11-09` |
-| Current remote `origin/main` | **`2366e36`** |
+| Current remote `origin/main` | Latest on `main` (verify: `git rev-parse origin/main`) |
 | Commits pushed | Former `6e84fda` → through engineering closure + doc sync (non-force) |
 | New annotated tag | `itdms-phase78-engineering-verified-2026-11-09` → **`80e2874`** |
 | Prior recovery tags | **Not modified** |
