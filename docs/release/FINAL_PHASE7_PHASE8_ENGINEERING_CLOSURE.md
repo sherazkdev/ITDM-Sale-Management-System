@@ -13,7 +13,9 @@
 | Remote `origin/main` (pre-push) | `6e84fda` |
 | Prompt #10 checkpoint | `ccfaac5` |
 | Prompt #11 checkpoint | `425fa3d` |
-| Prompt #12 final commit | **`80e2874`** — `chore(release): verify phase 7 and phase 8 engineering closure` |
+| Prompt #12 release commit | **`80e2874`** — `chore(release): verify phase 7 and phase 8 engineering closure` |
+| Post-push doc sync | **`799dabf`** — `docs(release): sync prompt 12 closure report push record` |
+| Current `origin/main` | **`799dabf`** |
 | Recovery tags preserved | `itdms-pre-crm-enhancements-2026-11-08`, `itdms-pre-client-uat-2026-11-08` |
 | New engineering tag (post-push) | `itdms-phase78-engineering-verified-2026-11-09` |
 
@@ -146,8 +148,9 @@ See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md` §4. All list exports wir
 
 | Item | Value |
 |------|--------|
-| Verified local HEAD | **`80e2874`** |
-| Commits pushed | `501575b` … `80e2874` (5 ahead of former `origin/main` `6e84fda`) |
+| Verified engineering checkpoint (tag) | **`80e2874`** — `itdms-phase78-engineering-verified-2026-11-09` |
+| Current remote `origin/main` | **`799dabf`** (includes closure doc sync after tag) |
+| Commits pushed | Former `6e84fda` → through **`799dabf`** (non-force) |
 | New annotated tag | `itdms-phase78-engineering-verified-2026-11-09` → **`80e2874`** |
 | Prior recovery tags | **Not modified** |
 | Force push | **Not used** |
