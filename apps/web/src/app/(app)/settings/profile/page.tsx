@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Briefcase, Camera, Loader2, Mail, MapPin, Phone, User as UserIcon } from "lucide-react";
@@ -17,19 +16,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/client";
 import { fetchUserProfile, patchUserProfile, uploadUserAvatar, userAvatarSrc } from "@/lib/api/user-profile";
 import { useAuth } from "@/components/providers/AuthProvider";
+import {
+  ACCEPTED_AVATAR_MIME,
+  profileSettingsSchema,
+  validateAvatarFile,
+} from "@/lib/validators/settings";
+import type { z } from "zod";
 
-const schema = z.object({
-  displayName: z.string().trim().min(1, "Display name is required").max(255),
-  email: z.string().email().max(255).optional().or(z.literal("")),
-  profilePhone: z.string().trim().max(64).optional(),
-  profileLocation: z.string().trim().max(255).optional(),
-  profileBio: z.string().trim().max(4000).optional(),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+type FormValues = z.infer<typeof profileSettingsSchema>;
 
 export default function ProfileSettingsPage() {
   const { session, refresh } = useAuth();
@@ -51,7 +45,7 @@ export default function ProfileSettingsPage() {
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(profileSettingsSchema),
     defaultValues: {
       displayName: "",
       email: "",
@@ -137,12 +131,9 @@ export default function ProfileSettingsPage() {
   const handleAvatarFile = (file?: File | null) => {
     if (!file) return;
     setAvatarError(null);
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setAvatarError("Unsupported format. Use PNG, JPG, WEBP, or GIF.");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setAvatarError("Image is too large. Maximum size is 2MB.");
+    const avatarValidationError = validateAvatarFile(file);
+    if (avatarValidationError) {
+      setAvatarError(avatarValidationError);
       return;
     }
     clearPreview();
@@ -192,7 +183,7 @@ export default function ProfileSettingsPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept={ACCEPTED_TYPES.join(",")}
+                    accept={ACCEPTED_AVATAR_MIME.join(",")}
                     className="hidden"
                     onChange={(e) => {
                       handleAvatarFile(e.target.files?.[0]);

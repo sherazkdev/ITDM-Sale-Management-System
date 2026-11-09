@@ -123,4 +123,48 @@ export class ReportController {
     await this.service.logExport(req.principal?.userId, "non-asset-stock-ledger", getRequestId(req));
     sendReport(req, res, data, format);
   });
+
+  maintenance = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const status =
+      typeof req.query.status === "string" && req.query.status.length > 0
+        ? req.query.status
+        : undefined;
+    const assetId =
+      typeof req.query.assetId === "string" && /^\d+$/.test(req.query.assetId)
+        ? BigInt(req.query.assetId)
+        : undefined;
+    const data = await this.service.maintenance(format, { status, assetId });
+    await this.service.logExport(req.principal?.userId, "maintenance", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
+
+  softwareLicenses = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const expiringBefore =
+      typeof req.query.before === "string" && /^\d{4}-\d{2}-\d{2}/.test(req.query.before)
+        ? req.query.before.slice(0, 10)
+        : undefined;
+    const data = await this.service.softwareLicenses(format, { expiringBefore });
+    await this.service.logExport(req.principal?.userId, "software-licenses", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
+
+  documentMetadata = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const data = await this.service.documentMetadata(format);
+    await this.service.logExport(req.principal?.userId, "document-metadata", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
+
+  auditLogs = asyncHandler(async (req: Request, res: Response) => {
+    const format = this.service.parseFormat(formatParam(req));
+    const targetType =
+      typeof req.query.targetType === "string" && req.query.targetType.trim().length > 0
+        ? req.query.targetType.trim()
+        : undefined;
+    const data = await this.service.auditLogs(format, { targetType });
+    await this.service.logExport(req.principal?.userId, "audit-logs", getRequestId(req));
+    sendReport(req, res, data, format);
+  });
 }

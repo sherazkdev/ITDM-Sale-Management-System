@@ -21,6 +21,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import { MAINTENANCE_STATUS_LABELS, maintenanceStatusToPill } from "@/lib/domain/maintenance-ui";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const STATUS_FILTER = [
   { value: "", label: "All statuses" },
@@ -119,14 +120,25 @@ export default function MaintenancePage() {
         title="Maintenance"
         description="Asset, contract, and vendor maintenance records."
         actions={
-          hasPermission(PermissionKeys.maintenanceManage) ? (
-            <Button asChild size="md">
-              <Link href="/maintenance/new">
-                <Plus className="h-4 w-4" />
-                New request
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <ReportListExportMenu
+                listKey="maintenance"
+                filterParams={{
+                  status: status || undefined,
+                  assetId: assetId || undefined,
+                }}
+              />
+            ) : null}
+            {hasPermission(PermissionKeys.maintenanceManage) ? (
+              <Button asChild size="md">
+                <Link href="/maintenance/new">
+                  <Plus className="h-4 w-4" />
+                  New request
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

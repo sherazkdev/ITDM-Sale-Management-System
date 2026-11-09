@@ -12,6 +12,7 @@ import { Pagination } from "@/components/common/Pagination";
 import { StatusPill } from "@/components/common/StatusPill";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListToolbar } from "@/components/crud/ListToolbar";
+import { FilterSelect } from "@/components/common/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchPurchaseOrders, type PurchaseOrder } from "@/lib/api/purchase-orders";
@@ -23,12 +24,21 @@ import { formatCurrency } from "@/lib/utils";
 import { PO_STATUS_LABELS, poStatusToPill } from "@/lib/domain/purchase-order-ui";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
-const PO_LIST_DEFAULTS = { page: 1, pageSize: 20, sortDir: "desc" as const };
+const PO_STATUS_FILTER = [
+  { value: "", label: "All statuses" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "SUBMITTED", label: "Submitted" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
+
+const PO_LIST_DEFAULTS = { page: 1, pageSize: 20, sortDir: "desc" as const, status: "" };
 
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const { hasPermission } = useAuth();
   const list = useServerListTable({ defaults: PO_LIST_DEFAULTS, defaultSortBy: "purchaseOrderId" });
+  const statusFilter = list.extras.status ?? "";
 
   const sortParams = useMemo(
     () => ({
@@ -44,6 +54,7 @@ export default function PurchaseOrdersPage() {
       list.page,
       list.pageSize,
       list.debouncedSearch,
+      statusFilter,
       sortParams.sortBy,
       sortParams.sortDir,
     ],
@@ -52,6 +63,7 @@ export default function PurchaseOrdersPage() {
         page: list.page,
         pageSize: list.pageSize,
         search: list.debouncedSearch || undefined,
+        status: statusFilter || undefined,
         sortBy: sortParams.sortBy,
         sortDir: sortParams.sortDir,
       }),
@@ -108,7 +120,10 @@ export default function PurchaseOrdersPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {hasPermission(PermissionKeys.reportsRead) ? (
-              <ReportListExportMenu listKey="purchase-orders" />
+              <ReportListExportMenu
+                listKey="purchase-orders"
+                filterParams={{ status: statusFilter || undefined }}
+              />
             ) : null}
             {hasPermission(PermissionKeys.purchaseOrdersManage) ? (
               <Button asChild size="md">
@@ -128,6 +143,16 @@ export default function PurchaseOrdersPage() {
           list.patch({ search: v, page: 1 });
         }}
         searchPlaceholder="Search PO number…"
+        filters={
+          <FilterSelect
+            aria-label="PO status filter"
+            value={statusFilter}
+            onChange={(v) => list.patch({ extras: { status: v }, page: 1 })}
+            options={PO_STATUS_FILTER}
+            placeholder="Status"
+            className="w-[160px]"
+          />
+        }
       />
 
       {isError ? (

@@ -23,6 +23,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { LICENSE_RENEW_BLOCKED_MESSAGE } from "@/lib/domain/license-ui";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 export default function SoftwareLicensesPage() {
   const router = useRouter();
@@ -103,14 +104,22 @@ export default function SoftwareLicensesPage() {
         title="Software licenses"
         description="License register and expiry tracking."
         actions={
-          hasPermission(PermissionKeys.licensesManage) ? (
-            <Button asChild size="md">
-              <Link href="/software-licenses/new">
-                <Plus className="h-4 w-4" />
-                New license
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <ReportListExportMenu
+                listKey="software-licenses"
+                filterParams={{ before: expiringBefore || undefined }}
+              />
+            ) : null}
+            {hasPermission(PermissionKeys.licensesManage) ? (
+              <Button asChild size="md">
+                <Link href="/software-licenses/new">
+                  <Plus className="h-4 w-4" />
+                  New license
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

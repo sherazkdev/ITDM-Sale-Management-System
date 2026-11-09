@@ -148,3 +148,9 @@ Unchanged: D12 templates, D01/D02 matrix approval, native Windows PG, UAT sign-o
 | API tests | `phase8-departments-rbac` **3/3**; financial Phase 4 **6/6** |
 
 Gap-closure details: `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md` (uncommitted implementation after `fff1bf9`).
+
+---
+
+## 13. Addendum — Prompt #11 (2026-11-09)
+
+No RBAC rule changes. `financial.corrections` admin-only enforcement **preserved**. Audit export uses `audit.read` + metadata redaction. Full `phase8-departments-rbac` suite **not re-run** (PostgreSQL down). See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md`. Phase 8 remains **PARTIAL**.

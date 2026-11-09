@@ -22,5 +22,19 @@ export function createReportRouter(deps: {
   router.get("/asset-movements", ...read, deps.reportController.assetMovements);
   router.get("/employees", ...read, deps.reportController.employees);
   router.get("/non-asset-stock-ledger", ...read, deps.reportController.nonAssetStockLedger);
+  router.get("/maintenance", ...read, deps.reportController.maintenance);
+  router.get("/software-licenses", ...read, deps.reportController.softwareLicenses);
+  router.get(
+    "/document-metadata",
+    authenticate,
+    requirePermission(PermissionKeys.documentsRead),
+    deps.reportController.documentMetadata,
+  );
+  router.get(
+    "/audit-logs",
+    authenticate,
+    requirePermission(PermissionKeys.auditRead),
+    deps.reportController.auditLogs,
+  );
   return router;
 }

@@ -36,6 +36,7 @@ export type PoListParams = {
   page?: number;
   pageSize?: number;
   search?: string;
+  status?: string;
   vendorId?: string;
   sortBy?: string;
   sortDir?: "asc" | "desc";
@@ -66,6 +67,7 @@ export function fetchPurchaseOrders(params: PoListParams) {
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 20,
       search: params.search,
+      status: params.status,
       vendorId: params.vendorId,
       sortBy: params.sortBy,
       sortDir: params.sortDir,

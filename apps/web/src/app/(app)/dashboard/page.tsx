@@ -43,6 +43,7 @@ import { ServiceUnavailableBanner } from "@/components/shell/ServiceUnavailableB
 import { BudgetProvisionalNotice } from "@/components/finance/BudgetProvisionalNotice";
 import { formatAuditActivityLine } from "@/lib/domain/audit-display";
 import { activityRecordHref, expiryWatchlistHref } from "@/lib/domain/dashboard-links";
+import { DashboardMetricScopeNote } from "@/components/dashboard/DashboardMetricScopeNote";
 
 const PO_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
@@ -536,7 +537,10 @@ export default function DashboardPage() {
                     <Link href="/maintenance">View all</Link>
                   </Button>
                 </CardHeader>
-                <CardContent className="min-h-[10rem] py-2 flex flex-col justify-center">
+                <CardContent className="min-h-[10rem] py-2 flex flex-col justify-center gap-2">
+                  <DashboardMetricScopeNote>
+                    Current workload — not limited by the activity date filter.
+                  </DashboardMetricScopeNote>
                   <HorizontalBarList
                     emptyLabel="No maintenance records yet."
                     rows={maintRows}
@@ -643,10 +647,13 @@ export default function DashboardPage() {
           <section className="grid grid-cols-12 gap-6">
             {data.expiryWatchlist ? (
               <Card className="col-span-12 min-w-0 lg:col-span-5">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-col items-start gap-1 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-base">
                     Expiry watchlist ({expiryWindow}d)
                   </CardTitle>
+                  <DashboardMetricScopeNote>
+                    As-of today — not scoped by activity date or financial year filters.
+                  </DashboardMetricScopeNote>
                 </CardHeader>
                 <CardContent className="max-h-80 overflow-y-auto scrollbar-thin pr-1">
                   {data.expiryWatchlist.items.length === 0 ? (

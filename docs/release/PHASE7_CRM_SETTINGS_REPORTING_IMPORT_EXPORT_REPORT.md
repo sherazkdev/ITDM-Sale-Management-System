@@ -175,3 +175,9 @@ See `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`. Implementation after commit `ff
 | Authoritative report | `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
 
 **Production-ready: NO**
+
+---
+
+## 14. Addendum — Prompt #11 (2026-11-09)
+
+Exports extended to maintenance, software licenses, document metadata, and audit logs; PO status filter; settings validators centralized. See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md`. Phase 7 remains **PARTIAL**.

@@ -9,6 +9,7 @@ import {
 } from "../../shared/export/tabular-export.js";
 import { buildTabularPdf } from "../../shared/export/tabular-pdf.js";
 import { buildTabularXlsx } from "../../shared/export/tabular-xlsx.js";
+import { sanitizeAuditMetadataForExport } from "../../shared/export/audit-metadata-sanitize.js";
 
 export class ReportService {
   constructor(
@@ -310,6 +311,140 @@ export class ReportService {
       line.asset.assetName,
     ]);
     return this.formatTabular("asset-movements", header, rows, format);
+  }
+
+  async maintenance(
+    format: ExportFormat,
+    filters?: { status?: string; assetId?: bigint },
+  ) {
+    const where: Prisma.MaintenanceRecordWhereInput = {
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.assetId ? { assetId: filters.assetId } : {}),
+    };
+    const rowsData = await this.prisma.maintenanceRecord.findMany({
+      where,
+      orderBy: { requestDate: "desc" },
+      include: { asset: true, vendor: true, contract: true },
+    });
+    const header = [
+      "maintenanceType",
+      "status",
+      "requestDate",
+      "completionDate",
+      "cost",
+      "assetCode",
+      "vendorName",
+      "contractNumber",
+      "remarks",
+    ];
+    const rows = rowsData.map((r) => [
+      r.maintenanceType,
+      r.status,
+      r.requestDate.toISOString().slice(0, 10),
+      r.completionDate ? r.completionDate.toISOString().slice(0, 10) : "",
+      r.cost != null ? String(r.cost) : "",
+      r.asset?.assetCode ?? "",
+      r.vendor?.vendorName ?? "",
+      r.contract?.contractNumber ?? "",
+      r.remarks ?? "",
+    ]);
+    return this.formatTabular("maintenance", header, rows, format);
+  }
+
+  async softwareLicenses(format: ExportFormat, filters?: { expiringBefore?: string }) {
+    const where: Prisma.SoftwareLicenseWhereInput = filters?.expiringBefore
+      ? { expiryDate: { lte: new Date(`${filters.expiringBefore}T00:00:00.000Z`) } }
+      : {};
+    const licenses = await this.prisma.softwareLicense.findMany({
+      where,
+      orderBy: { expiryDate: "asc" },
+      include: { vendor: true, purchaseOrder: true },
+    });
+    const header = [
+      "softwareName",
+      "status",
+      "startDate",
+      "expiryDate",
+      "licenseQuantity",
+      "renewalCost",
+      "vendor",
+      "poNumber",
+    ];
+    const rows = licenses.map((l) => [
+      l.softwareName,
+      l.status,
+      l.startDate.toISOString().slice(0, 10),
+      l.expiryDate.toISOString().slice(0, 10),
+      String(l.licenseQuantity),
+      l.renewalCost != null ? String(l.renewalCost) : "",
+      l.vendor?.vendorName ?? "",
+      l.purchaseOrder?.poNumber ?? "",
+    ]);
+    return this.formatTabular("software-licenses", header, rows, format);
+  }
+
+  /** Metadata register only — file bytes are never included in tabular exports. */
+  async documentMetadata(format: ExportFormat) {
+    const docs = await this.prisma.storedDocument.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        link: true,
+        uploadedBy: { select: { username: true, displayName: true } },
+      },
+    });
+    const header = [
+      "originalFileName",
+      "mimeType",
+      "sizeBytes",
+      "sha256",
+      "createdAt",
+      "uploadedBy",
+      "ownerType",
+      "ownerId",
+    ];
+    const rows = docs.map((d) => [
+      d.originalFileName,
+      d.mimeType,
+      String(d.sizeBytes),
+      d.sha256,
+      d.createdAt.toISOString(),
+      d.uploadedBy?.displayName ?? d.uploadedBy?.username ?? "",
+      d.link?.ownerType ?? "",
+      d.link?.ownerId ?? "",
+    ]);
+    return this.formatTabular("document-metadata", header, rows, format);
+  }
+
+  async auditLogs(format: ExportFormat, filters?: { targetType?: string }) {
+    const where: Prisma.AuditLogWhereInput = filters?.targetType
+      ? { targetType: filters.targetType }
+      : {};
+    const events = await this.prisma.auditLog.findMany({
+      where,
+      orderBy: { occurredAt: "desc" },
+      include: { actor: { select: { username: true, displayName: true } } },
+    });
+    const header = [
+      "occurredAt",
+      "action",
+      "targetType",
+      "targetId",
+      "result",
+      "actor",
+      "requestId",
+      "metadata",
+    ];
+    const rows = events.map((e) => [
+      e.occurredAt.toISOString(),
+      e.action,
+      e.targetType,
+      e.targetId ?? "",
+      e.result,
+      e.actor?.displayName ?? e.actor?.username ?? "",
+      e.requestId ?? "",
+      sanitizeAuditMetadataForExport(e.metadata),
+    ]);
+    return this.formatTabular("audit-logs", header, rows, format);
   }
 
   async employees(format: ExportFormat, filters?: { departmentId?: bigint }) {

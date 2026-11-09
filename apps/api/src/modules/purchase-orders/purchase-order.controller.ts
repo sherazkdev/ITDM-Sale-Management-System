@@ -51,7 +51,11 @@ export class PurchaseOrderController {
       typeof req.query.vendorId === "string" && /^\d+$/.test(req.query.vendorId)
         ? BigInt(req.query.vendorId)
         : undefined;
-    const result = await this.service.list(pagination, { vendorId, search });
+    const status =
+      typeof req.query.status === "string" && req.query.status.length > 0
+        ? req.query.status
+        : undefined;
+    const result = await this.service.list(pagination, { vendorId, search, status });
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
       ...paginationMeta(pagination.page, pagination.pageSize, result.total),

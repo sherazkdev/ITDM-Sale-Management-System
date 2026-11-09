@@ -34,6 +34,7 @@ import {
   type UploadDocumentInput,
 } from "@/lib/validators/document";
 import { ApiClientError } from "@/lib/api/client";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -170,6 +171,9 @@ export default function DocumentsPage() {
       <PageHeader
         title="Documents"
         description="Upload and link files to purchase orders, contracts, invoices, or maintenance records."
+        actions={
+          canRead ? <ReportListExportMenu listKey="document-metadata" /> : null
+        }
       />
 
       <QuickTip title="Access control">

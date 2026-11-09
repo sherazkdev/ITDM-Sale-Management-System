@@ -214,7 +214,7 @@ export class PurchaseOrderService {
     );
   }
 
-  list(query: PaginationQuery, filters: { vendorId?: bigint; search?: string }) {
+  list(query: PaginationQuery, filters: { vendorId?: bigint; search?: string; status?: string }) {
     return this.repository.list(query, filters);
   }
 }

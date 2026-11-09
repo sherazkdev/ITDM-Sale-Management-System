@@ -252,7 +252,7 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
   );
 }
 
-/** Client-side filter for audit timestamps until `/dashboard/summary` accepts range query params. */
+/** Aligns recent-activity list with custom date range when rendering client-side. */
 export function filterRecentActivityByRange<T extends { occurredAt: string }>(
   items: T[] | undefined,
   range: DashboardDateRange,

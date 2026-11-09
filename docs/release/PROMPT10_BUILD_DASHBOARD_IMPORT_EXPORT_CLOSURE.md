@@ -14,7 +14,7 @@
 | Earlier Phase 7+8 | `501575b`, `fff1bf9` |
 | Recovery tag `itdms-pre-crm-enhancements-2026-11-08` | `3e41a51` — **unchanged** |
 | Remote `main` | `6e84fda` — **unchanged** |
-| Prompt #10 engineering delta | **Uncommitted** on `main` (source + screenshot churn) |
+| Prompt #10 engineering delta | **Committed** as **`ccfaac5`** (`feat(itdms): checkpoint prompt 10 dashboard filters and list exports`) |
 
 **Staged for this task:** application source, `ReportListExportMenu`, `list-export-config.ts`, API report/dashboard changes, release docs — **not** screenshot matrix churn or `docs/release/_tmp_*` logs unless explicitly requested.
 

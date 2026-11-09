@@ -1,9 +1,9 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-09 — Prompt #10 engineering — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md`  
+**Last verified at:** 2026-11-09 — Prompt #11 engineering — `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md`  
 **Git recovery:** tag `itdms-pre-crm-enhancements-2026-11-08` @ `3e41a51` (unchanged); remote `main` @ `6e84fda` (unchanged)  
-**Local Git:** `4656039` (gap-closure checkpoint); Prompt #10 delta **uncommitted**
+**Local Git:** `ccfaac5` (Prompt #10 checkpoint); Prompt #11 delta **uncommitted**
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -54,7 +54,8 @@
 | Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
 | Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Web build **fixed**; dashboard filters extended (assets + movements); `ReportListExportMenu` on key lists; invoice filtered export; API Vitest **BLOCKED** (PG down) — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
 | Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Preserved; admin-only `financial.corrections`; fresh Playwright **NOT RUN** (PG down) — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
-| Prompt #10 — build, dashboard, import/export closure | **PARTIAL (engineering)** | Build **PASS**; Web Vitest **54/54**; full API/Playwright **BLOCKED** infra — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
+| Prompt #10 — build, dashboard, import/export closure | **PARTIAL (engineering)** | Committed **`ccfaac5`** — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
+| Prompt #11 — CRM UI, exports, settings QA | **PARTIAL (engineering)** | Maintenance/licenses/docs/audit exports; PO status filter; Web **58/58**; visual/API E2E **BLOCKED** — `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

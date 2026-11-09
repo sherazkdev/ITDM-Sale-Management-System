@@ -10,7 +10,11 @@ export type ReportSlug =
   | "invoices"
   | "asset-movements"
   | "employees"
-  | "non-asset-stock-ledger";
+  | "non-asset-stock-ledger"
+  | "maintenance"
+  | "software-licenses"
+  | "document-metadata"
+  | "audit-logs";
 
 export type ReportFormat = "json" | "csv" | "pdf" | "xlsx";
 
@@ -69,6 +73,26 @@ export const REPORT_DEFINITIONS: Array<{
     title: "Non-asset stock ledger (D09)",
     description: "Movement history with units, recipients, and quantity before/after per transaction.",
     inventoryAlias: true,
+  },
+  {
+    slug: "maintenance",
+    title: "Maintenance register",
+    description: "Maintenance requests and status (operational export).",
+  },
+  {
+    slug: "software-licenses",
+    title: "Software licenses",
+    description: "License inventory and expiry (secrets excluded).",
+  },
+  {
+    slug: "document-metadata",
+    title: "Document metadata",
+    description: "File metadata and owner links only — no file contents.",
+  },
+  {
+    slug: "audit-logs",
+    title: "Audit log",
+    description: "Administrative audit events with redacted metadata.",
   },
 ];
 

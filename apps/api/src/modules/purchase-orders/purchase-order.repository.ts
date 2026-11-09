@@ -27,9 +27,13 @@ export class PurchaseOrderRepository {
     return this.prisma.purchaseOrder.update({ where: { purchaseOrderId }, data });
   }
 
-  async list(query: PaginationQuery, filters: { vendorId?: bigint; search?: string }) {
+  async list(
+    query: PaginationQuery,
+    filters: { vendorId?: bigint; search?: string; status?: string },
+  ) {
     const where = {
       ...(filters.vendorId ? { vendorId: filters.vendorId } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
       ...(filters.search
         ? { poNumber: { contains: filters.search, mode: "insensitive" as const } }
         : {}),

@@ -13,6 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { fetchAuditEvent, fetchAuditEvents, type AuditLogEntry } from "@/lib/api/audit";
 import { ApiClientError } from "@/lib/api/client";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { PermissionKeys } from "@/lib/permissions";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AuditLogPage() {
+  const { hasPermission } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [targetType, setTargetType] = useState("");
@@ -61,7 +65,18 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Audit log" description="Read-only security and change events (`audit.read`)." />
+      <PageHeader
+        title="Audit log"
+        description="Read-only security and change events (`audit.read`)."
+        actions={
+          hasPermission(PermissionKeys.auditRead) ? (
+            <ReportListExportMenu
+              listKey="audit-logs"
+              filterParams={{ targetType: targetType || undefined }}
+            />
+          ) : null
+        }
+      />
 
       <SectionCard title="Events">
         <form

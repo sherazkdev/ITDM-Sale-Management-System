@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound, Lock } from "lucide-react";
@@ -14,19 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiClientError } from "@/lib/api/client";
 import { changeUserPassword } from "@/lib/api/user-profile";
+import { passwordChangeSchema } from "@/lib/validators/settings";
+import type { z } from "zod";
 
-const passwordForm = z
-  .object({
-    currentPassword: z.string().min(1, "Required"),
-    newPassword: z.string().min(12, "At least 12 characters").max(128),
-    confirmPassword: z.string().min(1, "Required"),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
-  });
-
-type PasswordValues = z.infer<typeof passwordForm>;
+type PasswordValues = z.infer<typeof passwordChangeSchema>;
 
 export default function SecuritySettingsPage() {
   const [show, setShow] = useState(false);
@@ -37,7 +27,7 @@ export default function SecuritySettingsPage() {
     reset,
     formState: { errors, isDirty },
   } = useForm<PasswordValues>({
-    resolver: zodResolver(passwordForm),
+    resolver: zodResolver(passwordChangeSchema),
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
