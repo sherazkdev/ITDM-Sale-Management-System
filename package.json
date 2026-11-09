@@ -25,6 +25,7 @@
     "smoke:ui08": "node scripts/smoke-ui08.mjs",
     "test:e2e": "npm run test:e2e --workspace=@itdms/web",
     "db:verify": "node scripts/db-verify.mjs",
+    "db:refresh-sample": "npm run db:refresh-sample --workspace=@itdms/api",
     "backup:itdms": "node scripts/backup-itdms.mjs",
     "backup:db": "node scripts/backup-db.mjs",
     "restore:rehearsal": "node scripts/restore-rehearsal.mjs",

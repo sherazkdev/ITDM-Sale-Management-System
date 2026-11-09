@@ -8,6 +8,9 @@ export async function pickSearchableSelect(
   optionPattern: RegExp | string,
 ) {
   await page.getByRole("button", { name: triggerAriaLabel }).click();
-  await page.getByRole("textbox", { name: "Filter options" }).fill(search);
+  const filter = page.getByRole("textbox", { name: "Filter options" });
+  if (await filter.isVisible().catch(() => false)) {
+    await filter.fill(search);
+  }
   await page.getByRole("option", { name: optionPattern }).first().click();
 }

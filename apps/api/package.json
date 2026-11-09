@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
+    "db:refresh-sample": "tsx prisma/refresh-dev-sample-data.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

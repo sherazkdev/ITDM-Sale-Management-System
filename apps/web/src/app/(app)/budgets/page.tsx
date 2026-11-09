@@ -107,8 +107,19 @@ export default function BudgetsPage() {
 
   const yearForm = useForm<CreateFinancialYearInput>({
     resolver: zodResolver(createFinancialYearSchema),
+    mode: "onTouched",
     defaultValues: { yearName: "", startDate: "", endDate: "", status: "OPEN" },
   });
+
+  const {
+    register: yearRegister,
+    handleSubmit: yearHandleSubmit,
+    formState: {
+      errors: yearErrors,
+      touchedFields: yearTouched,
+      isSubmitted: yearSubmitted,
+    },
+  } = yearForm;
 
   const allocForm = useForm<CreateBudgetAllocationInput>({
     resolver: zodResolver(createBudgetAllocationSchema),
@@ -283,16 +294,71 @@ export default function BudgetsPage() {
         {canManage ? (
           <form
             className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2 lg:grid-cols-5"
-            onSubmit={yearForm.handleSubmit((v) => createYearMutation.mutate(v))}
+            onSubmit={yearHandleSubmit((v) => createYearMutation.mutate(v))}
+            noValidate
           >
-            <Input placeholder="Year name" {...yearForm.register("yearName")} />
-            <Input type="date" {...yearForm.register("startDate")} />
-            <Input type="date" {...yearForm.register("endDate")} />
-            <Input placeholder="Status" {...yearForm.register("status")} />
-            <Button type="submit" size="md" disabled={createYearMutation.isPending}>
-              <Plus className="h-4 w-4" />
-              Add year
-            </Button>
+            <FormField
+              label="Year name"
+              htmlFor="fy-yearName"
+              required
+              description="Label shown in budget reports (e.g. FY 2026)."
+              error={fieldErrorMessage("yearName", yearTouched, yearSubmitted, yearErrors)}
+            >
+              <Input
+                id="fy-yearName"
+                placeholder="FY 2026"
+                error={fieldHasError("yearName", yearTouched, yearSubmitted, yearErrors)}
+                {...yearRegister("yearName")}
+              />
+            </FormField>
+            <FormField
+              label="Start date"
+              htmlFor="fy-startDate"
+              required
+              description="First day of the financial year."
+              error={fieldErrorMessage("startDate", yearTouched, yearSubmitted, yearErrors)}
+            >
+              <Input
+                id="fy-startDate"
+                type="date"
+                error={fieldHasError("startDate", yearTouched, yearSubmitted, yearErrors)}
+                {...yearRegister("startDate")}
+              />
+            </FormField>
+            <FormField
+              label="End date"
+              htmlFor="fy-endDate"
+              required
+              description="Last inclusive day of the financial year."
+              error={fieldErrorMessage("endDate", yearTouched, yearSubmitted, yearErrors)}
+            >
+              <Input
+                id="fy-endDate"
+                type="date"
+                error={fieldHasError("endDate", yearTouched, yearSubmitted, yearErrors)}
+                {...yearRegister("endDate")}
+              />
+            </FormField>
+            <FormField
+              label="Status"
+              htmlFor="fy-status"
+              required
+              description="Use OPEN while accepting allocations; CLOSED when locked."
+              error={fieldErrorMessage("status", yearTouched, yearSubmitted, yearErrors)}
+            >
+              <Input
+                id="fy-status"
+                placeholder="OPEN"
+                error={fieldHasError("status", yearTouched, yearSubmitted, yearErrors)}
+                {...yearRegister("status")}
+              />
+            </FormField>
+            <div className="flex items-end">
+              <Button type="submit" size="md" loading={createYearMutation.isPending}>
+                <Plus className="h-4 w-4" />
+                Add year
+              </Button>
+            </div>
           </form>
         ) : null}
       </SectionCard>

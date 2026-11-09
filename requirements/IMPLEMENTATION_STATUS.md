@@ -1,7 +1,7 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-09 — Prompt #16 UX gap closure — `PROMPT16_FINAL_UX_GAP_CLOSURE_REPORT.md` (browser notification matrix **PASS**; full Playwright **NOT RUN**)
+**Last verified at:** 2026-11-09 — Prompt #17 demo readiness — `PROMPT17_FINAL_UI_AND_DEMO_READINESS.md` (Playwright **315/0/216**; client demo **http://127.0.0.1:3011**)
 **Prior:** Prompt #14 — `PROMPT14_ENTERPRISE_UI_UX_REFINEMENT_REPORT.md`
 **Prior regression:** Prompt #12 — `FINAL_PHASE7_PHASE8_ENGINEERING_CLOSURE.md`  
 **Git recovery:** tag `itdms-pre-crm-enhancements-2026-11-08` @ `3e41a51` (unchanged); engineering tag `itdms-phase78-engineering-verified-2026-11-09` (post-Prompt #12 push)  
