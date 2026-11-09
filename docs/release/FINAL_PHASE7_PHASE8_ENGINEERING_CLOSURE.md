@@ -13,7 +13,7 @@
 | Remote `origin/main` (pre-push) | `6e84fda` |
 | Prompt #10 checkpoint | `ccfaac5` |
 | Prompt #11 checkpoint | `425fa3d` |
-| Prompt #12 final commit | *(see §17 after push)* |
+| Prompt #12 final commit | **`80e2874`** — `chore(release): verify phase 7 and phase 8 engineering closure` |
 | Recovery tags preserved | `itdms-pre-crm-enhancements-2026-11-08`, `itdms-pre-client-uat-2026-11-08` |
 | New engineering tag (post-push) | `itdms-phase78-engineering-verified-2026-11-09` |
 
@@ -38,7 +38,7 @@
 | `prisma validate` | **PASS** |
 | API typecheck | **PASS** |
 | API lint | **PASS** |
-| API Vitest (`itdms_test`) | **98 / 98 PASS** (36 files) — log: `docs/release/_prompt12_api_vitest.log` |
+| API Vitest (`itdms_test`) | **98 / 98 PASS** (36 files) |
 
 **Defect fixed this session:** `non-asset-stock.test.ts` list search used short token on large DB — tightened to full `stockCode` query (**harness/data hygiene**, not product bug).
 
@@ -78,7 +78,7 @@ Settings validators centralized (`lib/validators/settings.ts`); profile/security
 | **Skipped** | **216** (UI08 screenshot matrix — intentional) |
 | Duration | ~14.4 min |
 
-Log: `docs/release/_prompt12_playwright.log`
+Playwright log: local `docs/release/_prompt12_playwright.log` (gitignored).
 
 **Includes:** D10 UI/API, D09 workflow, lifecycle, workflows (employee + filters), responsive **390/768/1440**, wave3 finance/inventory, route smoke, a11y samples.
 
@@ -144,4 +144,10 @@ See `PROMPT11_CRM_UI_AND_PHASE78_COMPLETION_REPORT.md` §4. All list exports wir
 
 ## 17. Cloud push record
 
-*(Updated post-push by release step.)*
+| Item | Value |
+|------|--------|
+| Verified local HEAD | **`80e2874`** |
+| Commits pushed | `501575b` … `80e2874` (5 ahead of former `origin/main` `6e84fda`) |
+| New annotated tag | `itdms-phase78-engineering-verified-2026-11-09` → **`80e2874`** |
+| Prior recovery tags | **Not modified** |
+| Force push | **Not used** |
