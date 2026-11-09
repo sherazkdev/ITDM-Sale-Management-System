@@ -48,13 +48,19 @@ Employees, Vendors, Departments, Asset categories, Assets (+ non-asset tab), Pur
 - Dashboard metric definitions (no fabricated KPIs)
 - Roles permission matrix behavior
 
+### Prompt #20 closure (2026-11-10)
+
+- Maintenance & software licenses — **ListToolbar**, filter chips, reset
+- Asset issuance — clearer employee/department affordances
+- E2E auth recovery — rebuild `:3021` + Playwright port-aligned `webServer`
+- See `PROMPT20_FINAL_UI_UX_AND_E2E_CLOSURE_REPORT.md`
+
 ### Not fully individually redesigned in this pass
 
-- Asset issuance workflow copy/layout (functional layout unchanged)
-- Detail pages (employee/vendor/PO/invoice/asset detail) — inherit list/shell only
+- Detail pages — baseline `DetailRecordLayout` on key modules; incremental polish only
 - Admin audit log row iconography
 - Reports/Documents/Search/Help — shell + tables only
-- Maintenance & software licenses — **no ListToolbar** yet (filters unchanged)
+- `FORM_HINTS` on all remaining `/new` forms (partial)
 
 ## 6–9. UX improvements summary
 
@@ -78,28 +84,26 @@ Employees, Vendors, Departments, Asset categories, Assets (+ non-asset tab), Pur
 
 ## 14. Remaining defects / work
 
-1. Full E2E Playwright matrix (historical ~315 pass baseline — re-verify after UI pass)
-2. ListToolbar + chips on maintenance / software licenses
-3. Guided issuance/return review panel (copy/structure only)
-4. Detail-page section hierarchy pass
-5. Wire `FORM_HINTS` into remaining `/new` forms
-6. Post-redesign before/after screenshot pack (separate from Prompt #18 audit)
+1. Playwright capture specs + a few UI workflow assertions (15 fail / 216 skip — see Prompt #20 report)
+2. Wire `FORM_HINTS` into remaining `/new` forms
+3. Detail-page incremental polish where not using overview cards
+4. Maintenance list search when API supports it
 
 ## 15. Before/after screenshots
 
 - **Before:** `C:\Users\shera\OneDrive\Desktop\ITDMS_UI_AUDIT`
-- **After (pending dedicated capture):** capture to `C:\Users\shera\OneDrive\Desktop\ITDMS_UI_AUDIT_AFTER_PROMPT19` after rebuild on :3021 or :3011
+- **After Prompt #20:** `C:\Users\shera\OneDrive\Desktop\ITDMS_UI_AUDIT_AFTER_PROMPT20` + `ITDMS_FINAL_PREMIUM_UI_AFTER_PROMPT20.zip`
 
 ## 16. Demo status
 
 | Stack | Status |
 |-------|--------|
-| Client demo `:3011` / `itdms_dev` | **YELLOW** — verify visually after `next build` / restart |
-| E2E `:3021` / `itdms_e2e` | **YELLOW** — run Playwright before client walkthrough |
+| Client demo `:3011` / `itdms_dev` | **GREEN** for meeting walkthrough |
+| E2E `:3021` / `itdms_e2e` | **GREEN** auth + smoke; full suite has known capture/workflow fails |
 
 ## 17. Git
 
-- Local feature commit: (see `git log -1` after `feat(web): complete enterprise-wide premium UI UX transformation`)
+- Transformation commit: `ac8385e` — `feat(web): complete enterprise-wide premium UI UX transformation`
 - **GitHub push:** **NOT DONE**
 
 ## Status

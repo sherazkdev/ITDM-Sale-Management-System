@@ -14,6 +14,18 @@ import path from "node:path";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3011";
 const authFile = path.join(__dirname, "e2e", ".auth", "admin.json");
 
+function resolveWebListenPort(origin: string): string {
+  try {
+    const { port, protocol } = new URL(origin);
+    if (port) return port;
+    return protocol === "https:" ? "443" : "80";
+  } catch {
+    return "3011";
+  }
+}
+
+const webListenPort = resolveWebListenPort(webOrigin);
+
 /** Staging-only; run via `npm run staging:e2e` when UAT credentials exist. */
 const stagingOnly = /staging-verification\.spec\.ts/;
 
@@ -34,11 +46,15 @@ export default defineConfig({
     video: "off",
   },
   webServer: {
-    command: "npm run start",
+    command: `next start -p ${webListenPort}`,
     cwd: path.join(__dirname),
     url: webOrigin,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    env: {
+      ...process.env,
+      ITDMS_API_URL: process.env.ITDMS_API_URL ?? "http://127.0.0.1:3020",
+    },
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },

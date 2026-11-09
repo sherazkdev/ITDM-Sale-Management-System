@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeftRight, RotateCcw, Search } from "lucide-react";
+import { ArrowLeftRight, Building2, RotateCcw, Search, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -35,6 +35,7 @@ import { ApiClientError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 
 type IssueFormValues = IssueAssetsInput;
 type ReturnFormValues = ReturnAssetsInput;
@@ -426,7 +427,10 @@ export default function AssetIssuancePage() {
               >
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
-                    <Label htmlFor="issue-employee">Receiving employee</Label>
+                    <Label htmlFor="issue-employee" className="inline-flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      Receiving employee
+                    </Label>
                     <Controller
                       control={issueForm.control}
                       name="employeeId"
@@ -451,7 +455,8 @@ export default function AssetIssuancePage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
-                    <Label htmlFor="issue-dept" required>
+                    <Label htmlFor="issue-dept" required className="inline-flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden />
                       Receiving department
                     </Label>
                     <Input
@@ -459,9 +464,7 @@ export default function AssetIssuancePage() {
                       placeholder="e.g. IT"
                       {...issueForm.register("receivingDepartment", { required: true })}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Recorded on the issuance document and does not update the employee master record.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{FORM_HINTS.receivingDepartment}</p>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="issue-ref">Reference number</Label>

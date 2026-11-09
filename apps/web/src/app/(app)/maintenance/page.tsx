@@ -11,6 +11,8 @@ import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
 import { FilterSelect } from "@/components/common/FilterSelect";
+import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchMaintenanceRecords, type MaintenanceRecord } from "@/lib/api/maintenance";
@@ -72,6 +74,26 @@ export default function MaintenancePage() {
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = [];
+    if (status) {
+      const label = STATUS_FILTER.find((o) => o.value === status)?.label ?? status;
+      chips.push({
+        id: "status",
+        label: `Status: ${label}`,
+        onRemove: () => list.patch({ extras: { status: "", assetId }, page: 1 }),
+      });
+    }
+    if (assetId) {
+      chips.push({
+        id: "assetId",
+        label: `Asset #${assetId}`,
+        onRemove: () => list.patch({ extras: { status, assetId: "" }, page: 1 }),
+      });
+    }
+    return chips;
+  }, [status, assetId, list]);
+
   const columns: Column<MaintenanceRecord>[] = [
     {
       key: "type",
@@ -123,15 +145,26 @@ export default function MaintenancePage() {
         }
       />
 
-      <div className="w-full max-w-xl">
-        <FilterSelect
-          aria-label="Status filter"
-          value={status}
-          onChange={(v) => list.patch({ extras: { status: v, assetId }, page: 1 })}
-          options={STATUS_FILTER}
-          placeholder="Status"
-        />
-      </div>
+      <ListToolbar
+        showSearch={false}
+        filters={
+          <FilterSelect
+            aria-label="Status filter"
+            value={status}
+            onChange={(v) => list.patch({ extras: { status: v, assetId }, page: 1 })}
+            options={STATUS_FILTER}
+            placeholder="All statuses"
+            className="w-full sm:w-48"
+          />
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() =>
+          list.patch({
+            extras: { status: "", assetId: "" },
+            page: 1,
+          })
+        }
+      />
 
       {isError ? (
         <Card className="p-4 text-sm text-destructive">

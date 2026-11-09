@@ -14,4 +14,9 @@ export const FORM_HINTS = {
   financialYear: "Financial year that owns budget allocations and ledger entries.",
   budgetCategory: "Budget line category (e.g. IT Hardware) within the selected year.",
   licenseQuantity: "Number of seats or entitlements covered by this license.",
+  maintenanceType: "Brief label for the work requested (e.g. preventive, repair).",
+  maintenanceRequestDate: "Date the maintenance was requested or logged.",
+  licenseExpiry: "Last day this license is valid; shown on expiry reports.",
+  receivingDepartment:
+    "Department receiving the asset on this document; does not change the employee master record.",
 } as const;

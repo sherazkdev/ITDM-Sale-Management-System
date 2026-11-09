@@ -12,6 +12,9 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
+import { FilterSelect } from "@/components/common/FilterSelect";
+import { ListToolbar } from "@/components/crud/ListToolbar";
+import type { ActiveFilterChip } from "@/components/common/ActiveFilterChips";
 import { PolicyNotApprovedNotice } from "@/components/procurement/PolicyNotApprovedNotice";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,6 +68,17 @@ export default function SoftwareLicensesPage() {
   const rows = data?.data ?? [];
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
+
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    if (!expiringBefore) return [];
+    return [
+      {
+        id: "before",
+        label: `Expiring before ${expiringBefore}`,
+        onRemove: () => list.patch({ extras: { before: "" }, page: 1 }),
+      },
+    ];
+  }, [expiringBefore, list]);
 
   const columns: Column<SoftwareLicense>[] = [
     {
@@ -121,19 +135,50 @@ export default function SoftwareLicensesPage() {
 
       <PolicyNotApprovedNotice title="Renewal unavailable" message={LICENSE_RENEW_BLOCKED_MESSAGE} />
 
-      <Card className="p-4">
-        <div className="flex max-w-sm flex-col gap-2">
-          <Label htmlFor="before">Expiring before (optional)</Label>
-          <Input
-            id="before"
-            type="date"
-            value={expiringBefore}
-            onChange={(e) => {
-              list.patch({ extras: { before: e.target.value }, page: 1 });
-            }}
-          />
-        </div>
-      </Card>
+      <ListToolbar
+        showSearch={false}
+        filters={
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <FilterSelect
+              aria-label="Expiry window"
+              value=""
+              onChange={(v) => {
+                if (!v) {
+                  list.patch({ extras: { before: "" }, page: 1 });
+                  return;
+                }
+                const days = Number(v);
+                if (Number.isFinite(days) && days > 0) {
+                  list.patch({ extras: { before: utcDatePlusDays(days) }, page: 1 });
+                }
+              }}
+              placeholder="Expiry window"
+              className="w-full sm:w-44"
+              options={[
+                { value: "", label: "Any expiry" },
+                { value: "30", label: "Within 30 days" },
+                { value: "60", label: "Within 60 days" },
+                { value: "90", label: "Within 90 days" },
+              ]}
+            />
+            <div className="flex min-w-0 flex-col gap-1 sm:w-48">
+              <Label htmlFor="before" className="text-xs text-muted-foreground">
+                Expiring before
+              </Label>
+              <Input
+                id="before"
+                type="date"
+                value={expiringBefore}
+                onChange={(e) => {
+                  list.patch({ extras: { before: e.target.value }, page: 1 });
+                }}
+              />
+            </div>
+          </div>
+        }
+        activeFilterChips={activeFilterChips}
+        onResetFilters={() => list.patch({ extras: { before: "" }, page: 1 })}
+      />
 
       {isError ? (
         <Card className="p-4 text-sm text-destructive">

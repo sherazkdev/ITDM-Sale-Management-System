@@ -42,6 +42,7 @@ import { ApiClientError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 
 type EntryKind = "asset" | "non_asset";
 
@@ -237,7 +238,7 @@ export default function NewAssetPage() {
                   label="Asset code"
                   htmlFor="assetCode"
                   required
-                  description="Unique identifier for this asset in the register."
+                  description={FORM_HINTS.assetCode}
                   error={fieldErrorMessage("assetCode", touchedFields, isSubmitted, errors)}
                 >
                   <Input
@@ -283,7 +284,7 @@ export default function NewAssetPage() {
                 <FormField
                   label="Serial number"
                   htmlFor="serialNumber"
-                  description="Enter the manufacturer's serial number for this device."
+                  description={FORM_HINTS.assetSerial}
                 >
                   <Input id="serialNumber" {...register("serialNumber")} />
                 </FormField>
