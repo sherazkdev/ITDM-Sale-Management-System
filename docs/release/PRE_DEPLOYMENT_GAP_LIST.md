@@ -86,4 +86,6 @@
 
 **Stage 5 addendum (2026-11-08):** **`ENGINEERING READY — CLIENT ACCEPTANCE PENDING`**. UAT execution package published; client UAT **NOT RUN**; full packaged API+DB rehearsal **BLOCKED** (Docker engine pipe). Client actions: `REMAINING_CLIENT_ACTIONS.md`. Handover: `FINAL_HANDOVER_READINESS_REPORT.md`.
 
+**Prompt #10 addendum (2026-11-09):** Next.js production build **PASS** after clearing stale `apps/web/.next` (root cause: corrupt build cache, not App Router `Html` misuse). Dashboard asset/movement filters + partial list export rollout (**uncommitted**). API Vitest + Playwright **NOT RUN** — Docker Desktop stopped, `127.0.0.1:5433` unreachable. See `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md`. **Production-ready: NO**.
+
 **Next step for client:** Supply D12 templates; sign D01/D02/D17; authorize staging UAT; confirm reversal policy before B6 work.

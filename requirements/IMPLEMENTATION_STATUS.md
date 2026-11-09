@@ -1,9 +1,9 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-08 (late PM) — gap closure engineering — `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`  
+**Last verified at:** 2026-11-09 — Prompt #10 engineering — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md`  
 **Git recovery:** tag `itdms-pre-crm-enhancements-2026-11-08` @ `3e41a51` (unchanged); remote `main` @ `6e84fda` (unchanged)  
-**Local Git:** `501575b` + `fff1bf9` (harness/docs); gap-closure code **uncommitted**
+**Local Git:** `4656039` (gap-closure checkpoint); Prompt #10 delta **uncommitted**
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -52,8 +52,9 @@
 | Phase 7+8 checkpoint regression | **COMPLETE (engineering, scoped)** | Local commit **501575b**; API **95/95**; Web **50/50**; Playwright **315/0/216**; Phases **PARTIAL** — `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md` |
 | Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
 | Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
-| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Import preview/confirm for 4 entities; dashboard URL filters (partial server scope); API **97/97**; export rollout + CRM capture matrix **OPEN** — `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md` |
-| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Admin-only `financial.corrections`; migration **13**; `phase8-departments-rbac` **3/3**; session-revocation E2E **OPEN** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
+| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Web build **fixed**; dashboard filters extended (assets + movements); `ReportListExportMenu` on key lists; invoice filtered export; API Vitest **BLOCKED** (PG down) — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
+| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Preserved; admin-only `financial.corrections`; fresh Playwright **NOT RUN** (PG down) — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
+| Prompt #10 — build, dashboard, import/export closure | **PARTIAL (engineering)** | Build **PASS**; Web Vitest **54/54**; full API/Playwright **BLOCKED** infra — `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

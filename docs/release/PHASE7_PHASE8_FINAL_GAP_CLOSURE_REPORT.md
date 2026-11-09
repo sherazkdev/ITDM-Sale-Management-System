@@ -99,4 +99,10 @@ Unchanged: D12 official templates, D01/D02 matrix approval, native Windows PG, U
 
 Includes: migration `20261108233000`, seed split, import preview API/UI, asset category import/export, dashboard filters, RBAC hardening, new tests, this report and status doc updates, plus any local screenshot churn from earlier Playwright runs (excluded from commits).
 
+---
+
+## 9. Prompt #10 follow-on (2026-11-09)
+
+See **`PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md`**. Summary: local checkpoint **`4656039`**; web build repair; dashboard `assetCategoryId` / `assetStatus` + movement date/dept filters; `ReportListExportMenu` + invoice report filters; fresh API/Playwright **blocked** on PostgreSQL. Phase 7/8 remain **PARTIAL**.
+
 **Do not push without further instruction.**

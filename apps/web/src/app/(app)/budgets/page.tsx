@@ -14,6 +14,7 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { BudgetProvisionalNotice } from "@/components/finance/BudgetProvisionalNotice";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,7 +231,18 @@ export default function BudgetsPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Annual budgets" description="Financial years, allocations, and ledger entries." />
+      <PageHeader
+        title="Annual budgets"
+        description="Financial years, allocations, and ledger entries."
+        actions={
+          hasPermission(PermissionKeys.reportsRead) ? (
+            <ReportListExportMenu
+              listKey="budget-utilization"
+              filterParams={{ financialYearId: selectedYearId || undefined }}
+            />
+          ) : null
+        }
+      />
 
       <BudgetProvisionalNotice />
 

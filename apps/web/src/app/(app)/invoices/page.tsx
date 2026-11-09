@@ -22,6 +22,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import { INVOICE_PAYMENT_LABELS, invoicePaymentToPill } from "@/lib/domain/invoice-ui";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const PAYMENT_STATUS_OPTIONS = [
   { value: "UNPAID", label: "Unpaid" },
@@ -118,14 +119,25 @@ export default function InvoicesPage() {
         title="Invoices & payments"
         description="Invoice register, balances, and payment history."
         actions={
-          hasPermission(PermissionKeys.invoicesManage) ? (
-            <Button asChild size="md">
-              <Link href="/invoices/new">
-                <Plus className="h-4 w-4" />
-                New invoice
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <ReportListExportMenu
+                listKey="invoices"
+                filterParams={{
+                  paymentStatus: list.extras.paymentStatus || undefined,
+                  search: list.debouncedSearch || undefined,
+                }}
+              />
+            ) : null}
+            {hasPermission(PermissionKeys.invoicesManage) ? (
+              <Button asChild size="md">
+                <Link href="/invoices/new">
+                  <Plus className="h-4 w-4" />
+                  New invoice
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

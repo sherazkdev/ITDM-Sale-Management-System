@@ -19,6 +19,7 @@ import { fetchAssets, type Asset } from "@/lib/api/assets";
 import { fetchNonAssetStockItems, type NonAssetStockItem } from "@/lib/api/non-asset-stock";
 import { fetchAssetCategories } from "@/lib/api/asset-categories";
 import { ASSET_STATUS_LABELS, assetStatusToPill } from "@/lib/domain/asset-status-ui";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
@@ -214,14 +215,22 @@ export default function AssetsPage() {
         title="Assets"
         description="Serialized assets and non-asset quantity stock."
         actions={
-          hasPermission(PermissionKeys.assetsManage) ? (
-            <Button asChild size="md">
-              <Link href="/assets/new">
-                <Plus className="h-4 w-4" />
-                Stock entry
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <>
+                <ReportListExportMenu listKey="serialized-assets" />
+                <ReportListExportMenu listKey="inventory-combined" />
+              </>
+            ) : null}
+            {hasPermission(PermissionKeys.assetsManage) ? (
+              <Button asChild size="md">
+                <Link href="/assets/new">
+                  <Plus className="h-4 w-4" />
+                  Stock entry
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

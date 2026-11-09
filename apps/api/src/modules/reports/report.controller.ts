@@ -68,7 +68,11 @@ export class ReportController {
 
   purchaseOrders = asyncHandler(async (req: Request, res: Response) => {
     const format = this.service.parseFormat(formatParam(req));
-    const data = await this.service.purchaseOrders(format);
+    const status =
+      typeof req.query.status === "string" && req.query.status.length > 0
+        ? req.query.status
+        : undefined;
+    const data = await this.service.purchaseOrders(format, { status });
     await this.service.logExport(req.principal?.userId, "purchase-orders", getRequestId(req));
     sendReport(req, res, data, format);
   });
@@ -82,7 +86,15 @@ export class ReportController {
 
   invoices = asyncHandler(async (req: Request, res: Response) => {
     const format = this.service.parseFormat(formatParam(req));
-    const data = await this.service.invoices(format);
+    const search =
+      typeof req.query.search === "string" && req.query.search.trim().length > 0
+        ? req.query.search.trim()
+        : undefined;
+    const paymentStatus =
+      typeof req.query.paymentStatus === "string" && req.query.paymentStatus.length > 0
+        ? req.query.paymentStatus
+        : undefined;
+    const data = await this.service.invoices(format, { search, paymentStatus });
     await this.service.logExport(req.principal?.userId, "invoices", getRequestId(req));
     sendReport(req, res, data, format);
   });
@@ -96,7 +108,11 @@ export class ReportController {
 
   employees = asyncHandler(async (req: Request, res: Response) => {
     const format = this.service.parseFormat(formatParam(req));
-    const data = await this.service.employees(format);
+    const departmentId =
+      typeof req.query.departmentId === "string" && /^\d+$/.test(req.query.departmentId)
+        ? BigInt(req.query.departmentId)
+        : undefined;
+    const data = await this.service.employees(format, { departmentId });
     await this.service.logExport(req.principal?.userId, "employees", getRequestId(req));
     sendReport(req, res, data, format);
   });

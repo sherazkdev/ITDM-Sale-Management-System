@@ -112,6 +112,8 @@ export type DashboardSummaryParams = {
   departmentId?: string;
   financialYearId?: string;
   poStatus?: string;
+  assetCategoryId?: string;
+  assetStatus?: string;
 };
 
 export async function fetchDashboardSummary(params?: DashboardSummaryParams): Promise<DashboardSummary> {

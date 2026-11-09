@@ -21,6 +21,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import { PO_STATUS_LABELS, poStatusToPill } from "@/lib/domain/purchase-order-ui";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const PO_LIST_DEFAULTS = { page: 1, pageSize: 20, sortDir: "desc" as const };
 
@@ -105,14 +106,19 @@ export default function PurchaseOrdersPage() {
         title="Purchase orders"
         description="PO drafts, lines, and procurement."
         actions={
-          hasPermission(PermissionKeys.purchaseOrdersManage) ? (
-            <Button asChild size="md">
-              <Link href="/purchase-orders/new">
-                <Plus className="h-4 w-4" />
-                New draft
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <ReportListExportMenu listKey="purchase-orders" />
+            ) : null}
+            {hasPermission(PermissionKeys.purchaseOrdersManage) ? (
+              <Button asChild size="md">
+                <Link href="/purchase-orders/new">
+                  <Plus className="h-4 w-4" />
+                  New draft
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

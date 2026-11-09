@@ -31,6 +31,11 @@ export class DashboardController {
         typeof req.query.poStatus === "string" && req.query.poStatus.length > 0
           ? req.query.poStatus
           : undefined,
+      assetCategoryId: parseId(req.query.assetCategoryId),
+      assetStatus:
+        typeof req.query.assetStatus === "string" && req.query.assetStatus.length > 0
+          ? req.query.assetStatus
+          : undefined,
     });
     sendSuccess(res, data, { requestId: getRequestId(req) });
   });

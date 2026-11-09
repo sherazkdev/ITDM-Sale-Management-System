@@ -1,6 +1,6 @@
 import type { AuditService } from "../../shared/audit/audit.service.js";
 import { computeBudgetUsdMetrics } from "../../shared/domain/budget-metrics.js";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   csvFromRows,
   NON_OFFICIAL_DISCLAIMER,
@@ -190,11 +190,11 @@ export class ReportService {
     return this.formatTabular("budget-utilization", header, rows, format);
   }
 
-  async purchaseOrders(format: ExportFormat) {
+  async purchaseOrders(format: ExportFormat, filters?: { status?: string }) {
     const pos = await this.prisma.purchaseOrder.findMany({
+      where: filters?.status ? { status: filters.status } : undefined,
       include: { vendor: true },
       orderBy: { poNumber: "asc" },
-      take: 5000,
     });
     const header = ["poNumber", "vendor", "status", "totalAmount", "currency", "validUntil"];
     const rows = pos.map((p) => [
@@ -212,7 +212,6 @@ export class ReportService {
     const contracts = await this.prisma.contract.findMany({
       include: { vendor: true },
       orderBy: { contractNumber: "asc" },
-      take: 5000,
     });
     const header = ["contractNumber", "vendor", "expiryDate", "contractValue"];
     const rows = contracts.map((c) => [
@@ -224,11 +223,27 @@ export class ReportService {
     return this.formatTabular("contracts", header, rows, format);
   }
 
-  async invoices(format: ExportFormat) {
+  async invoices(
+    format: ExportFormat,
+    filters?: { search?: string; paymentStatus?: string },
+  ) {
+    const search = filters?.search?.trim();
+    const paymentStatus = filters?.paymentStatus?.trim();
+    const where: Prisma.InvoiceWhereInput = {
+      ...(paymentStatus ? { paymentStatus } : {}),
+      ...(search
+        ? {
+            OR: [
+              { invoiceNumber: { contains: search, mode: "insensitive" } },
+              { purchaseOrder: { poNumber: { contains: search, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    };
     const invoices = await this.prisma.invoice.findMany({
+      where,
       include: { purchaseOrder: true, payments: true },
       orderBy: { invoiceNumber: "asc" },
-      take: 5000,
     });
     const header = [
       "invoiceNumber",
@@ -297,10 +312,10 @@ export class ReportService {
     return this.formatTabular("asset-movements", header, rows, format);
   }
 
-  async employees(format: ExportFormat) {
+  async employees(format: ExportFormat, filters?: { departmentId?: bigint }) {
     const employees = await this.prisma.employee.findMany({
+      where: filters?.departmentId ? { departmentId: filters.departmentId } : undefined,
       orderBy: { employeeNumber: "asc" },
-      take: 5000,
     });
     const header = ["employeeNumber", "fullName", "department", "email", "contactNumber", "isActive"];
     const rows = employees.map((e) => [

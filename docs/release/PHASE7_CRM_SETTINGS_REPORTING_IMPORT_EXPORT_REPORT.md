@@ -160,3 +160,18 @@ Side-by-side screenshots at 390/768/1440/1920: **deferred** to client UAT / Phas
 | Web Vitest | **54/54** (+ settings + dashboard filter helpers) |
 
 See `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`. Implementation after commit `fff1bf9` is **uncommitted**.
+
+---
+
+## 13. Addendum — Prompt #10 (2026-11-09)
+
+| Item | Result |
+|------|--------|
+| Next.js production build | **PASS** (stale `.next` removed) |
+| Dashboard filters | **Extended** — asset category/status; movement counts by activity range + department |
+| List exports | **Partial** — `ReportListExportMenu` on POs, assets, invoices, contracts, budgets, asset-issuance |
+| Invoice report filters | **Y** — `search`, `paymentStatus` on `/reports/invoices` |
+| API / Playwright regression | **BLOCKED** — PostgreSQL `127.0.0.1:5433` down |
+| Authoritative report | `PROMPT10_BUILD_DASHBOARD_IMPORT_EXPORT_CLOSURE.md` |
+
+**Production-ready: NO**

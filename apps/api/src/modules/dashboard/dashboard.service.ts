@@ -63,6 +63,8 @@ export class DashboardService {
       departmentId?: bigint;
       financialYearId?: bigint;
       poStatus?: string;
+      assetCategoryId?: bigint;
+      assetStatus?: string;
     },
   ): Promise<DashboardSummary> {
     const generatedAt = new Date().toISOString();
@@ -93,14 +95,40 @@ export class DashboardService {
     if (has(principal, PermissionKeys.assetsRead)) {
       tasks.push(
         (async () => {
+          const assetWhere: { categoryId?: bigint; assetStatus?: string } = {};
+          if (options?.assetCategoryId) assetWhere.categoryId = options.assetCategoryId;
+          if (options?.assetStatus) assetWhere.assetStatus = options.assetStatus;
+
+          const movementWhere: {
+            occurredAt?: { gte?: Date; lte?: Date };
+            employeeId?: bigint;
+            receivingDepartment?: { contains: string; mode: "insensitive" };
+          } = {};
+          if (options?.activityFrom || options?.activityTo) {
+            movementWhere.occurredAt = {};
+            if (options.activityFrom) movementWhere.occurredAt.gte = options.activityFrom;
+            if (options.activityTo) movementWhere.occurredAt.lte = options.activityTo;
+          }
+          if (options?.departmentId) {
+            const dept = await this.prisma.department.findUnique({
+              where: { departmentId: options.departmentId },
+              select: { departmentName: true },
+            });
+            if (dept?.departmentName) {
+              movementWhere.receivingDepartment = { contains: dept.departmentName, mode: "insensitive" };
+            }
+          }
+
           const [grouped, nonAssetCount, movementGrouped] = await Promise.all([
             this.prisma.asset.groupBy({
               by: ["assetStatus"],
+              where: assetWhere,
               _count: { _all: true },
             }),
             this.prisma.nonAssetStockItem.count(),
             this.prisma.assetMovementDocument.groupBy({
               by: ["documentType"],
+              where: Object.keys(movementWhere).length ? movementWhere : undefined,
               _count: { _all: true },
             }),
           ]);

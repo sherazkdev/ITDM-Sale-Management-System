@@ -17,6 +17,7 @@ import { fetchContracts, type Contract } from "@/lib/api/contracts";
 import { fetchVendors } from "@/lib/api/vendors";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 
@@ -123,14 +124,19 @@ export default function ContractsPage() {
         title="Contracts"
         description="Vendor and service contracts."
         actions={
-          hasPermission(PermissionKeys.contractsManage) ? (
-            <Button asChild size="md">
-              <Link href="/contracts/new">
-                <Plus className="h-4 w-4" />
-                Add contract
-              </Link>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {hasPermission(PermissionKeys.reportsRead) ? (
+              <ReportListExportMenu listKey="contracts" />
+            ) : null}
+            {hasPermission(PermissionKeys.contractsManage) ? (
+              <Button asChild size="md">
+                <Link href="/contracts/new">
+                  <Plus className="h-4 w-4" />
+                  Add contract
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

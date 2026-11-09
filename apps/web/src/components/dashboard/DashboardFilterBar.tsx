@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { fetchDepartmentSelectOptions } from "@/lib/api/departments";
 import { fetchFinancialYears } from "@/lib/api/budgets";
+import { fetchAssetCategories } from "@/lib/api/asset-categories";
 import { cn } from "@/lib/utils";
 
 export type DashboardDatePreset = "current_month" | "last_30" | "current_year" | "custom";
@@ -58,8 +59,18 @@ export function useDashboardFilterParams() {
     departmentId: searchParams.get("departmentId") ?? undefined,
     financialYearId: searchParams.get("financialYearId") ?? undefined,
     poStatus: searchParams.get("poStatus") ?? undefined,
+    assetCategoryId: searchParams.get("assetCategoryId") ?? undefined,
+    assetStatus: searchParams.get("assetStatus") ?? undefined,
   };
 }
+
+const ASSET_STATUS_OPTIONS = [
+  { value: "", label: "All asset statuses" },
+  { value: "IN_STOCK", label: "In stock" },
+  { value: "ISSUED", label: "Issued" },
+  { value: "UNDER_MAINTENANCE", label: "Under maintenance" },
+  { value: "RETIRED", label: "Retired" },
+] as const;
 
 export function useDashboardDateRange(): DashboardDateRange {
   const searchParams = useSearchParams();
@@ -100,6 +111,19 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
     queryFn: fetchFinancialYears,
     staleTime: 60_000,
   });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["asset-categories"],
+    queryFn: fetchAssetCategories,
+    staleTime: 60_000,
+  });
+  const activeFilterCount = [
+    searchParams.get("departmentId"),
+    searchParams.get("financialYearId"),
+    searchParams.get("poStatus"),
+    searchParams.get("assetCategoryId"),
+    searchParams.get("assetStatus"),
+    range.preset !== "current_month" ? "range" : null,
+  ].filter(Boolean).length;
 
   const patchParams = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -135,6 +159,11 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
         <CalendarRange className="h-4 w-4 shrink-0" />
         <span>
           {range.from} → {range.to}
+          {activeFilterCount > 0 ? (
+            <span className="ml-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+              {activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active
+            </span>
+          ) : null}
         </span>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -190,6 +219,23 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
           onChange={(v) => patchParams({ poStatus: v || undefined })}
           options={[...PO_STATUS_OPTIONS]}
           className="min-w-[140px]"
+        />
+        <FilterSelect
+          aria-label="Asset category filter"
+          value={searchParams.get("assetCategoryId") ?? ""}
+          onChange={(v) => patchParams({ assetCategoryId: v || undefined })}
+          options={[
+            { value: "", label: "All categories" },
+            ...categories.map((c) => ({ value: c.categoryId, label: c.categoryName })),
+          ]}
+          className="min-w-[150px]"
+        />
+        <FilterSelect
+          aria-label="Asset status filter"
+          value={searchParams.get("assetStatus") ?? ""}
+          onChange={(v) => patchParams({ assetStatus: v || undefined })}
+          options={[...ASSET_STATUS_OPTIONS]}
+          className="min-w-[150px]"
         />
         <Button
           type="button"

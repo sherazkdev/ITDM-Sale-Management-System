@@ -125,6 +125,8 @@ export default function DashboardPage() {
       filterParams.departmentId,
       filterParams.financialYearId,
       filterParams.poStatus,
+      filterParams.assetCategoryId,
+      filterParams.assetStatus,
     ],
     queryFn: () =>
       fetchDashboardSummary({

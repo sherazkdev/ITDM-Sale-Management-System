@@ -34,6 +34,7 @@ import {
 import { ApiClientError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 type IssueFormValues = IssueAssetsInput;
 type ReturnFormValues = ReturnAssetsInput;
@@ -394,6 +395,11 @@ export default function AssetIssuancePage() {
         eyebrow="Inventory"
         title="Issuance & returns"
         description="Issue in-stock assets to employees and process returns. Selections are submitted as atomic movements with audit history."
+        actions={
+          hasPermission(PermissionKeys.reportsRead) ? (
+            <ReportListExportMenu listKey="asset-movements" />
+          ) : null
+        }
       />
 
       <Tabs defaultValue={canIssue ? "issue" : "return"} className="w-full">
