@@ -22,6 +22,7 @@ import { VendorImportService } from "../modules/vendors/vendor-import.service.js
 import { AssetCategoryRepository } from "../modules/asset-categories/asset-category.repository.js";
 import { AssetCategoryService } from "../modules/asset-categories/asset-category.service.js";
 import { AssetCategoryController } from "../modules/asset-categories/asset-category.controller.js";
+import { AssetCategoryImportService } from "../modules/asset-categories/asset-category-import.service.js";
 import { AssetRepository } from "../modules/assets/asset.repository.js";
 import { AssetService } from "../modules/assets/asset.service.js";
 import { AssetController } from "../modules/assets/asset.controller.js";
@@ -123,7 +124,8 @@ export function createApplicationControllers(
 
   const assetCategoryRepository = new AssetCategoryRepository(prisma);
   const assetCategoryService = new AssetCategoryService(assetCategoryRepository);
-  const assetCategoryController = new AssetCategoryController(assetCategoryService);
+  const assetCategoryImportService = new AssetCategoryImportService(prisma);
+  const assetCategoryController = new AssetCategoryController(assetCategoryService, assetCategoryImportService);
 
   const assetRepository = new AssetRepository(prisma);
   const assetService = new AssetService(assetRepository, audit);

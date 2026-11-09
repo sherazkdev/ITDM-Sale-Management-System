@@ -94,4 +94,14 @@ export class DepartmentController {
       sendSuccess(res, data, { requestId: getRequestId(req) });
     }),
   ];
+
+  importPreviewSpreadsheet = [
+    upload.single("file"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const file = req.file;
+      if (!file?.buffer) throw new AppError(ErrorCodes.VALIDATION_ERROR, "Missing import file", 422);
+      const data = await this.importService.previewBuffer(file.buffer, file.originalname);
+      sendSuccess(res, data, { requestId: getRequestId(req) });
+    }),
+  ];
 }

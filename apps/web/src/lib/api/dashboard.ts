@@ -109,14 +109,13 @@ export type DashboardSummary = {
 export type DashboardSummaryParams = {
   from?: string;
   to?: string;
+  departmentId?: string;
+  financialYearId?: string;
+  poStatus?: string;
 };
 
 export async function fetchDashboardSummary(params?: DashboardSummaryParams): Promise<DashboardSummary> {
-  const qs =
-    params?.from || params?.to
-      ? `?${new URLSearchParams(
-          Object.entries(params).filter(([, v]) => v) as Array<[string, string]>,
-        ).toString()}`
-      : "";
+  const entries = Object.entries(params ?? {}).filter(([, v]) => v) as Array<[string, string]>;
+  const qs = entries.length ? `?${new URLSearchParams(entries).toString()}` : "";
   return apiGet<DashboardSummary>(`/dashboard/summary${qs}`);
 }

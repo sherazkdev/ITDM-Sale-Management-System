@@ -1,10 +1,62 @@
 import type { PrismaClient } from "@prisma/client";
 import { createVendorSchema } from "./vendor.schema.js";
 import { mapRowsByHeader, parseSpreadsheetBuffer } from "../../shared/import/spreadsheet-parse.js";
-import type { BulkImportResult } from "../../shared/import/bulk-import-result.js";
+import type {
+  BulkImportPreviewResult,
+  BulkImportPreviewRow,
+  BulkImportResult,
+} from "../../shared/import/bulk-import-result.js";
 
 export class VendorImportService {
   constructor(private readonly prisma: PrismaClient) {}
+
+  async previewBuffer(buffer: Buffer, fileName: string): Promise<BulkImportPreviewResult> {
+    const { header, rows } = await parseSpreadsheetBuffer(buffer, fileName);
+    const mapped = mapRowsByHeader(header, rows);
+    const previewRows: BulkImportPreviewRow[] = [];
+    let validCount = 0;
+    let duplicateCount = 0;
+    let invalidCount = 0;
+
+    for (let i = 0; i < mapped.length; i++) {
+      const rowIndex = i + 2;
+      const row = mapped[i]!;
+      const values = {
+        vendorName: row.vendor_name ?? row.vendorname ?? row.vendorName ?? "",
+        email: row.email ?? "",
+      };
+      const parsed = createVendorSchema.safeParse({
+        vendorName: values.vendorName,
+        registrationNumber: row.registration_number || row.registrationnumber || undefined,
+        contactPerson: row.contact_person || undefined,
+        phone: row.phone || undefined,
+        email: row.email || undefined,
+        address: row.address || undefined,
+      });
+      if (!parsed.success) {
+        invalidCount++;
+        previewRows.push({ row: rowIndex, status: "invalid", values, message: "Invalid vendor row" });
+        continue;
+      }
+      const existing = await this.prisma.vendor.findFirst({
+        where: { vendorName: { equals: parsed.data.vendorName, mode: "insensitive" } },
+      });
+      if (existing) {
+        duplicateCount++;
+        previewRows.push({ row: rowIndex, status: "duplicate", values });
+        continue;
+      }
+      validCount++;
+      previewRows.push({ row: rowIndex, status: "valid", values });
+    }
+    return {
+      totalRows: mapped.length,
+      validCount,
+      duplicateCount,
+      invalidCount,
+      rows: previewRows.slice(0, 200),
+    };
+  }
 
   async importBuffer(buffer: Buffer, fileName: string): Promise<BulkImportResult> {
     const { header, rows } = await parseSpreadsheetBuffer(buffer, fileName);

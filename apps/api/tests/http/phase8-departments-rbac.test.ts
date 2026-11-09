@@ -26,6 +26,19 @@ describe("Phase 8 — departments and dynamic RBAC", () => {
       .expect(409);
   });
 
+  it("blocks financial.corrections on it_admin_proposed system role", async () => {
+    const app = buildApplication().app;
+    const cookie = await loginAsAdmin(app);
+    const roles = await request(app).get("/api/v1/roles").set(sessionRequestHeaders(cookie)).expect(200);
+    const proposed = roles.body.data.find((r: { roleKey: string }) => r.roleKey === "it_admin_proposed");
+    expect(proposed).toBeTruthy();
+    await request(app)
+      .put(`/api/v1/roles/${proposed.roleId}/permissions`)
+      .set(sessionRequestHeaders(cookie))
+      .send({ permissionKeys: ["financial.corrections", "employees.read"] })
+      .expect(403);
+  });
+
   it("blocks financial.corrections on custom role", async () => {
     const app = buildApplication().app;
     const cookie = await loginAsAdmin(app);

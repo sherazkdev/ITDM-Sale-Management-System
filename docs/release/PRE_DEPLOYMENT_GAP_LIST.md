@@ -80,6 +80,8 @@
 
 **Prompt 2 addendum (2026-11-08):** Full local regression **green** — API Vitest **91/91**, Web **50/50**, Playwright **315/0/216** on `itdms_e2e` (see `FINAL_FULL_REGRESSION_CLOSURE_REPORT.md`). **No new application defect blockers**; release blockers unchanged.
 
+**Phase 7+8 gap closure addendum (2026-11-08 late PM):** Local commits `501575b` + `fff1bf9` (not pushed). Further engineering: import preview/confirm, asset-category import/export, dashboard filters (partial), **admin-only** `financial.corrections`. Fresh API **97/97**, Web **54/54**. Full Playwright **BLOCKED** on `next build` prerender error (`Html` /404). Phase 7/8 remain **PARTIAL**. See `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`. **Production-ready: NO**.
+
 **Stage 4 addendum (2026-11-08):** Offline manifest **1084** files; backup/rotation + isolated restore **VERIFIED**; D09/D10 migrations applied on `itdms_deploy_rehearsal`; **`start-itdms-production.ps1`** web launcher fixed (wrong `npx` app on port). **Native Windows PostgreSQL**, client Task Scheduler, and packaged web re-smoke **NOT VERIFIED** (Docker stopped late session). See `docs/deployment/FINAL_WINDOWS_STANDALONE_READINESS.md`. **Production-ready: NO.**
 
 **Stage 5 addendum (2026-11-08):** **`ENGINEERING READY — CLIENT ACCEPTANCE PENDING`**. UAT execution package published; client UAT **NOT RUN**; full packaged API+DB rehearsal **BLOCKED** (Docker engine pipe). Client actions: `REMAINING_CLIENT_ACTIONS.md`. Handover: `FINAL_HANDOVER_READINESS_REPORT.md`.

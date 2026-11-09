@@ -22,6 +22,11 @@ export function createEmployeeRouter(deps: {
     deps.employeeController.create,
   );
   router.post(
+    "/import/preview",
+    requirePermission(PermissionKeys.employeesWrite),
+    ...deps.employeeController.importPreviewSpreadsheet,
+  );
+  router.post(
     "/import",
     requirePermission(PermissionKeys.employeesWrite),
     ...deps.employeeController.importSpreadsheet,

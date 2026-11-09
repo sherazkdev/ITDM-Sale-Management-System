@@ -135,3 +135,16 @@ Unchanged: D12 templates, D01/D02 matrix approval, native Windows PG, UAT sign-o
 **Phase 8 status remains PARTIAL.**
 
 **Production-ready: NO**
+
+---
+
+## 12. Addendum — financial corrections hardening (2026-11-08 late PM)
+
+| Item | Result |
+|------|--------|
+| `financial.corrections` assignable | **`admin` role key only** |
+| `it_admin_proposed` | Corrections **removed** (migration + seed) |
+| `admin.dev` | **admin** + proposed roles (corrections via admin) |
+| API tests | `phase8-departments-rbac` **3/3**; financial Phase 4 **6/6** |
+
+Gap-closure details: `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md` (uncommitted implementation after `fff1bf9`).

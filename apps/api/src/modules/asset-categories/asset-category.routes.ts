@@ -22,6 +22,17 @@ export function createAssetCategoryRouter(deps: {
     requirePermission(PermissionKeys.assetsRead),
     deps.assetCategoryController.list,
   );
+  router.get("/export", requirePermission(PermissionKeys.assetsRead), deps.assetCategoryController.exportList);
+  router.post(
+    "/import/preview",
+    requirePermission(PermissionKeys.assetsManage),
+    ...deps.assetCategoryController.importPreviewSpreadsheet,
+  );
+  router.post(
+    "/import",
+    requirePermission(PermissionKeys.assetsManage),
+    ...deps.assetCategoryController.importSpreadsheet,
+  );
   router.post(
     "/",
     requirePermission(PermissionKeys.assetsManage),

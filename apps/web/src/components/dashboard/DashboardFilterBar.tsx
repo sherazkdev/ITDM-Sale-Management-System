@@ -4,8 +4,13 @@ import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarRange } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+
 import { FilterSelect } from "@/components/common/FilterSelect";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { fetchDepartmentSelectOptions } from "@/lib/api/departments";
+import { fetchFinancialYears } from "@/lib/api/budgets";
 import { cn } from "@/lib/utils";
 
 export type DashboardDatePreset = "current_month" | "last_30" | "current_year" | "custom";
@@ -47,6 +52,15 @@ export function resolveDashboardRange(preset: DashboardDatePreset, from?: string
   return { preset: "current_month", from: toISODate(start), to: end };
 }
 
+export function useDashboardFilterParams() {
+  const searchParams = useSearchParams();
+  return {
+    departmentId: searchParams.get("departmentId") ?? undefined,
+    financialYearId: searchParams.get("financialYearId") ?? undefined,
+    poStatus: searchParams.get("poStatus") ?? undefined,
+  };
+}
+
 export function useDashboardDateRange(): DashboardDateRange {
   const searchParams = useSearchParams();
   const presetRaw = searchParams.get("range") ?? "current_month";
@@ -62,11 +76,30 @@ type DashboardFilterBarProps = {
   className?: string;
 };
 
+const PO_STATUS_OPTIONS = [
+  { value: "", label: "All PO statuses" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "SUBMITTED", label: "Submitted" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "CANCELLED", label: "Cancelled" },
+] as const;
+
 export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const range = useDashboardDateRange();
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments", "select-options"],
+    queryFn: () => fetchDepartmentSelectOptions(),
+    staleTime: 60_000,
+  });
+  const { data: financialYears = [] } = useQuery({
+    queryKey: ["financial-years"],
+    queryFn: fetchFinancialYears,
+    staleTime: 60_000,
+  });
 
   const patchParams = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -131,6 +164,43 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
             />
           </div>
         ) : null}
+        <FilterSelect
+          aria-label="Department filter"
+          value={searchParams.get("departmentId") ?? ""}
+          onChange={(v) => patchParams({ departmentId: v || undefined })}
+          options={[{ value: "", label: "All departments" }, ...departments]}
+          className="min-w-[160px]"
+        />
+        <FilterSelect
+          aria-label="Financial year filter"
+          value={searchParams.get("financialYearId") ?? ""}
+          onChange={(v) => patchParams({ financialYearId: v || undefined })}
+          options={[
+            { value: "", label: "All financial years" },
+            ...financialYears.map((fy) => ({
+              value: fy.financialYearId,
+              label: fy.yearName,
+            })),
+          ]}
+          className="min-w-[160px]"
+        />
+        <FilterSelect
+          aria-label="Purchase order status filter"
+          value={searchParams.get("poStatus") ?? ""}
+          onChange={(v) => patchParams({ poStatus: v || undefined })}
+          options={[...PO_STATUS_OPTIONS]}
+          className="min-w-[140px]"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            router.replace(pathname, { scroll: false })
+          }
+        >
+          Reset filters
+        </Button>
       </div>
     </div>
   );

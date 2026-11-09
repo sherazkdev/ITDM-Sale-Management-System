@@ -18,9 +18,19 @@ export class DashboardController {
       const d = new Date(raw);
       return Number.isNaN(d.getTime()) ? undefined : d;
     };
+    const parseId = (raw: unknown): bigint | undefined => {
+      if (typeof raw !== "string" || !/^\d+$/.test(raw)) return undefined;
+      return BigInt(raw);
+    };
     const data = await this.service.buildSummary(req.principal, {
       activityFrom: parseDate(req.query.from),
       activityTo: parseDate(req.query.to),
+      departmentId: parseId(req.query.departmentId),
+      financialYearId: parseId(req.query.financialYearId),
+      poStatus:
+        typeof req.query.poStatus === "string" && req.query.poStatus.length > 0
+          ? req.query.poStatus
+          : undefined,
     });
     sendSuccess(res, data, { requestId: getRequestId(req) });
   });

@@ -81,7 +81,22 @@ export type EntityImportResult = {
   errors: Array<{ row: number; message: string }>;
 };
 
-export async function postEntityImport(importPath: string, file: File): Promise<EntityImportResult> {
+export type EntityImportPreviewRow = {
+  row: number;
+  status: "valid" | "duplicate" | "invalid";
+  values: Record<string, string>;
+  message?: string;
+};
+
+export type EntityImportPreviewResult = {
+  totalRows: number;
+  validCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+  rows: EntityImportPreviewRow[];
+};
+
+async function postEntityImportFile<T>(importPath: string, file: File): Promise<T> {
   const normalized = importPath.startsWith("/") ? importPath : `/${importPath}`;
   const url = `${getApiBaseUrl()}${normalized}`;
   const form = new FormData();
@@ -103,7 +118,7 @@ export async function postEntityImport(importPath: string, file: File): Promise<
   }
 
   const body = (await response.json()) as
-    | { success: true; data: EntityImportResult }
+    | { success: true; data: T }
     | { success: false; error: { message: string } };
 
   if (!response.ok || !("success" in body) || !body.success) {
@@ -114,4 +129,16 @@ export async function postEntityImport(importPath: string, file: File): Promise<
     throw new Error(message);
   }
   return body.data;
+}
+
+export function postEntityImportPreview(
+  importPath: string,
+  file: File,
+): Promise<EntityImportPreviewResult> {
+  const previewPath = importPath.replace(/\/import$/, "/import/preview");
+  return postEntityImportFile<EntityImportPreviewResult>(previewPath, file);
+}
+
+export async function postEntityImport(importPath: string, file: File): Promise<EntityImportResult> {
+  return postEntityImportFile<EntityImportResult>(importPath, file);
 }

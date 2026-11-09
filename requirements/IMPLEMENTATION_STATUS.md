@@ -1,9 +1,9 @@
 # Implementation Status — Update Only After Verified Work
 
 **Current phase:** **ENGINEERING READY — CLIENT ACCEPTANCE PENDING**  
-**Last verified at:** 2026-11-08 (PM) — Phase 7+8 checkpoint, migrations, full regression — `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md`  
+**Last verified at:** 2026-11-08 (late PM) — gap closure engineering — `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`  
 **Git recovery:** tag `itdms-pre-crm-enhancements-2026-11-08` @ `3e41a51` (unchanged); remote `main` @ `6e84fda` (unchanged)  
-**Local Git:** checkpoint `501575b` on `main` (not pushed)
+**Local Git:** `501575b` + `fff1bf9` (harness/docs); gap-closure code **uncommitted**
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -52,8 +52,8 @@
 | Phase 7+8 checkpoint regression | **COMPLETE (engineering, scoped)** | Local commit **501575b**; API **95/95**; Web **50/50**; Playwright **315/0/216**; Phases **PARTIAL** — `PHASE7_PHASE8_FULL_REGRESSION_AND_CHECKPOINT_REPORT.md` |
 | Stage 5 — UAT package & handover prep | **COMPLETE (documentation)** | `CLIENT_UAT_EXECUTION_PACKAGE.md`; UAT **NOT EXECUTED** — `FINAL_HANDOVER_READINESS_REPORT.md` |
 | Stage 5 — packaged runtime verification | **VERIFIED (engineering)** | Docker WSL + Compose PG; migrate **10/10** on `itdms_deploy_rehearsal`; API Vitest **91/91** on `itdms_test`; smokes + exports **PASS**; `127.0.0.1:3012/login` **200**; restart persistence **PASS** — `POST_STAGE5_DOCS_AND_RUNTIME_CLOSURE.md` |
-| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Checkpoint **501575b**; migrations on test DBs; API **95/95** incl. PDF; Playwright indirect; preview/confirm + full export rollout **OPEN** — `PHASE7_CRM_SETTINGS_REPORTING_IMPORT_EXPORT_REPORT.md` |
-| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | 12 migrations on `itdms_test`/`itdms_e2e`; `phase8-departments-rbac` **2/2**; E2E employee dept harness fixed; settings/roles dedicated Vitest **OPEN** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
+| Phase 7 — CRM UI, PDF, settings, import/export | **PARTIAL (engineering)** | Import preview/confirm for 4 entities; dashboard URL filters (partial server scope); API **97/97**; export rollout + CRM capture matrix **OPEN** — `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md` |
+| Phase 8 — departments & dynamic RBAC | **PARTIAL (engineering)** | Admin-only `financial.corrections`; migration **13**; `phase8-departments-rbac` **3/3**; session-revocation E2E **OPEN** — `PHASE8_DEPARTMENTS_DYNAMIC_RBAC_REPORT.md` |
 | P00–P01 | VERIFIED | Phase reports |
 | P02 | IMPLEMENTED | migrations |
 | P03–P15 | IMPLEMENTED / TESTED | API tests |

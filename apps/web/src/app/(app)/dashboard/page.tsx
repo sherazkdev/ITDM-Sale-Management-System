@@ -32,6 +32,7 @@ import {
   DashboardFilterBar,
   filterRecentActivityByRange,
   useDashboardDateRange,
+  useDashboardFilterParams,
 } from "@/components/dashboard/DashboardFilterBar";
 import { fetchDashboardSummary, type DashboardSummary } from "@/lib/api/dashboard";
 import { ApiClientError } from "@/lib/api/client";
@@ -111,12 +112,26 @@ export default function DashboardPage() {
   const router = useRouter();
   const { session, hasPermission, serviceUnavailable } = useAuth();
   const dateRange = useDashboardDateRange();
+  const filterParams = useDashboardFilterParams();
   const firstName =
     session.status === "authenticated" ? session.user.displayName.split(" ")[0] : "there";
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["dashboard", "summary", dateRange.from, dateRange.to],
-    queryFn: () => fetchDashboardSummary({ from: dateRange.from, to: dateRange.to }),
+    queryKey: [
+      "dashboard",
+      "summary",
+      dateRange.from,
+      dateRange.to,
+      filterParams.departmentId,
+      filterParams.financialYearId,
+      filterParams.poStatus,
+    ],
+    queryFn: () =>
+      fetchDashboardSummary({
+        from: dateRange.from,
+        to: dateRange.to,
+        ...filterParams,
+      }),
     staleTime: 30_000,
     enabled: session.status === "authenticated" && !serviceUnavailable,
   });

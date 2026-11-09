@@ -15,25 +15,53 @@ async function main() {
     });
   }
 
-  const role = await prisma.role.upsert({
+  const adminRole = await prisma.role.upsert({
+    where: { roleKey: "admin" },
+    create: {
+      roleKey: "admin",
+      displayName: "Administrator",
+      description: "Client-approved administrative role (financial corrections)",
+      isSystem: true,
+      isActive: true,
+    },
+    update: { isSystem: true, isActive: true },
+  });
+
+  const proposedRole = await prisma.role.upsert({
     where: { roleKey: "it_admin_proposed" },
     create: {
       roleKey: "it_admin_proposed",
       displayName: "IT Admin (PROPOSED seed role)",
       description: "Development seed only — not an approved client role matrix",
+      isSystem: true,
+      isActive: true,
     },
-    update: {},
+    update: { isSystem: true },
   });
 
   const permissions = await prisma.permission.findMany({
     where: { permissionKey: { in: ALL_PERMISSIONS } },
   });
+
   for (const permission of permissions) {
     await prisma.rolePermission.upsert({
-      where: { roleId_permissionId: { roleId: role.roleId, permissionId: permission.permissionId } },
-      create: { roleId: role.roleId, permissionId: permission.permissionId },
+      where: { roleId_permissionId: { roleId: adminRole.roleId, permissionId: permission.permissionId } },
+      create: { roleId: adminRole.roleId, permissionId: permission.permissionId },
       update: {},
     });
+    if (permission.permissionKey === PermissionKeys.financialCorrections) {
+      await prisma.rolePermission.deleteMany({
+        where: { roleId: proposedRole.roleId, permissionId: permission.permissionId },
+      });
+    } else {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId: proposedRole.roleId, permissionId: permission.permissionId },
+        },
+        create: { roleId: proposedRole.roleId, permissionId: permission.permissionId },
+        update: {},
+      });
+    }
   }
 
   const username = process.env.SEED_ADMIN_USERNAME ?? "admin.dev";
@@ -51,18 +79,20 @@ async function main() {
     update: { passwordHash, isActive: true, isLocked: false },
   });
 
-  await prisma.userRole.upsert({
-    where: { userId_roleId: { userId: user.userId, roleId: role.roleId } },
-    create: { userId: user.userId, roleId: role.roleId },
-    update: {},
-  });
+  for (const roleId of [adminRole.roleId, proposedRole.roleId]) {
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.userId, roleId } },
+      create: { userId: user.userId, roleId },
+      update: {},
+    });
+  }
 
   console.log(
     JSON.stringify({
       seeded: true,
       username,
       note:
-        "Dev seed user — Wave 1: client confirmed single initial admin; provision one production user with full role via /admin when D01 matrix is finalized. Rotate credentials.",
+        "Dev seed user — admin role holds financial.corrections; it_admin_proposed excludes corrections until D01.",
     }),
   );
 }

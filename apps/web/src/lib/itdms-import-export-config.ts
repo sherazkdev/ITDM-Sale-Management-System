@@ -149,7 +149,8 @@ export const ENTITY_CONFIG: Record<ItdmsEntityKind, EntityImportConfig> = {
   "asset-categories": {
     entityLabel: "Asset categories",
     importApiPath: "/asset-categories/import",
-    exportMode: null,
+    exportMode: "entity",
+    exportApiPath: "/asset-categories/export",
     reportsHref: "/reports",
     columns: CATEGORY_COLUMNS,
     sampleRow: CATEGORY_SAMPLE,

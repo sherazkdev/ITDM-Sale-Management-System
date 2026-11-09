@@ -57,7 +57,13 @@ export class DashboardService {
 
   async buildSummary(
     principal: AuthPrincipal,
-    options?: { activityFrom?: Date; activityTo?: Date },
+    options?: {
+      activityFrom?: Date;
+      activityTo?: Date;
+      departmentId?: bigint;
+      financialYearId?: bigint;
+      poStatus?: string;
+    },
   ): Promise<DashboardSummary> {
     const generatedAt = new Date().toISOString();
     const sectionsIncluded: string[] = [];
@@ -71,9 +77,12 @@ export class DashboardService {
     if (has(principal, PermissionKeys.employeesRead)) {
       tasks.push(
         (async () => {
+          const deptFilter = options?.departmentId
+            ? { departmentId: options.departmentId }
+            : {};
           const [active, inactive] = await Promise.all([
-            this.prisma.employee.count({ where: { isActive: true } }),
-            this.prisma.employee.count({ where: { isActive: false } }),
+            this.prisma.employee.count({ where: { isActive: true, ...deptFilter } }),
+            this.prisma.employee.count({ where: { isActive: false, ...deptFilter } }),
           ]);
           summary.employees = { total: active + inactive, active, inactive };
           sectionsIncluded.push("employees");
@@ -153,8 +162,10 @@ export class DashboardService {
     if (has(principal, PermissionKeys.purchaseOrdersRead)) {
       tasks.push(
         (async () => {
+          const poWhere = options?.poStatus ? { status: options.poStatus } : {};
           const grouped = await this.prisma.purchaseOrder.groupBy({
             by: ["status"],
+            where: poWhere,
             _count: { _all: true },
           });
           const byStatus: Record<string, number> = {};
@@ -305,7 +316,10 @@ export class DashboardService {
         (async () => {
           const [usdAllocations, committedLines, paymentLines] = await Promise.all([
             this.prisma.budgetAllocation.findMany({
-              where: { currency: "USD" },
+              where: {
+                currency: "USD",
+                ...(options?.financialYearId ? { financialYearId: options.financialYearId } : {}),
+              },
               include: { budgetTransactions: true },
             }),
             this.prisma.budgetTransaction.count({

@@ -147,3 +147,16 @@ Side-by-side screenshots at 390/768/1440/1920: **deferred** to client UAT / Phas
 **Phase 7 status remains PARTIAL** — §10 gaps unchanged (preview/confirm, export rollout, asset-category import, KPI filters, CRM screenshots).
 
 **Production-ready: NO**
+
+---
+
+## 12. Addendum — gap closure (2026-11-08 late PM)
+
+| Item | Result |
+|------|--------|
+| Import Preview → Confirm | **DONE** (4 entities + preview API) |
+| Asset category import/export | **DONE** |
+| Dashboard filters | **PARTIAL** (dept / FY / PO status + activity dates) |
+| Web Vitest | **54/54** (+ settings + dashboard filter helpers) |
+
+See `PHASE7_PHASE8_FINAL_GAP_CLOSURE_REPORT.md`. Implementation after commit `fff1bf9` is **uncommitted**.

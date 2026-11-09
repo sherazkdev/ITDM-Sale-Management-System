@@ -5,7 +5,8 @@ import { PermissionKeys } from "../../shared/auth/permissions.js";
 import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
 
-const CORRECTIONS_ELIGIBLE_ROLE_KEYS = new Set(["admin", "it_admin_proposed"]);
+/** Client policy: only the approved Administrator role may hold financial.corrections. */
+const CORRECTIONS_ELIGIBLE_ROLE_KEYS = new Set(["admin"]);
 const PROTECTED_SYSTEM_ROLE_KEYS = new Set(["it_admin_proposed", "admin"]);
 
 export class RoleAdminService {

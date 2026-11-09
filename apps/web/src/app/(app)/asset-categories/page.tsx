@@ -33,6 +33,8 @@ import {
   createAssetCategorySchema,
   type CreateAssetCategoryInput,
 } from "@/lib/validators/asset";
+import { ImportModal } from "@/components/data-management/ImportModal";
+import { ExportMenu } from "@/components/data-management/ExportMenu";
 import { ApiClientError } from "@/lib/api/client";
 
 type CategoryFormValues = CreateAssetCategoryInput;
@@ -133,10 +135,14 @@ export default function AssetCategoriesPage() {
         description="Category taxonomy for the asset register."
         actions={
           canManage ? (
-            <Button size="md" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add category
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <ImportModal entity="asset-categories" />
+              <ExportMenu entity="asset-categories" />
+              <Button size="md" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add category
+              </Button>
+            </div>
           ) : null
         }
       />

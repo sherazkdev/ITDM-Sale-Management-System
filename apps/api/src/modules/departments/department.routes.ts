@@ -25,6 +25,7 @@ export function createDepartmentRouter(deps: {
     validateBody(updateDepartmentSchema),
     deps.departmentController.update,
   );
+  router.post("/import/preview", ...manage, ...deps.departmentController.importPreviewSpreadsheet);
   router.post("/import", ...manage, ...deps.departmentController.importSpreadsheet);
   return router;
 }

@@ -23,6 +23,11 @@ export function createVendorRouter(deps: {
   );
   router.get("/export", requirePermission(PermissionKeys.vendorsRead), deps.vendorController.exportList);
   router.post(
+    "/import/preview",
+    requirePermission(PermissionKeys.vendorsManage),
+    ...deps.vendorController.importPreviewSpreadsheet,
+  );
+  router.post(
     "/import",
     requirePermission(PermissionKeys.vendorsManage),
     ...deps.vendorController.importSpreadsheet,
