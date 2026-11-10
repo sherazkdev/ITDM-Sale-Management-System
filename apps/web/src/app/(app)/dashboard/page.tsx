@@ -676,7 +676,11 @@ function DashboardPageContent() {
                     As-of today — not scoped by activity date or financial year filters.
                   </DashboardMetricScopeNote>
                 </CardHeader>
-                <CardContent className="max-h-80 overflow-y-auto scrollbar-thin pr-1">
+                <CardContent
+                  tabIndex={0}
+                  aria-label="Expiry watchlist"
+                  className="max-h-80 overflow-y-auto scrollbar-thin pr-1"
+                >
                   {data.expiryWatchlist.items.length === 0 ? (
                     <p className="py-8 text-center text-sm text-muted-foreground">
                       Nothing expiring within {expiryWindow} days.
@@ -717,7 +721,11 @@ function DashboardPageContent() {
                     parameters for all KPI sections.
                   </p>
                 </CardHeader>
-                <CardContent className="max-h-80 overflow-y-auto scrollbar-thin pr-1">
+                <CardContent
+                  tabIndex={0}
+                  aria-label="Recent activity"
+                  className="max-h-80 overflow-y-auto scrollbar-thin pr-1"
+                >
                   <div className="flex flex-col gap-0.5">
                     {filteredRecentActivity.length === 0 ? (
                       <div className="py-8 text-center text-sm text-muted-foreground">

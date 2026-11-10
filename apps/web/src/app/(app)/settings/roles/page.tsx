@@ -169,7 +169,7 @@ export default function RolesSettingsPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-1">
+          <CardContent className="flex max-h-52 flex-col gap-1 overflow-y-auto overscroll-contain lg:max-h-[calc(100vh-12rem)]">
             <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               System
             </p>

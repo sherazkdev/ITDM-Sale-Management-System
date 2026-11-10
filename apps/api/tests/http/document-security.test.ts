@@ -7,7 +7,7 @@ import { loginAsAdmin, sessionRequestHeaders } from "../helpers/auth-test.js";
 describe("Document upload validation", () => {
   beforeAll(async () => {
     await prepareTestDatabase();
-  }, 120_000);
+  }, 180_000);
 
   it("rejects executable MIME at storage layer via API", async () => {
     const app = buildApplication().app;

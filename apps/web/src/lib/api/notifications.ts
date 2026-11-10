@@ -1,3 +1,4 @@
+import { formatDateOnly } from "@/lib/utils";
 import { apiGet, apiGetPage, apiPost } from "./client";
 import { toQueryString } from "./query-string";
 
@@ -52,9 +53,16 @@ export async function markNotificationRead(notificationEventId: string) {
   return apiPost<NotificationEvent>(`/notifications/${encodeURIComponent(notificationEventId)}/read`);
 }
 
+function presentStoredDateText(value: string): string {
+  return value.replace(/\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?/g, (token) => {
+    const formatted = formatDateOnly(token, token);
+    return formatted;
+  });
+}
+
 export function notificationSummary(row: NotificationEvent): string {
   const payload = row.payload as Record<string, unknown> | null;
-  if (payload && typeof payload.message === "string") return payload.message;
+  if (payload && typeof payload.message === "string") return presentStoredDateText(payload.message);
   if (payload && typeof payload.contractNumber === "string") {
     return `Contract ${payload.contractNumber} approaching expiry`;
   }

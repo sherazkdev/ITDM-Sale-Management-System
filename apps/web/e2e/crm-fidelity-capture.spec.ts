@@ -1,8 +1,9 @@
 import { test } from "@playwright/test";
 import path from "node:path";
 import { applyTheme } from "./helpers-visual";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/frontend/screenshots/crm-fidelity");
+const OUT = uiCaptureDir("crm-fidelity");
 
 const ROUTES = [
   { name: "login", path: "/login", auth: false },
@@ -12,7 +13,7 @@ const ROUTES = [
 ] as const;
 
 test.describe("CRM fidelity capture", () => {
-  test.describe.configure({ timeout: 120_000 });
+  test.describe.configure({ timeout: 240_000 });
 
   for (const theme of ["light", "dark"] as const) {
     test(`login ${theme} @ 1440`, async ({ page }) => {
@@ -21,7 +22,7 @@ test.describe("CRM fidelity capture", () => {
       await applyTheme(page, theme);
       await page.goto("/login", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(500);
-      await page.screenshot({
+      await saveScreenshot(page, {
         path: path.join(OUT, `itdms-login-1440-${theme}.png`),
         fullPage: true,
       });
@@ -33,7 +34,7 @@ test.describe("CRM fidelity capture", () => {
       for (const route of ROUTES.filter((r) => r.auth)) {
         await page.goto(route.path, { waitUntil: "domcontentloaded" });
         await page.waitForTimeout(500);
-        await page.screenshot({
+        await saveScreenshot(page, {
           path: path.join(OUT, `itdms-${route.name}-1440-${theme}.png`),
           fullPage: true,
         });

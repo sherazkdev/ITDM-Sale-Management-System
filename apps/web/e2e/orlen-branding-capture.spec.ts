@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { applyTheme } from "./helpers-visual";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/frontend/screenshots/orlen-branding");
+const OUT = uiCaptureDir("orlen-branding");
 
 /** Representative pages for ORLEN branding verification (layout unchanged). */
 const ROUTES = [
@@ -33,7 +34,7 @@ test.describe("ORLEN final branding capture", () => {
           for (const route of ROUTES.filter((r) => !("public" in r && r.public))) {
             await page.goto(route.path, { waitUntil: "networkidle" });
             await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
-            await page.screenshot({
+            await saveScreenshot(page, {
               path: path.join(OUT, `after-${route.name}-${vp.tag}-${theme}.png`),
               fullPage: true,
             });
@@ -53,7 +54,7 @@ test.describe("ORLEN final branding capture", () => {
           await page.setViewportSize({ width: vp.width, height: vp.height });
           await page.goto("/login", { waitUntil: "networkidle" });
           await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
-          await page.screenshot({
+          await saveScreenshot(page, {
             path: path.join(OUT, `after-login-${vp.tag}-${theme}.png`),
             fullPage: true,
           });

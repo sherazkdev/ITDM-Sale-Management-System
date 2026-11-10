@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { apiGetEnvelope, apiJson, apiPostEnvelope } from "./helpers/api";
 import { pickSearchableSelect } from "./helpers/searchable-select";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
 test.describe.configure({ mode: "serial" });
 
@@ -78,8 +79,8 @@ test.describe("D10 — employee department asset custody", () => {
     await page.goto("/asset-issuance", { waitUntil: "networkidle" });
     await expect(page.getByLabel(/receiving department/i)).toBeVisible();
 
-    const shotDir = path.resolve(__dirname, "../../../docs/release/audit-screenshots/d10");
-    await page.screenshot({
+    const shotDir = uiCaptureDir("d10");
+    await saveScreenshot(page, {
       path: path.join(shotDir, "asset-issuance-department-field.png"),
       fullPage: true,
     });
@@ -108,7 +109,7 @@ test.describe("D10 — employee department asset custody", () => {
     await expect(page.getByRole("columnheader", { name: "Department" })).toBeVisible();
     await expect(page.locator('table[role="grid"]').filter({ hasText: "ISSUE" })).toContainText("IT");
 
-    await page.screenshot({
+    await saveScreenshot(page, {
       path: path.join(shotDir, "asset-detail-history-department.png"),
       fullPage: true,
     });

@@ -44,7 +44,7 @@ export function Topbar() {
   }, [router]);
 
   return (
-    <header className="sticky top-0 z-30 grid h-16 min-w-0 grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-border bg-background/90 px-3 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur sm:gap-3 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+    <header className="sticky top-0 z-30 grid h-16 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/90 px-3 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur sm:gap-3 md:px-4 lg:px-6">
       <Button
         variant="ghost"
         size="icon"
@@ -65,8 +65,9 @@ export function Topbar() {
         <PanelLeft className="h-5 w-5" />
       </Button>
 
-      <div className="col-span-3 hidden min-w-0 max-w-xl justify-self-center md:col-span-1 md:block lg:max-w-2xl">
+      <div className="hidden min-w-0 md:block">
         <Input
+          className="h-9 min-w-0"
           placeholder="Search purchase order number…"
           leftIcon={<Search />}
           readOnly
@@ -81,7 +82,7 @@ export function Topbar() {
             }
           }}
           rightIcon={
-            <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground lg:inline-flex">
               ⌘K
             </kbd>
           }

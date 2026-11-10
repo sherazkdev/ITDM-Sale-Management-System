@@ -34,7 +34,7 @@ export function UserMenu() {
     return (
       <div className="flex items-center gap-2 pl-1.5 pr-2 h-10">
         <Skeleton className="h-8 w-8 rounded-full" />
-        <Skeleton className="hidden md:block h-4 w-24" />
+        <Skeleton className="hidden lg:block h-4 w-24" />
       </div>
     );
   }
@@ -53,11 +53,11 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-10 gap-2 pl-1.5 pr-2">
+        <Button variant="ghost" className="h-10 max-w-full gap-2 pl-1.5 pr-2" aria-label={`${user.displayName} account`}>
           <UserAvatar name={user.displayName} src={avatarSrc} size={32} />
-          <div className="hidden md:flex flex-col items-start leading-tight">
-            <span className="text-sm font-medium">{user.displayName}</span>
-            <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">{user.username}</span>
+          <div className="hidden min-w-0 flex-col items-start leading-tight lg:flex">
+            <span className="max-w-[9rem] truncate text-sm font-medium">{user.displayName}</span>
+            <span className="max-w-[9rem] truncate text-[11px] text-muted-foreground">{user.username}</span>
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Button>

@@ -36,8 +36,8 @@ export function PageHeader({
           className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/[0.06] blur-3xl dark:bg-primary/12"
           aria-hidden
         />
-        <header className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
+        <header className="relative flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
+          <div className="min-w-[12rem] flex-1">
             {breadcrumbs && breadcrumbs.length > 0 ? (
               <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
                 {breadcrumbs.map((crumb, i) => {
@@ -65,7 +65,7 @@ export function PageHeader({
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>
             ) : null}
           </div>
-          {actions ? <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div> : null}
+          {actions ? <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
         </header>
       </div>
     );

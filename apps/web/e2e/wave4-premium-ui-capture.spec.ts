@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { applyTheme } from "./helpers-visual";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/frontend/screenshots/wave4-premium-ui");
+const OUT = uiCaptureDir("wave4-premium-ui");
 
 const PRIORITY_ROUTES = [
   { name: "dashboard", path: "/dashboard" },
@@ -35,7 +36,7 @@ test.describe("Wave 4 premium UI capture", () => {
         for (const route of PRIORITY_ROUTES) {
           await page.goto(route.path, { waitUntil: "networkidle" });
           await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
-          await page.screenshot({
+          await saveScreenshot(page, {
             path: path.join(OUT, `${route.name}-${vp.tag}-${theme}.png`),
             fullPage: true,
           });
@@ -50,7 +51,7 @@ test.describe("Wave 4 premium UI capture", () => {
     for (const route of REPRESENTATIVE_ROUTES.filter((r) => !("public" in r && r.public))) {
       await page.goto(route.path, { waitUntil: "networkidle" });
       await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
-      await page.screenshot({
+      await saveScreenshot(page, {
         path: path.join(OUT, `${route.name}-1440-light.png`),
         fullPage: true,
       });
@@ -65,7 +66,7 @@ test.describe("Wave 4 premium UI capture", () => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.goto("/login", { waitUntil: "networkidle" });
         await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
-        await page.screenshot({
+        await saveScreenshot(page, {
           path: path.join(OUT, `login-1440-${theme}.png`),
           fullPage: true,
         });

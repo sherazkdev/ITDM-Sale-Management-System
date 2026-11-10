@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { applyTheme, assertNoHorizontalPageOverflow, VIEWPORTS } from "./helpers-visual";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/frontend/screenshots/wave4b-premium-ui");
+const OUT = uiCaptureDir("wave4b-premium-ui");
 
 const PRIORITY = [
   { name: "dashboard", path: "/dashboard" },
@@ -26,7 +27,7 @@ test.describe("Wave 4B fidelity capture", () => {
         for (const route of PRIORITY) {
           await page.goto(route.path, { waitUntil: "networkidle" });
           await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
-          await page.screenshot({
+          await saveScreenshot(page, {
             path: path.join(OUT, `${route.name}-${vp.tag}-${theme}.png`),
             fullPage: true,
           });

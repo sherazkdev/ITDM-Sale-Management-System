@@ -27,6 +27,8 @@ type ReportListExportMenuProps = {
   listKey: ListReportExportKey;
   filterParams?: Record<string, string | undefined>;
   disabled?: boolean;
+  /** Visible trigger label when more than one export sits on the same page. */
+  buttonLabel?: string;
 };
 
 const FORMATS: Array<{ format: ReportFormat; label: string }> = [
@@ -39,6 +41,7 @@ export function ReportListExportMenu({
   listKey,
   filterParams = {},
   disabled,
+  buttonLabel = "Export",
 }: ReportListExportMenuProps) {
   const spec = LIST_REPORT_EXPORT[listKey];
   const [loading, setLoading] = useState(false);
@@ -69,7 +72,7 @@ export function ReportListExportMenu({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="md" disabled={disabled || loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Export
+          {buttonLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">

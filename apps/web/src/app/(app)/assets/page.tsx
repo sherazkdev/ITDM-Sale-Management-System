@@ -221,8 +221,8 @@ export default function AssetsPage() {
           <div className="flex flex-wrap items-center gap-2">
             {hasPermission(PermissionKeys.reportsRead) ? (
               <>
-                <ReportListExportMenu listKey="serialized-assets" />
-                <ReportListExportMenu listKey="inventory-combined" />
+                <ReportListExportMenu listKey="serialized-assets" buttonLabel="Export assets" />
+                <ReportListExportMenu listKey="inventory-combined" buttonLabel="Export inventory" />
               </>
             ) : null}
             {hasPermission(PermissionKeys.assetsManage) ? (

@@ -9,6 +9,72 @@ import {
 } from "recharts";
 import { formatCompact, formatNumber, cn } from "@/lib/utils";
 
+const RADIAN = Math.PI / 180;
+
+function polar(cx: number, cy: number, radius: number, angle: number) {
+  return {
+    x: cx + Math.cos(-RADIAN * angle) * radius,
+    y: cy + Math.sin(-RADIAN * angle) * radius,
+  };
+}
+
+/** Matches Recharts sector geometry without the hardcoded unlabeled role="img". */
+function sectorPath(
+  cx: number,
+  cy: number,
+  innerRadius: number,
+  outerRadius: number,
+  startAngle: number,
+  endAngle: number,
+) {
+  const sign = Math.sign(endAngle - startAngle) || 1;
+  const angle = sign * Math.min(Math.abs(endAngle - startAngle), 359.999);
+  const tempEnd = startAngle + angle;
+  const outerStart = polar(cx, cy, outerRadius, startAngle);
+  const outerEnd = polar(cx, cy, outerRadius, tempEnd);
+  let path = `M ${outerStart.x},${outerStart.y} A ${outerRadius},${outerRadius},0,${+(Math.abs(angle) > 180)},${+(startAngle > tempEnd)},${outerEnd.x},${outerEnd.y}`;
+  if (innerRadius > 0) {
+    const innerEnd = polar(cx, cy, innerRadius, tempEnd);
+    const innerStart = polar(cx, cy, innerRadius, startAngle);
+    path += ` L ${innerEnd.x},${innerEnd.y} A ${innerRadius},${innerRadius},0,${+(Math.abs(angle) > 180)},${+(startAngle <= tempEnd)},${innerStart.x},${innerStart.y} Z`;
+  } else {
+    path += ` L ${cx},${cy} Z`;
+  }
+  return path;
+}
+
+function LabeledSector(props: {
+  cx?: number;
+  cy?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  startAngle?: number;
+  endAngle?: number;
+  fill?: string;
+  name?: string;
+  value?: number;
+}) {
+  const label = props.name ? `${props.name}: ${formatNumber(Number(props.value ?? 0))}` : "Chart slice";
+  return (
+    <path
+      d={sectorPath(
+        props.cx ?? 0,
+        props.cy ?? 0,
+        props.innerRadius ?? 0,
+        props.outerRadius ?? 0,
+        props.startAngle ?? 0,
+        props.endAngle ?? 0,
+      )}
+      fill={props.fill}
+      stroke="none"
+      aria-label={label}
+      className="recharts-sector"
+    >
+      <title>{label}</title>
+    </path>
+  );
+}
+
 export const CHART = {
   brand: "hsl(var(--chart-brand))",
   brandMuted: "hsl(var(--chart-brand-muted))",
@@ -63,6 +129,10 @@ export function StatusDonut({
               outerRadius={outer}
               paddingAngle={2}
               stroke="none"
+              isAnimationActive={false}
+              rootTabIndex={-1}
+              activeIndex={data.map((_, index) => index)}
+              activeShape={LabeledSector}
               style={{ cursor: onSliceActivate ? "pointer" : undefined }}
               onClick={(_, index) => {
                 const slice = data[index];

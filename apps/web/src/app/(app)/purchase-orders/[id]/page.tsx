@@ -50,7 +50,7 @@ import {
   type PurchaseOrderLineInput,
 } from "@/lib/validators/purchase-order";
 import { ApiClientError } from "@/lib/api/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateOnly } from "@/lib/utils";
 import { D03_POLICY_MESSAGE, PO_STATUS_LABELS, PO_WORKFLOW_BLOCKED, poStatusToPill } from "@/lib/domain/purchase-order-ui";
 
 function WorkflowActionButton({
@@ -298,8 +298,8 @@ export default function PurchaseOrderDetailPage() {
           aside={
             <SectionCard title="Header">
               <dl className="flex flex-col gap-3">
-                <DetailField label="PO date" value={po.poDate} />
-                <DetailField label="Valid until" value={po.validUntil ?? "—"} />
+                <DetailField label="PO date" value={formatDateOnly(po.poDate)} />
+                <DetailField label="Valid until" value={formatDateOnly(po.validUntil)} />
                 <DetailField
                   label="Contract"
                   value={

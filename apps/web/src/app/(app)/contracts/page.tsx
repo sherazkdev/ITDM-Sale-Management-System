@@ -20,7 +20,7 @@ import { PermissionKeys } from "@/lib/permissions";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 import { contractListCell } from "@/lib/list-entity-cells";
 import { ApiClientError } from "@/lib/api/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateOnly } from "@/lib/utils";
 
 function expiringBeforeDate(days: number): string {
   const d = new Date();
@@ -88,12 +88,12 @@ export default function ContractsPage() {
       key: "startDate",
       header: "Start",
       hideOnMobile: true,
-      cell: (c) => c.startDate,
+      cell: (c) => formatDateOnly(c.startDate),
     },
     {
       key: "expiryDate",
       header: "Expires",
-      cell: (c) => c.expiryDate,
+      cell: (c) => formatDateOnly(c.expiryDate),
     },
     {
       key: "contractValue",

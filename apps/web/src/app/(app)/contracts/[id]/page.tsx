@@ -41,7 +41,7 @@ import {
 import { fetchVendors } from "@/lib/api/vendors";
 import { updateContractSchema, type UpdateContractInput } from "@/lib/validators/contract";
 import { ApiClientError } from "@/lib/api/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateOnly } from "@/lib/utils";
 import { poStatusToPill } from "@/lib/domain/purchase-order-ui";
 
 export default function ContractDetailPage() {
@@ -124,7 +124,7 @@ export default function ContractDetailPage() {
       key: "poDate",
       header: "Date",
       hideOnMobile: true,
-      cell: (po) => po.poDate,
+      cell: (po) => formatDateOnly(po.poDate),
     },
   ];
 
@@ -198,8 +198,8 @@ export default function ContractDetailPage() {
         aside={
           <SectionCard title="Term">
             <dl className="flex flex-col gap-3">
-              <DetailField label="Start date" value={contract.startDate} />
-              <DetailField label="Expiry date" value={contract.expiryDate} />
+              <DetailField label="Start date" value={formatDateOnly(contract.startDate)} />
+              <DetailField label="Expiry date" value={formatDateOnly(contract.expiryDate)} />
               <DetailField label="Renewal status" value={contract.renewalStatus ?? "—"} />
             </dl>
           </SectionCard>

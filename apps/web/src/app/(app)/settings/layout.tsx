@@ -82,15 +82,16 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         breadcrumbs={[{ label: "Settings" }]}
         actions={<SettingsIcon className="hidden sm:block h-6 w-6 text-muted-foreground" />}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
-        <aside className="lg:sticky lg:top-[88px] self-start">
-          <nav className="rounded-xl border border-border bg-card shadow-card p-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+        <aside className="lg:sticky lg:top-[88px] lg:self-start">
+          <nav aria-label="Settings" className="rounded-xl border border-border bg-card p-2 shadow-card">
+            <div className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-visible">
             {grouped.map((g, idx) => (
-              <div key={g.group} className={cn(idx > 0 && "mt-2 pt-2 border-t border-border")}>
+              <div key={g.group} className={cn("min-w-0 shrink-0 lg:shrink", idx > 0 && "lg:mt-2 lg:border-t lg:border-border lg:pt-2")}>
                 <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {g.group}
                 </p>
-                <ul className="flex flex-col gap-0.5">
+                <ul className="flex gap-0.5 lg:flex-col">
                   {g.items.map((item) => {
                     const Icon = item.icon;
                     const active =
@@ -101,7 +102,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                            "flex items-center gap-2 whitespace-nowrap rounded-lg px-2 py-1.5 text-sm transition-colors lg:whitespace-normal",
                             active
                               ? "bg-accent text-primary font-medium"
                               : "text-foreground hover:bg-muted",
@@ -116,6 +117,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 </ul>
               </div>
             ))}
+            </div>
           </nav>
         </aside>
 

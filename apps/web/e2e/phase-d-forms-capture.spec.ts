@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/release/audit-screenshots/phase-d");
+const OUT = uiCaptureDir("phase-d");
 
 const ROUTES = [
   "purchase-orders/new",
@@ -28,7 +29,7 @@ test.describe("Phase D form screenshots", () => {
         await page.goto(`/${route}`, { waitUntil: "networkidle" });
         await expect(page.locator("main").first()).toBeVisible({ timeout: 30_000 });
         const slug = route.replace(/\//g, "-");
-        await page.screenshot({
+        await saveScreenshot(page, {
           path: path.join(OUT, `${slug}-${vp.tag}-loaded.png`),
           fullPage: true,
         });

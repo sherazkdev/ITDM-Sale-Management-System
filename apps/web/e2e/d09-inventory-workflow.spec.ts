@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { apiPostEnvelope } from "./helpers/api";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
 test.describe.configure({ mode: "serial" });
 
@@ -149,19 +150,19 @@ test.describe("D09 — non-asset inventory workflow (UI + API)", () => {
 
   test("capture D09 UI screenshots @ 1440", async ({ page }) => {
     test.skip(!stockItemId, "fixture missing");
-    const out = path.resolve(__dirname, "../../../docs/release/audit-screenshots/d09");
+    const out = uiCaptureDir("d09");
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/assets/non-asset/${stockItemId}`, { waitUntil: "networkidle" });
     await expect(page.getByRole("button", { name: /issue stock/i })).toBeVisible();
-    await page.screenshot({ path: path.join(out, "non-asset-detail-1440-loaded.png"), fullPage: true });
+    await saveScreenshot(page, { path: path.join(out, "non-asset-detail-1440-loaded.png"), fullPage: true });
     await page.getByRole("button", { name: /issue stock/i }).click();
-    await page.screenshot({ path: path.join(out, "non-asset-issue-form-1440-loaded.png"), fullPage: true });
+    await saveScreenshot(page, { path: path.join(out, "non-asset-issue-form-1440-loaded.png"), fullPage: true, settle: false });
     await page.getByRole("button", { name: /return stock/i }).click();
-    await page.screenshot({ path: path.join(out, "non-asset-return-form-1440-loaded.png"), fullPage: true });
+    await saveScreenshot(page, { path: path.join(out, "non-asset-return-form-1440-loaded.png"), fullPage: true, settle: false });
     await page.getByRole("button", { name: /^write off$/i }).click();
-    await page.screenshot({ path: path.join(out, "non-asset-writeoff-form-1440-loaded.png"), fullPage: true });
+    await saveScreenshot(page, { path: path.join(out, "non-asset-writeoff-form-1440-loaded.png"), fullPage: true, settle: false });
     await page.getByRole("button", { name: /cancel/i }).first().click();
     await expect(page.getByRole("heading", { name: /movement history/i })).toBeVisible();
-    await page.screenshot({ path: path.join(out, "non-asset-movement-history-1440-loaded.png"), fullPage: true });
+    await saveScreenshot(page, { path: path.join(out, "non-asset-movement-history-1440-loaded.png"), fullPage: true });
   });
 });

@@ -29,7 +29,7 @@ import {
   fetchUnreadNotificationCount,
   type NotificationEvent,
 } from "@/lib/api/notifications";
-import { cn } from "@/lib/utils";
+import { cn, formatDateOnly } from "@/lib/utils";
 
 const ENTITY_ICON: Record<string, LucideIcon> = {
   purchase_order: Briefcase,
@@ -158,7 +158,7 @@ function NotificationRow({ item }: { item: NotificationEvent }) {
           {titleFor(item)}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-          {item.entityType.replace(/_/g, " ")} · due {item.dueOn}
+          {item.entityType.replace(/_/g, " ")} · due {formatDateOnly(item.dueOn)}
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground tabular">{timeAgo(item.createdAt)}</p>
       </div>

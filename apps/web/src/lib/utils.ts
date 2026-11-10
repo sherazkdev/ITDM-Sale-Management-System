@@ -19,6 +19,41 @@ export function formatCompact(value: number, locale = "en-US"): string {
   return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
+const DATE_ONLY_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/**
+ * Format a stored calendar date for display.
+ * Uses the YYYY-MM-DD prefix so midnight-UTC date columns do not shift a day.
+ * Does not change the stored value.
+ */
+export function formatDateOnly(value: string | null | undefined, fallback = "—"): string {
+  if (!value?.trim()) return fallback;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+  if (!match) return value;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return value;
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) {
+    return value;
+  }
+  return `${day} ${DATE_ONLY_MONTHS[month - 1]} ${year}`;
+}
+
 /** Format a currency value. Default USD. */
 export function formatCurrency(
   value: number,

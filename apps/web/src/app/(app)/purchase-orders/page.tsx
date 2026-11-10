@@ -21,7 +21,7 @@ import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { ApiClientError } from "@/lib/api/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateOnly } from "@/lib/utils";
 import { ReportListExportMenu } from "@/components/data-management/ReportListExportMenu";
 
 const PO_STATUS_FILTER = [
@@ -115,7 +115,7 @@ export default function PurchaseOrdersPage() {
       hideOnMobile: true,
       sortable: true,
       serverSortKey: "poDate",
-      cell: (po) => po.poDate,
+      cell: (po) => formatDateOnly(po.poDate),
     },
   ];
 

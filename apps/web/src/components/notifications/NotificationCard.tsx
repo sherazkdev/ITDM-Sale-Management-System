@@ -2,7 +2,7 @@
 
 import { Bell, Calendar, FileText, KeyRound, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDateOnly } from "@/lib/utils";
 import type { NotificationEvent } from "@/lib/api/notifications";
 import { notificationSummary } from "@/lib/api/notifications";
 
@@ -61,7 +61,7 @@ export function NotificationCard({ row, onMarkRead, marking }: Props) {
           <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              Due {row.dueOn}
+              Due {formatDateOnly(row.dueOn)}
             </span>
             <span>
               {row.entityType} #{row.entityId}

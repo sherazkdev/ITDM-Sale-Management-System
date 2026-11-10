@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { applyTheme } from "./helpers-visual";
+import { saveScreenshot, uiCaptureDir } from "./helpers-screenshot";
 
-const OUT = path.resolve(__dirname, "../../../docs/frontend/screenshots/crm-layout-correction");
+const OUT = uiCaptureDir("crm-layout-correction");
 
 const DESKTOP_ROUTES = [
   { name: "dashboard", path: "/dashboard" },
@@ -41,7 +42,7 @@ async function captureRoutes(
   for (const route of routes) {
     await page.goto(route.path, { waitUntil: "networkidle" });
     await expect(page.locator("body")).toBeVisible();
-    await page.screenshot({
+    await saveScreenshot(page, {
       path: path.join(OUT, `${route.name}-${viewportTag}-light.png`),
       fullPage: true,
     });
@@ -76,7 +77,7 @@ test.describe("CRM layout correction capture — phase 02", () => {
       await link.click();
       await page.waitForURL(urlPattern, { timeout: 30_000 });
       await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
-      await page.screenshot({
+      await saveScreenshot(page, {
         path: path.join(OUT, fileName),
         fullPage: true,
       });
@@ -129,7 +130,7 @@ test.describe("CRM layout correction capture — phase 02", () => {
         await link.click();
         await page.waitForURL(mod.urlPattern, { timeout: 30_000 });
         await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
-        await page.screenshot({
+        await saveScreenshot(page, {
           path: path.join(OUT, `${mod.filePrefix}-${viewport.tag}-light.png`),
           fullPage: true,
         });
@@ -145,7 +146,7 @@ test.describe("CRM layout correction capture — unauthenticated smoke", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await applyTheme(page, "light");
     await page.goto("/login");
-    await page.screenshot({
+    await saveScreenshot(page, {
       path: path.join(OUT, "login-1440-light.png"),
       fullPage: true,
     });

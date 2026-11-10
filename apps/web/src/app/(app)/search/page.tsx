@@ -21,7 +21,7 @@ import { searchPurchaseOrder, type PoSearchResult } from "@/lib/api/search";
 import { downloadDocument } from "@/lib/api/documents";
 import { ApiClientError } from "@/lib/api/client";
 import { PO_SEARCH_SCOPE_NOTE } from "@/lib/domain/export-ui";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateOnly } from "@/lib/utils";
 import { toast } from "sonner";
 
 function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
@@ -227,15 +227,15 @@ export default function GlobalSearchPage() {
                   </Link>
                 }
               />
-              <DetailField label="PO date" value={po.poDate} />
+              <DetailField label="PO date" value={formatDateOnly(po.poDate)} />
               <DetailField label="Currency" value={po.currency} />
               <DetailField
                 label="PO valid until"
-                value={searchQuery.data.expiryDates.poValidUntil ?? "Not set"}
+                value={formatDateOnly(searchQuery.data.expiryDates.poValidUntil, "Not set")}
               />
               <DetailField
                 label="Contract expiry"
-                value={searchQuery.data.expiryDates.contractExpiry ?? "Not set"}
+                value={formatDateOnly(searchQuery.data.expiryDates.contractExpiry, "Not set")}
               />
             </dl>
             <p className="mt-3 text-xs text-muted-foreground">{searchQuery.data.expiryDates.note}</p>
