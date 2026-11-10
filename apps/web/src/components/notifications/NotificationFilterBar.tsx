@@ -88,12 +88,10 @@ export function NotificationFilterBar({ className }: Props) {
   }, [filters, patch]);
 
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-4 shadow-card space-y-3", className)}>
+    <div className={cn("space-y-3", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <SlidersHorizontal className="h-4 w-4" />
-          </div>
+          <SlidersHorizontal className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <div>
             <p className="text-sm font-medium">Filter notifications</p>
             {activeCount > 0 ? (

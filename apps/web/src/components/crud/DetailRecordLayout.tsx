@@ -33,7 +33,7 @@ export function RecordOverviewCard({ children, className }: RecordOverviewCardPr
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-6 shadow-card",
+        "rounded-lg border border-border bg-card p-5",
         className,
       )}
     >

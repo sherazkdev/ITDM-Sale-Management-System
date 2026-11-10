@@ -39,18 +39,6 @@ const ENTITY_ICON: Record<string, LucideIcon> = {
   software_license: Calendar,
 };
 
-const ENTITY_TONE: Record<string, string> = {
-  purchase_order: "bg-info-soft text-info-softFg",
-  contract: "bg-primary/10 text-primary",
-  asset: "bg-success-soft text-success-softFg",
-  maintenance: "bg-warning-soft text-warning-softFg",
-  software_license: "bg-primary/10 text-primary",
-};
-
-function toneFor(item: NotificationEvent) {
-  return ENTITY_TONE[item.entityType] ?? "bg-muted text-muted-foreground";
-}
-
 function iconFor(item: NotificationEvent) {
   return ENTITY_ICON[item.entityType] ?? MessageSquare;
 }
@@ -164,14 +152,7 @@ function NotificationRow({ item }: { item: NotificationEvent }) {
   const Icon = iconFor(item);
   const inner = (
     <div className="flex items-start gap-3 px-3 py-2.5 hover:bg-muted/60 transition-colors">
-      <span
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-          toneFor(item),
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className={cn("text-sm leading-snug capitalize", !item.readAt && "font-medium")}>
           {titleFor(item)}

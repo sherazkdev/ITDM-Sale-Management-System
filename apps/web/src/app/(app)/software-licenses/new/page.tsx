@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/forms/FormField";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import {
   CreateFormActions,
@@ -240,7 +241,7 @@ export default function NewSoftwareLicensePage() {
                   label="License expiry date"
                   htmlFor="expiryDate"
                   required
-                  description="Select the date this license expires."
+                  description={FORM_HINTS.licenseExpiry}
                   error={fieldErrorMessage("expiryDate", touchedFields, isSubmitted, errors)}
                 >
                   <Input
@@ -254,7 +255,7 @@ export default function NewSoftwareLicensePage() {
               <FormField
                 label="License quantity"
                 htmlFor="licenseQuantity"
-                description="Seat or instance count purchased."
+                description={FORM_HINTS.licenseQuantity}
                 error={fieldErrorMessage("licenseQuantity", touchedFields, isSubmitted, errors)}
               >
                 <Input

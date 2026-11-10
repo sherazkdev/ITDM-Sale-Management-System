@@ -201,7 +201,7 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "w-full min-w-0 rounded-xl border border-border bg-card shadow-card overflow-hidden",
+        "w-full min-w-0 overflow-hidden rounded-lg border border-border bg-background",
         className,
       )}
     >
@@ -316,8 +316,8 @@ export function DataTable<T>({
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                     onFocus={() => setFocusedRowIndex(rowIndex)}
                     className={cn(
-                      "border-t border-border transition-colors",
-                      onRowClick && "cursor-pointer hover:bg-muted/50 active:bg-muted/60",
+                      "border-t border-border transition-colors hover:bg-muted/40",
+                      onRowClick && "cursor-pointer",
                       focused && "bg-muted/40 outline-none ring-1 ring-inset ring-ring/30",
                     )}
                   >
@@ -328,7 +328,7 @@ export function DataTable<T>({
                         <td
                           key={col.key}
                           className={cn(
-                            "px-4 py-3.5 align-middle",
+                            "px-4 py-3 align-middle text-sm",
                             col.align === "right" && "text-right",
                             col.align === "center" && "text-center",
                             col.hideOnMobile && "hidden md:table-cell",

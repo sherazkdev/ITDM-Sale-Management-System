@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/forms/FormField";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import {
   CreateFormActions,
@@ -228,6 +229,7 @@ export default function NewMaintenancePage() {
                 label="Type"
                 htmlFor="maintenanceType"
                 required
+                description={FORM_HINTS.maintenanceType}
                 error={errors.maintenanceType?.message}
               >
                 <Input id="maintenanceType" error={!!errors.maintenanceType} {...register("maintenanceType")} />
@@ -237,6 +239,7 @@ export default function NewMaintenancePage() {
                 label="Request date"
                 htmlFor="requestDate"
                 required
+                description={FORM_HINTS.maintenanceRequestDate}
                 error={errors.requestDate?.message}
               >
                 <Input id="requestDate" type="date" error={!!errors.requestDate} {...register("requestDate")} />

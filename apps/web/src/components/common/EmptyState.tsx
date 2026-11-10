@@ -18,9 +18,7 @@ type EmptyStateProps = {
 export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
   return (
     <Card className={cn("flex flex-col items-center justify-center gap-3 p-10 text-center", className)}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Icon className="h-6 w-6" />
-      </div>
+      <Icon className="h-5 w-5 text-muted-foreground" aria-hidden />
       <div>
         <h3 className="text-base font-semibold">{title}</h3>
         {description ? (

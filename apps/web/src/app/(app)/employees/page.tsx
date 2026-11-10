@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, UserCheck, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type Column } from "@/components/common/DataTable";
@@ -26,9 +26,7 @@ import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useServerListTable } from "@/lib/hooks/use-server-list-table";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
-import { ListPageKpiBand } from "@/components/crud/ListPageKpiBand";
 import { SectionCard } from "@/components/common/SectionCard";
-import { useListMetaTotals } from "@/lib/hooks/use-list-meta";
 import { ApiClientError } from "@/lib/api/client";
 
 const EMPLOYEE_LIST_DEFAULTS = { page: 1, pageSize: 20, active: "all", departmentId: "" };
@@ -84,10 +82,6 @@ export default function EmployeesPage() {
   const total = data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / list.pageSize));
 
-  const metaTotals = useListMetaTotals(["employees", "summary"], fetchEmployees, {
-    includeInactive: true,
-  });
-
   const activeFilterChips = useMemo((): ActiveFilterChip[] => {
     const chips: ActiveFilterChip[] = [];
     if (list.search.trim()) {
@@ -125,6 +119,18 @@ export default function EmployeesPage() {
       cell: (e) => employeeListCell(e),
     },
     {
+      key: "department",
+      header: "Department",
+      hideOnMobile: true,
+      cell: (e) => e.department ?? "—",
+    },
+    {
+      key: "designation",
+      header: "Designation",
+      hideOnMobile: true,
+      cell: (e) => e.designation ?? "—",
+    },
+    {
       key: "isActive",
       header: "Status",
       cell: (e) => <StatusPill status={e.isActive ? "active" : "inactive"} dot />,
@@ -147,35 +153,6 @@ export default function EmployeesPage() {
             </Button>
           ) : null
         }
-      />
-
-      <ListPageKpiBand
-        loading={metaTotals.isLoading}
-        density="compact"
-        items={[
-          {
-            key: "total",
-            label: "Total employees",
-            value: metaTotals.total ?? 0,
-            icon: Users,
-            tone: "violet",
-          },
-          {
-            key: "active",
-            label: "Active",
-            value: metaTotals.active ?? 0,
-            icon: UserCheck,
-            tone: "green",
-          },
-          {
-            key: "inactive",
-            label: "Inactive",
-            value: metaTotals.inactive ?? 0,
-            icon: Users,
-            tone: "neutral",
-          },
-        ]}
-        columns={3}
       />
 
       <ListToolbar

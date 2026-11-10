@@ -73,7 +73,7 @@ export function Pagination({
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="h-9 rounded-lg border border-input bg-card px-2 text-sm shadow-card focus:outline-none focus:ring-2 focus:ring-ring"
+              className="h-9 rounded-lg border border-input bg-card px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label="Rows per page"
             >
               {pageSizes.map((s) => (
@@ -108,7 +108,10 @@ export function Pagination({
               key={n}
               variant={n === page ? "default" : "outline"}
               size="icon"
-              className={cn("h-9 w-9 tabular-nums", n === page && "bg-brand-gradient shadow-pop border-0")}
+              className={cn(
+                "h-9 w-9 tabular-nums",
+                n === page && "bg-primary text-primary-foreground shadow-none [background-image:none]",
+              )}
               onClick={() => onPageChange(n)}
               aria-current={n === page ? "page" : undefined}
             >

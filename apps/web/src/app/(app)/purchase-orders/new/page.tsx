@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 import { FormField } from "@/components/forms/FormField";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
@@ -178,7 +179,7 @@ export default function NewPurchaseOrderPage() {
                 label="PO number"
                 htmlFor="poNumber"
                 required
-                description="Enter the official PO reference recorded by the company."
+                description={FORM_HINTS.poNumber}
                 error={fieldErrorMessage("poNumber", touchedFields, isSubmitted, errors)}
               >
                 <Input

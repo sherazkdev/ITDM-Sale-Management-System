@@ -231,7 +231,10 @@ export default function BudgetsPage() {
     {
       key: "allocated",
       header: "Allocated",
-      cell: (a) => formatCurrency(Number(a.allocatedAmount), a.currency),
+      align: "right",
+      cell: (a) => (
+        <span className="tabular-nums">{formatCurrency(Number(a.allocatedAmount), a.currency)}</span>
+      ),
     },
     {
       key: "id",

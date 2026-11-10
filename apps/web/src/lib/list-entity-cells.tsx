@@ -33,15 +33,8 @@ export function employeeListCell(e: Employee) {
   return (
     <EntityIdentityCell
       icon={Users}
-      tone="violet"
       title={e.fullName}
       subtitle={e.employeeNumber}
-      meta={
-        <>
-          {e.department ? <span className="entity-chip">{e.department}</span> : null}
-          {e.designation ? <span className="entity-chip">{e.designation}</span> : null}
-        </>
-      }
     />
   );
 }
@@ -50,10 +43,8 @@ export function vendorListCell(v: Vendor) {
   return (
     <EntityIdentityCell
       icon={Building2}
-      tone="blue"
       title={v.vendorName}
       subtitle={v.contactPerson ?? v.email ?? undefined}
-      meta={v.email && v.contactPerson ? <span className="entity-chip">{v.email}</span> : undefined}
     />
   );
 }
@@ -62,7 +53,6 @@ export function departmentListCell(d: Department) {
   return (
     <EntityIdentityCell
       icon={Building2}
-      tone="neutral"
       title={d.departmentName}
       subtitle={d.departmentCode ?? undefined}
     />
@@ -71,28 +61,20 @@ export function departmentListCell(d: Department) {
 
 export function assetCategoryListCell(c: AssetCategory) {
   return (
-    <EntityIdentityCell icon={FolderTree} tone="amber" title={c.categoryName} subtitle={c.description ?? undefined} />
+    <EntityIdentityCell icon={FolderTree} title={c.categoryName} subtitle={c.description ?? undefined} />
   );
 }
 
 export function assetListCell(a: Asset & { currentAssigneeName?: string | null }) {
-  const assignee = a.currentAssigneeName;
   return (
     <EntityIdentityCell
       icon={Laptop}
-      tone="brand"
       title={
         <Link href={`/assets/${a.assetId}`} className="hover:text-primary hover:underline">
           {a.assetName}
         </Link>
       }
       subtitle={a.assetCode}
-      meta={
-        <>
-          {a.currentLocation ? <span className="entity-chip">{a.currentLocation}</span> : null}
-          {assignee ? <span className="entity-chip">→ {assignee}</span> : null}
-        </>
-      }
     />
   );
 }
@@ -101,7 +83,6 @@ export function purchaseOrderListCell(po: PurchaseOrder) {
   return (
     <EntityIdentityCell
       icon={FileText}
-      tone="blue"
       title={
         <Link href={`/purchase-orders/${po.purchaseOrderId}`} className="hover:text-primary hover:underline">
           {po.poNumber}
@@ -123,14 +104,12 @@ export function contractListCell(c: Contract) {
   return (
     <EntityIdentityCell
       icon={Handshake}
-      tone="violet"
       title={
         <Link href={`/contracts/${c.contractId}`} className="hover:text-primary hover:underline">
           {c.contractNumber}
         </Link>
       }
       subtitle={c.vendor?.vendorName ?? (c as Contract & { vendorName?: string }).vendorName ?? undefined}
-      meta={c.renewalStatus ? <span className="entity-chip">{c.renewalStatus}</span> : undefined}
     />
   );
 }
@@ -139,7 +118,6 @@ export function invoiceListCell(inv: Invoice) {
   return (
     <EntityIdentityCell
       icon={Receipt}
-      tone="green"
       title={
         <Link href={`/invoices/${inv.invoiceId}`} className="hover:text-primary hover:underline">
           {inv.invoiceNumber}
@@ -165,7 +143,6 @@ export function licenseListCell(l: SoftwareLicense) {
   return (
     <EntityIdentityCell
       icon={KeyRound}
-      tone="amber"
       title={l.softwareName}
       subtitle={l.expiryDate ? `Expires ${l.expiryDate}` : undefined}
       meta={
@@ -189,7 +166,6 @@ export function maintenanceListCell(m: MaintenanceRecord) {
   return (
     <EntityIdentityCell
       icon={Wrench}
-      tone="neutral"
       title={m.maintenanceType}
       subtitle={
         m.asset?.assetName ??
@@ -218,16 +194,8 @@ export function nonAssetStockListCell(item: {
   return (
     <EntityIdentityCell
       icon={Package}
-      tone="green"
       title={item.itemName}
       subtitle={item.stockCode}
-      meta={
-        item.quantityAvailable != null ? (
-          <span className="entity-chip tabular">
-            {item.quantityAvailable} {item.unitOfMeasure ?? ""}
-          </span>
-        ) : undefined
-      }
     />
   );
 }

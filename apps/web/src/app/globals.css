@@ -103,13 +103,13 @@
 
 @layer components {
   .page-stack {
-    @apply flex flex-col gap-6 md:gap-7;
+    @apply flex flex-col gap-5;
   }
   .panel-muted {
     @apply rounded-xl border border-border bg-[hsl(var(--surface-muted))]/50 p-4 md:p-5;
   }
   .list-toolbar-panel {
-    @apply rounded-xl border border-border bg-card p-4 shadow-card;
+    @apply bg-transparent p-0 shadow-none;
   }
   .enterprise-table tbody tr:hover td {
     @apply bg-muted/35;

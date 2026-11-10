@@ -199,15 +199,13 @@ export function DashboardFilterBar({ className }: DashboardFilterBarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-card",
+        "flex flex-col gap-3",
         className,
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <SlidersHorizontal className="h-4 w-4" />
-          </div>
+          <SlidersHorizontal className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <div className="min-w-0">
             <p className="text-sm font-medium">Overview filters</p>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">

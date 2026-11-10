@@ -18,21 +18,11 @@ type KpiCardProps = {
   sparkline?: React.ReactNode;
 };
 
-const TONE_MAP: Record<NonNullable<KpiCardProps["tone"]>, string> = {
-  violet: "bg-primary/10 text-primary",
-  green: "bg-success-soft text-success-softFg",
-  blue: "bg-info-soft text-info-softFg",
-  amber: "bg-warning-soft text-warning-softFg",
-  rose: "bg-destructive/10 text-destructive",
-  neutral: "bg-muted text-muted-foreground",
-};
-
 export function KpiCard({
   label,
   value,
   change,
   icon: Icon,
-  tone = "violet",
   className,
   href,
   sparkline,
@@ -54,15 +44,7 @@ export function KpiCard({
     >
       <div className="flex items-start gap-3.5">
         {Icon ? (
-          <div
-            className={cn(
-              "flex shrink-0 items-center justify-center rounded-lg",
-              density === "compact" ? "h-10 w-10" : "h-11 w-11 rounded-xl",
-              TONE_MAP[tone],
-            )}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
+          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
         ) : null}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium leading-snug text-muted-foreground line-clamp-2">{label}</p>

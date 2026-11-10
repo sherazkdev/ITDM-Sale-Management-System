@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/forms/FormField";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
 import { useUnsavedChangesWarning } from "@/lib/hooks/use-unsaved-changes-warning";
@@ -160,7 +161,7 @@ export default function NewInvoicePage() {
                 label="Invoice number"
                 htmlFor="invoiceNumber"
                 required
-                description="Enter the vendor invoice reference linked to this purchase order."
+                description={FORM_HINTS.invoiceNumber}
                 error={fieldErrorMessage("invoiceNumber", touchedFields, isSubmitted, errors)}
               >
                 <Input
@@ -210,7 +211,7 @@ export default function NewInvoicePage() {
                 label="Invoice amount"
                 htmlFor="invoiceAmount"
                 required
-                description="Enter the invoice amount in the original transaction currency."
+                description={FORM_HINTS.invoiceAmount}
                 error={fieldErrorMessage("invoiceAmount", touchedFields, isSubmitted, errors)}
               >
                 <Input

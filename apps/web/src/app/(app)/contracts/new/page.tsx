@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FORM_HINTS } from "@/lib/form-field-hints";
 import { FormField } from "@/components/forms/FormField";
 import { fieldErrorMessage, fieldHasError } from "@/lib/forms/field-error";
 import { SearchableSelect } from "@/components/forms/SearchableSelect";
@@ -162,7 +163,7 @@ export default function NewContractPage() {
                 label="Contract number"
                 htmlFor="contractNumber"
                 required
-                description="Official contract or agreement reference."
+                description={FORM_HINTS.contractNumber}
                 error={fieldErrorMessage("contractNumber", touchedFields, isSubmitted, errors)}
               >
                 <Input

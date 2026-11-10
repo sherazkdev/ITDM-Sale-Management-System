@@ -136,23 +136,21 @@ export default function RolesSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="shadow-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Roles &amp; permissions</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Review system and custom roles, inspect effective permissions, and tailor access for your organization.
-            Financial corrections remain on the protected Admin role only.
-          </p>
-        </CardHeader>
-      </Card>
+      <div className="border-b border-border pb-4">
+        <h1 className="text-lg font-semibold tracking-tight">Roles &amp; permissions</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Review system and custom roles, inspect effective permissions, and tailor access for your organization.
+          Financial corrections remain on the protected Admin role only.
+        </p>
+      </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
       <div className="flex flex-col gap-4">
-        <Card className="shadow-card">
+        <Card>
           <CardHeader className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <ShieldCheck className="h-4 w-4 text-primary" /> Role directory
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" /> Role directory
               </CardTitle>
               {canManage ? (
                 <Button size="sm" variant="soft" onClick={openCreate}>
@@ -238,16 +236,11 @@ export default function RolesSettingsPage() {
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                        style={{
-                          backgroundColor: `hsl(${roleColorHsl(r.colorKey)} / 0.12)`,
-                          color: `hsl(${roleColorHsl(r.colorKey)})`,
-                        }}
-                      >
+                      <span className="inline-flex items-center gap-2 text-sm font-medium">
                         <span
-                          className="h-2 w-2 rounded-full"
+                          className="h-2 w-2 shrink-0 rounded-full"
                           style={{ backgroundColor: `hsl(${roleColorHsl(r.colorKey)})` }}
+                          aria-hidden
                         />
                         {r.displayName}
                       </span>
@@ -271,7 +264,7 @@ export default function RolesSettingsPage() {
       </div>
 
       <div className="flex flex-col gap-6 min-w-0">
-        <Card className="shadow-card">
+        <Card>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -312,29 +305,22 @@ export default function RolesSettingsPage() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                     {group.label}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="divide-y divide-border">
                     {group.permissions.map((perm) => {
                       const allowed = selectedPermissions.has(perm.key);
                       return (
                         <div
                           key={perm.key}
-                          className={cn(
-                            "flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2",
-                            allowed ? "bg-success-soft/40" : "bg-muted/40",
-                          )}
+                          className="flex items-center justify-between gap-3 py-2"
                         >
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{perm.label}</p>
-                            <p className="text-xs text-muted-foreground font-mono truncate">{perm.key}</p>
+                            <p className="truncate text-sm font-medium">{perm.label}</p>
+                            <p className="truncate font-mono text-xs text-muted-foreground">{perm.key}</p>
                           </div>
                           {allowed ? (
-                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
-                              <Check className="h-3 w-3" />
-                            </span>
+                            <Check className="h-4 w-4 shrink-0 text-success" aria-label="Granted" />
                           ) : (
-                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                              <X className="h-3 w-3" />
-                            </span>
+                            <X className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="Not granted" />
                           )}
                         </div>
                       );
