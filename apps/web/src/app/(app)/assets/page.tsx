@@ -166,6 +166,7 @@ export default function AssetsPage() {
         nonAssetStockListCell({
           stockCode: r.stockCode,
           itemName: r.itemName,
+          href: `/assets/non-asset/${r.stockItemId}`,
           quantityAvailable: Number(r.quantityAvailable ?? r.quantityOnHand),
           unitOfMeasure: r.unitOfMeasure,
         }),

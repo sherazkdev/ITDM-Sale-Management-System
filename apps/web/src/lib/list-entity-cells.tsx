@@ -190,12 +190,21 @@ export function nonAssetStockListCell(item: {
   itemName: string;
   quantityAvailable?: number;
   unitOfMeasure?: string;
+  href?: string;
 }) {
   return (
     <EntityIdentityCell
       icon={Package}
       title={item.itemName}
-      subtitle={item.stockCode}
+      subtitle={
+        item.href ? (
+          <Link href={item.href} className="hover:text-primary hover:underline">
+            {item.stockCode}
+          </Link>
+        ) : (
+          item.stockCode
+        )
+      }
     />
   );
 }

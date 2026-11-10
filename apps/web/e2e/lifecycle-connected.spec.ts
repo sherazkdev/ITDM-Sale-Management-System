@@ -122,7 +122,7 @@ test.describe("Connected business workflows (UI + API)", () => {
     await page.getByRole("textbox", { name: /year name/i }).fill(`LC-FY-${lifecycle.ts}`);
     await page.locator("#fy-startDate").fill("2026-04-01");
     await page.locator("#fy-endDate").fill("2027-03-31");
-    await page.getByRole("button", { name: /add year/i }).click();
+    await page.getByRole("button", { name: /add financial year/i }).click();
     await expect(page.getByText(`LC-FY-${lifecycle.ts}`, { exact: true })).toBeVisible({ timeout: 15_000 });
   });
 
