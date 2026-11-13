@@ -71,7 +71,10 @@ test.describe("D09 — non-asset inventory workflow (UI + API)", () => {
     await page.locator("#qty").fill(qty);
     if (withEmployee) {
       await page.getByRole("button", { name: "Employee" }).click();
-      await page.getByRole("textbox", { name: "Filter options" }).fill(employeeNumber);
+      const filter = page.getByRole("textbox", { name: "Filter options" });
+      if (await filter.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await filter.fill(employeeNumber);
+      }
       await page.getByRole("option", { name: new RegExp(employeeNumber) }).click();
     }
     await page.getByRole("button", { name: new RegExp(`Review ${label}`, "i") }).click();

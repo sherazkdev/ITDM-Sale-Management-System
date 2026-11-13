@@ -48,12 +48,45 @@ test.describe("Prompt #26 — official movement XLSX", () => {
     const documentId = issue.json.data?.documentId;
     if (!documentId) throw new Error("missing documentId");
 
-    const response = await page.request.get(
-      `/api/v1/asset-issuances/${documentId}/official-xlsx`,
+    const apiOrigin = (process.env.ITDMS_API_URL ?? "http://127.0.0.1:3020").replace(/\/$/, "");
+    const cookies = await page.context().cookies();
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+    const response = await page.request.fetch(
+      `${apiOrigin}/api/v1/asset-issuances/${documentId}/official-xlsx`,
+      { headers: cookieHeader ? { cookie: cookieHeader } : {} },
     );
     expect(response.status()).toBe(200);
     const buffer = await response.body();
     expect(buffer.byteLength).toBeGreaterThan(1000);
     expect(response.headers()["x-itdms-export-disclaimer"]).toBe("CLIENT-D12-OFFICIAL-TEMPLATE");
+  });
+
+  test("asset detail UI downloads official issuance workbook", async ({ page }) => {
+    const ts = Date.now();
+    const category = await apiPostEnvelope<{ categoryId: string }>(page, "/asset-categories", {
+      categoryName: `P26UI-CAT-${ts}`,
+    });
+    const asset = await apiPostEnvelope<{ assetId: string }>(page, "/assets", {
+      assetCode: `P26UI-${ts}`,
+      assetName: "UI download laptop",
+      categoryId: category.json.data!.categoryId,
+    });
+    const emp = await apiPostEnvelope<{ employeeId: string }>(page, "/employees", {
+      employeeNumber: `P26UI-E-${ts}`,
+      fullName: "UI Downloader",
+      department: "IT",
+    });
+    const issue = await apiPostEnvelope<{ documentId: string }>(page, "/asset-issuances", {
+      employeeId: emp.json.data!.employeeId,
+      referenceNumber: `P26UI-ISS-${ts}`,
+      assets: [{ assetId: asset.json.data!.assetId }],
+    });
+    const assetId = asset.json.data!.assetId;
+    await page.goto(`/assets/${assetId}`, { waitUntil: "networkidle" });
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Official XLSX" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
+    expect(issue.json.data!.documentId).toBeTruthy();
   });
 });

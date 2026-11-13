@@ -127,7 +127,8 @@ export class NotificationService {
     let created = 0;
     for (const target of targets) {
       for (const recipientUserId of recipients) {
-        const dedupeKey = `${target.eventType}:${target.entityId}:${dateOnlyIso(target.expiry)}:d${target.payload.daysUntil}:u${recipientUserId}`;
+        const milestoneDays = Number(target.payload.daysUntil);
+        const dedupeKey = `${target.eventType}:${target.entityId}:${dateOnlyIso(target.expiry)}:d${milestoneDays}:u${recipientUserId}`;
         try {
           await this.prisma.notificationEvent.create({
             data: {
