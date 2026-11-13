@@ -33,6 +33,8 @@ export const D03_POLICY_MESSAGE = PO_AUTO_APPROVAL_MESSAGE;
 
 export const PO_WORKFLOW_BLOCKED = true;
 
+export const PO_SHOW_LEGACY_WORKFLOW_ACTIONS = false;
+
 export function isPoComposableStatus(status: string | undefined): boolean {
   return status === "DRAFT" || status === "APPROVED";
 }

@@ -19,7 +19,7 @@ import {
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { StatusPill } from "@/components/common/StatusPill";
 import { ConfirmDialog } from "@/components/crud/ConfirmDialog";
-import { PolicyNotApprovedNotice } from "@/components/procurement/PolicyNotApprovedNotice";
+import { QuickTip } from "@/components/common/QuickTip";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,8 @@ import { formatCurrency, formatDateOnly } from "@/lib/utils";
 import {
   D03_POLICY_MESSAGE,
   PO_STATUS_LABELS,
+  PO_AUTO_APPROVAL_MESSAGE,
+  PO_SHOW_LEGACY_WORKFLOW_ACTIONS,
   PO_WORKFLOW_BLOCKED,
   isPoComposableStatus,
   poStatusToPill,
@@ -254,7 +256,7 @@ export default function PurchaseOrderDetailPage() {
                   Back
                 </Link>
               </Button>
-              {canManage ? (
+              {canManage && PO_SHOW_LEGACY_WORKFLOW_ACTIONS ? (
                 <>
                   <WorkflowActionButton
                     label="Submit"
@@ -277,7 +279,9 @@ export default function PurchaseOrderDetailPage() {
           }
         />
 
-        {PO_WORKFLOW_BLOCKED ? <PolicyNotApprovedNotice message={D03_POLICY_MESSAGE} /> : null}
+        {PO_WORKFLOW_BLOCKED ? (
+          <QuickTip title="Purchase order approval">{PO_AUTO_APPROVAL_MESSAGE}</QuickTip>
+        ) : null}
 
         <RecordOverviewCard>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

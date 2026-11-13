@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./client";
+import { apiFetchBinary, apiGet, apiPost, saveBlobAsFile } from "./client";
 import type { IssueAssetsInput, ReturnAssetsInput } from "@/lib/validators/asset-movement";
 
 export type MovementDocumentLine = {
@@ -17,6 +17,8 @@ export type MovementDocument = {
   employee?: { employeeId: string; fullName: string; employeeNumber: string; department?: string | null };
   lines: MovementDocumentLine[];
 };
+
+export type OfficialMovementKind = "issuance" | "return";
 
 function toMovementBody(input: IssueAssetsInput | ReturnAssetsInput) {
   const receivingDepartment =
@@ -47,4 +49,31 @@ export function fetchIssuanceDocument(documentId: string) {
 
 export function fetchReturnDocument(documentId: string) {
   return apiGet<MovementDocument>(`/asset-returns/${documentId}`);
+}
+
+function officialXlsxPath(documentId: string, kind: OfficialMovementKind): string {
+  return kind === "issuance"
+    ? `/asset-issuances/${documentId}/official-xlsx`
+    : `/asset-returns/${documentId}/official-xlsx`;
+}
+
+function fileNameFromDisposition(headers: Headers, fallback: string): string {
+  const cd = headers.get("content-disposition") ?? "";
+  const match = /filename="([^"]+)"/i.exec(cd);
+  return match?.[1] ?? fallback;
+}
+
+export async function downloadOfficialMovementXlsx(
+  documentId: string,
+  kind: OfficialMovementKind,
+): Promise<{ blob: Blob; fileName: string }> {
+  const path = officialXlsxPath(documentId, kind);
+  const { blob, headers } = await apiFetchBinary(path);
+  const fileName = fileNameFromDisposition(headers, `ITDMS-${kind}-${documentId}.xlsx`);
+  return { blob, fileName };
+}
+
+export async function saveOfficialMovementXlsx(documentId: string, kind: OfficialMovementKind) {
+  const { blob, fileName } = await downloadOfficialMovementXlsx(documentId, kind);
+  saveBlobAsFile(blob, fileName);
 }

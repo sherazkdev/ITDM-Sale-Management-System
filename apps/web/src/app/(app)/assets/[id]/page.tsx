@@ -43,6 +43,7 @@ import {
 import { updateAssetMetadataSchema, type UpdateAssetMetadataInput } from "@/lib/validators/asset";
 import { ASSET_STATUS_LABELS, assetStatusToPill } from "@/lib/domain/asset-status-ui";
 import { ApiClientError } from "@/lib/api/client";
+import { OfficialMovementDownloadButton } from "@/components/inventory/OfficialMovementDownloadButton";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -59,6 +60,7 @@ export default function AssetDetailPage() {
     hasPermission(PermissionKeys.assetsManage) ||
     hasPermission(PermissionKeys.assetsFinancialsRead) ||
     hasPermission(PermissionKeys.invoicesRead);
+  const canDownloadOfficial = hasPermission(PermissionKeys.assetsRead);
 
   const [editOpen, setEditOpen] = useState(false);
   const [retireOpen, setRetireOpen] = useState(false);
@@ -151,10 +153,22 @@ export default function AssetDetailPage() {
       {
         key: "movementDocument",
         header: "Document",
-        cell: (row) => row.movementDocument?.documentNumber ?? "—",
+        cell: (row) => {
+          const doc = row.movementDocument;
+          if (!doc?.documentId) return "—";
+          const kind = row.transactionType === "RETURN" ? "return" : "issuance";
+          return (
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+              <span className="tabular text-sm">{doc.documentNumber ?? doc.documentId}</span>
+              {canDownloadOfficial ? (
+                <OfficialMovementDownloadButton documentId={doc.documentId} kind={kind} />
+              ) : null}
+            </div>
+          );
+        },
       },
     ],
-    [],
+    [canDownloadOfficial],
   );
 
   if (isLoading) {

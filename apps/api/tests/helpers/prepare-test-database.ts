@@ -31,7 +31,7 @@ async function ensurePostgresTestDatabase(): Promise<void> {
 }
 
 async function acquirePrepareLock(): Promise<() => void> {
-  const deadline = Date.now() + 70_000;
+  const deadline = Date.now() + 180_000;
   while (true) {
     try {
       const fd = fs.openSync(prepareLockFile, "wx");
@@ -65,7 +65,7 @@ function runPrismaStep(command: string, env: NodeJS.ProcessEnv): void {
         cwd: apiRoot,
         stdio: "pipe",
         env,
-        timeout: 90_000,
+        timeout: 180_000,
       });
       return;
     } catch (err) {

@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +23,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { PermissionKeys } from "@/lib/permissions";
 import { fetchEmployees } from "@/lib/api/employees";
 import { fetchAssets, type Asset } from "@/lib/api/assets";
-import { issueAssets, returnAssets } from "@/lib/api/asset-movements";
+import { issueAssets, returnAssets, saveOfficialMovementXlsx } from "@/lib/api/asset-movements";
 import {
   issueAssetsSchema,
   returnAssetsSchema,
@@ -41,12 +40,17 @@ type IssueFormValues = IssueAssetsInput;
 type ReturnFormValues = ReturnAssetsInput;
 
 function movementSuccessToast(documentId: string, kind: "issue" | "return") {
+  const officialKind = kind === "issue" ? "issuance" : "return";
   toast.success(kind === "issue" ? "Assets issued" : "Assets returned", {
-    description: (
-      <Link href={`/asset-history?documentId=${encodeURIComponent(documentId)}`} className="underline">
-        Document {documentId}
-      </Link>
-    ),
+    description: `Movement document ${documentId}`,
+    action: {
+      label: "Download official XLSX",
+      onClick: () => {
+        void saveOfficialMovementXlsx(documentId, officialKind).catch((err) => {
+          toast.error(err instanceof ApiClientError ? err.message : "Official template download failed");
+        });
+      },
+    },
   });
 }
 
