@@ -192,4 +192,4 @@ Functional rules from Prompt #25 are implemented and spot-verified; **#26 adds u
 
 ## 15. Local commit (Prompt #26)
 
-_To be filled after commit:_ SHA of commit containing UI download wiring, Prompt #26 tests, vitest/prepare harness tuning, and this document.
+**SHA:** `22ee9aa6886fd52c2483eba9b067c639cb0acabc` — UI official downloads, PO UI cleanup, Prompt #26 API/Web tests, Vitest prepare tuning, this acceptance doc.
