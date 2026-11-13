@@ -253,7 +253,10 @@ export class DashboardService {
       tasks.push(
         (async () => {
           const unread = await this.prisma.notificationEvent.count({
-            where: { readAt: null },
+            where: {
+              readAt: null,
+              OR: [{ recipientUserId: principal.userId }, { recipientUserId: null }],
+            },
           });
           summary.notifications = { unread };
           sectionsIncluded.push("notifications");

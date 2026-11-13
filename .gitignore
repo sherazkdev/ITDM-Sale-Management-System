@@ -28,4 +28,5 @@ storage-test/
 apps/api/dist/
 apps/api/.env.staging
 apps/api/storage-staging/
+storage/client-templates/*.xlsx
 apps/web/.env.local.staging

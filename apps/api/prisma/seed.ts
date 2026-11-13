@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PermissionKeys } from "../src/shared/auth/permissions.js";
 import { AuthService } from "../src/modules/auth/auth.service.js";
+import { seedClientApprovedRoles } from "./seed-client-roles.js";
 
 const prisma = new PrismaClient();
 
@@ -86,6 +87,8 @@ async function main() {
       update: {},
     });
   }
+
+  await seedClientApprovedRoles(prisma);
 
   console.log(
     JSON.stringify({

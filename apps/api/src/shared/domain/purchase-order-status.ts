@@ -10,3 +10,11 @@ export type PurchaseOrderStatusValue = (typeof PurchaseOrderStatus)[keyof typeof
 export function isPoDraft(status: string): boolean {
   return status === PurchaseOrderStatus.draft;
 }
+
+/** Header/lines editable — legacy DRAFT plus client auto-approved POs without a blocking status. */
+export function isPoComposable(status: string): boolean {
+  return (
+    status === PurchaseOrderStatus.draft ||
+    status === PurchaseOrderStatus.approved
+  );
+}

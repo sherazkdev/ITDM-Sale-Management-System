@@ -1,10 +1,25 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { AppEnv } from "../../shared/config/env.js";
+import { listSuperAdminUserIds } from "../../shared/auth/super-admin-users.js";
+import {
+  EXPIRY_REMINDER_MAX_LEAD_DAYS,
+  dateOnlyIso,
+  daysUntilExpiryDateOnly,
+  isExpiryReminderMilestone,
+  startOfUtcDay,
+} from "../../shared/domain/expiry-reminder-policy.js";
 import type { NotificationListQuery } from "./notification-list.query.js";
+import { PurchaseOrderStatus } from "../../shared/domain/purchase-order-status.js";
 
-function dateOnly(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
+const LICENSE_INACTIVE = new Set(["inactive", "cancelled", "expired", "retired"]);
+
+type ExpiryTarget = {
+  entityType: string;
+  entityId: string;
+  eventType: string;
+  expiry: Date;
+  payload: Record<string, unknown>;
+};
 
 export class NotificationService {
   constructor(
@@ -12,114 +27,153 @@ export class NotificationService {
     private readonly env: AppEnv,
   ) {}
 
+  private recipientWhere(userId: bigint): Prisma.NotificationEventWhereInput {
+    return {
+      OR: [{ recipientUserId: userId }, { recipientUserId: null }],
+    };
+  }
+
   async runExpiryScan(asOf: Date = new Date()) {
-    const leadDays = this.env.NOTIFICATION_LEAD_DAYS;
-    const threshold = new Date(asOf.getTime() + leadDays * 24 * 60 * 60 * 1000);
+    const asOfDay = startOfUtcDay(asOf);
+    const horizon = new Date(asOfDay.getTime() + EXPIRY_REMINDER_MAX_LEAD_DAYS * 86_400_000);
+    const recipients = await listSuperAdminUserIds(this.prisma);
+    if (recipients.length === 0) {
+      return {
+        created: 0,
+        leadDays: this.env.NOTIFICATION_LEAD_DAYS,
+        milestones: EXPIRY_REMINDER_MAX_LEAD_DAYS,
+        recipients: 0,
+        poExpirySource: "purchase_orders.valid_until when set",
+      };
+    }
 
     const [contracts, licenses, purchaseOrders] = await Promise.all([
       this.prisma.contract.findMany({
-        where: { expiryDate: { lte: threshold, gte: asOf } },
+        where: { expiryDate: { gte: asOfDay, lte: horizon } },
       }),
       this.prisma.softwareLicense.findMany({
-        where: { expiryDate: { lte: threshold, gte: asOf } },
+        where: { expiryDate: { gte: asOfDay, lte: horizon } },
       }),
       this.prisma.purchaseOrder.findMany({
         where: {
-          validUntil: { not: null, lte: threshold, gte: asOf },
+          validUntil: { not: null, gte: asOfDay, lte: horizon },
+          status: { not: PurchaseOrderStatus.cancelled },
         },
       }),
     ]);
 
-    let created = 0;
+    const targets: ExpiryTarget[] = [];
     for (const c of contracts) {
-      const dedupeKey = `contract-expiry:${c.contractId}:${dateOnly(c.expiryDate)}`;
-      try {
-        await this.prisma.notificationEvent.create({
-          data: {
-            eventType: "CONTRACT_EXPIRY",
-            entityType: "contract",
-            entityId: String(c.contractId),
-            dueOn: c.expiryDate,
-            dedupeKey,
-            payload: {
-              contractNumber: c.contractNumber,
-              leadDays,
-              policy: "Client Wave 1 — in-app reminder within NOTIFICATION_LEAD_DAYS before expiry",
-            },
-          },
-        });
-        created++;
-      } catch {
-        // duplicate dedupeKey — idempotent
+      const daysUntil = daysUntilExpiryDateOnly(asOfDay, c.expiryDate);
+      if (!isExpiryReminderMilestone(daysUntil)) {
+        continue;
       }
+      targets.push({
+        entityType: "contract",
+        entityId: String(c.contractId),
+        eventType: "CONTRACT_EXPIRY",
+        expiry: c.expiryDate,
+        payload: {
+          contractNumber: c.contractNumber,
+          daysUntil,
+          expiryDate: dateOnlyIso(c.expiryDate),
+          policy: "Client Prompt #25 — in-app milestone reminder for Super Admin",
+        },
+      });
     }
     for (const l of licenses) {
-      const dedupeKey = `license-expiry:${l.licenseId}:${dateOnly(l.expiryDate)}`;
-      try {
-        await this.prisma.notificationEvent.create({
-          data: {
-            eventType: "LICENSE_EXPIRY",
-            entityType: "software_license",
-            entityId: String(l.licenseId),
-            dueOn: l.expiryDate,
-            dedupeKey,
-            payload: {
-              softwareName: l.softwareName,
-              leadDays,
-              policy: "Client Wave 1 — in-app reminder within NOTIFICATION_LEAD_DAYS before expiry",
-            },
-          },
-        });
-        created++;
-      } catch {
-        // idempotent
+      if (LICENSE_INACTIVE.has(l.status.toLowerCase())) {
+        continue;
       }
+      const daysUntil = daysUntilExpiryDateOnly(asOfDay, l.expiryDate);
+      if (!isExpiryReminderMilestone(daysUntil)) {
+        continue;
+      }
+      targets.push({
+        entityType: "software_license",
+        entityId: String(l.licenseId),
+        eventType: "LICENSE_EXPIRY",
+        expiry: l.expiryDate,
+        payload: {
+          softwareName: l.softwareName,
+          daysUntil,
+          expiryDate: dateOnlyIso(l.expiryDate),
+          policy: "Client Prompt #25 — in-app milestone reminder for Super Admin",
+        },
+      });
     }
     for (const po of purchaseOrders) {
       if (!po.validUntil) {
         continue;
       }
-      const dedupeKey = `po-valid-until:${po.purchaseOrderId}:${dateOnly(po.validUntil)}`;
-      try {
-        await this.prisma.notificationEvent.create({
-          data: {
-            eventType: "PO_VALID_UNTIL",
-            entityType: "purchase_order",
-            entityId: String(po.purchaseOrderId),
-            dueOn: po.validUntil,
-            dedupeKey,
-            payload: {
-              poNumber: po.poNumber,
-              leadDays,
-              validUntil: dateOnly(po.validUntil),
-              policy:
-                "Client Wave 1 — reminder when valid_until is set; no date invented when null (D04 partial)",
+      const daysUntil = daysUntilExpiryDateOnly(asOfDay, po.validUntil);
+      if (!isExpiryReminderMilestone(daysUntil)) {
+        continue;
+      }
+      targets.push({
+        entityType: "purchase_order",
+        entityId: String(po.purchaseOrderId),
+        eventType: "PO_VALID_UNTIL",
+        expiry: po.validUntil,
+        payload: {
+          poNumber: po.poNumber,
+          daysUntil,
+          validUntil: dateOnlyIso(po.validUntil),
+          policy: "Client Prompt #25 — reminder on valid_until; no invented dates",
+        },
+      });
+    }
+
+    let created = 0;
+    for (const target of targets) {
+      for (const recipientUserId of recipients) {
+        const dedupeKey = `${target.eventType}:${target.entityId}:${dateOnlyIso(target.expiry)}:d${target.payload.daysUntil}:u${recipientUserId}`;
+        try {
+          await this.prisma.notificationEvent.create({
+            data: {
+              eventType: target.eventType,
+              entityType: target.entityType,
+              entityId: target.entityId,
+              dueOn: target.expiry,
+              dedupeKey,
+              recipientUserId,
+              payload: target.payload as Prisma.InputJsonValue,
             },
-          },
-        });
-        created++;
-      } catch {
-        // idempotent
+          });
+          created++;
+        } catch {
+          // duplicate dedupeKey — idempotent
+        }
       }
     }
+
     return {
       created,
-      leadDays,
-      poExpirySource: "purchase_orders.valid_until when set — no automatic renewal",
+      leadDays: EXPIRY_REMINDER_MAX_LEAD_DAYS,
+      milestones: EXPIRY_REMINDER_MAX_LEAD_DAYS,
+      recipients: recipients.length,
+      poExpirySource: "purchase_orders.valid_until when set",
     };
   }
 
-  buildListWhere(query: NotificationListQuery, asOf: Date = new Date()): Prisma.NotificationEventWhereInput {
+  buildListWhere(
+    query: NotificationListQuery,
+    asOf: Date = new Date(),
+    recipientUserId?: bigint,
+  ): Prisma.NotificationEventWhereInput {
     const and: Prisma.NotificationEventWhereInput[] = [];
+
+    if (recipientUserId !== undefined) {
+      and.push(this.recipientWhere(recipientUserId));
+    }
 
     if (query.read === "unread") and.push({ readAt: null });
     else if (query.read === "read") and.push({ NOT: { readAt: null } });
 
     if (query.expiringSoon) {
-      const leadDays = this.env.NOTIFICATION_LEAD_DAYS;
-      const from = new Date(asOf);
-      from.setUTCHours(0, 0, 0, 0);
-      const to = new Date(from.getTime() + leadDays * 24 * 60 * 60 * 1000);
+      const leadDays = Math.max(this.env.NOTIFICATION_LEAD_DAYS, EXPIRY_REMINDER_MAX_LEAD_DAYS);
+      const from = startOfUtcDay(asOf);
+      const to = new Date(from.getTime() + leadDays * 86_400_000);
       and.push({ dueOn: { gte: from, lte: to } });
     }
 
@@ -148,8 +202,8 @@ export class NotificationService {
     return and.length ? { AND: and } : {};
   }
 
-  async list(query: NotificationListQuery) {
-    const where = this.buildListWhere(query);
+  async list(query: NotificationListQuery, recipientUserId?: bigint) {
+    const where = this.buildListWhere(query, new Date(), recipientUserId);
     const page = query.page;
     const pageSize = query.pageSize;
     const [items, total] = await Promise.all([
@@ -164,11 +218,30 @@ export class NotificationService {
     return { items, total };
   }
 
-  async unreadCount() {
-    return this.prisma.notificationEvent.count({ where: { readAt: null } });
+  async unreadCount(recipientUserId?: bigint) {
+    const where: Prisma.NotificationEventWhereInput = { readAt: null };
+    if (recipientUserId !== undefined) {
+      return this.prisma.notificationEvent.count({
+        where: { AND: [where, this.recipientWhere(recipientUserId)] },
+      });
+    }
+    return this.prisma.notificationEvent.count({ where });
   }
 
-  async markRead(notificationEventId: bigint) {
+  async markRead(notificationEventId: bigint, recipientUserId?: bigint) {
+    const row = await this.prisma.notificationEvent.findUnique({
+      where: { notificationEventId },
+    });
+    if (!row) {
+      return null;
+    }
+    if (
+      recipientUserId !== undefined &&
+      row.recipientUserId !== null &&
+      row.recipientUserId !== recipientUserId
+    ) {
+      return null;
+    }
     return this.prisma.notificationEvent.update({
       where: { notificationEventId },
       data: { readAt: new Date() },

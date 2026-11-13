@@ -442,6 +442,7 @@ model User {
   movementDocuments       AssetMovementDocument[]
   storedDocuments         StoredDocument[]
   nonAssetStockMovements  NonAssetStockMovement[]
+  notificationEvents      NotificationEvent[]
 
   @@map("users")
 }
@@ -645,11 +646,15 @@ model NotificationEvent {
   entityId            String   @map("entity_id") @db.VarChar(64)
   dueOn               DateTime @map("due_on") @db.Date
   dedupeKey           String   @unique @map("dedupe_key") @db.VarChar(255)
+  recipientUserId     BigInt?  @map("recipient_user_id")
   payload             Json?
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   readAt              DateTime? @map("read_at") @db.Timestamptz(6)
 
+  recipient User? @relation(fields: [recipientUserId], references: [userId], onDelete: Restrict)
+
   @@index([dueOn])
   @@index([readAt])
+  @@index([recipientUserId])
   @@map("notification_events")
 }

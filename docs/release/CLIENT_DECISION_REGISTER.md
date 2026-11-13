@@ -6,6 +6,19 @@
 
 ---
 
+## Prompt #25 — Final approved business rules (recorded 2026-11-13)
+
+| ID / topic | Status | Client rule | Implementation |
+|---|---|---|---|
+| **D03 superseded** | **CONFIRMED** | No manual/SAP PO approval; new POs auto-**APPROVED** in ITDMS | `purchase-order.service.ts` creates `APPROVED`; legacy `DRAFT` unchanged |
+| **D14 superseded** | **CONFIRMED** | Reminders at 60…0 days before expiry; in-app; Super Admin only | `expiry-reminder-policy.ts`, `notification.service.ts`, `recipient_user_id` |
+| **Finance matrix** | **CONFIRMED** | Admin write; Manager read; IT Staff no finance | `seed-client-roles.ts`, API routes + search redaction |
+| **D12 issuance/return** | **CONFIRMED** | Client Excel templates for issue/return download | `asset-movement-official-export.ts`; templates in `storage/client-templates/` (gitignored) |
+
+Approver name/date: Prompt #25 engineering brief (client session).
+
+---
+
 ## Latest confirmed client responses (recorded 2026-11-06)
 
 **Important:** Confirmation of business rules is **not** proof that corresponding code is already implemented. Implementation status remains separate (`requirements/IMPLEMENTATION_STATUS.md`).
@@ -17,7 +30,7 @@
 | Asset issuance identity | Issuance records **employee and department** | D10 (partial supersede of “dept-only holder”) | **Phase 3 verified** — historical `receivingDepartment` on issuance; see `BUSINESS_PHASE3_ASSET_CUSTODY_REPORT.md` |
 | Budget currency | Allocations are **always USD**; foreign-currency conversion rates entered **manually** | D08 | Aligns with Wave 2 USD reporting + manual FX; non-USD allocation edge cases may remain provisional |
 | Financial corrections | **Admin-only** and **must be audited** | D01 / finance ops | **Phase 4/5 verified** — permission `financial.corrections` (not `users.manage` alone); posted/payment reversals **BLOCKED** — closure report |
-| Official templates | Official issuance/return templates **still awaiting client files** | D12 | Operational XLSX/CSV remain; official layouts **blocked** until files arrive |
+| Official templates | Client supplied Issuance/Return xlsx (Prompt #25) | D12 | Official movement XLSX export; templates **not** in Git |
 
 **Phase A UI note:** Premium UI Phase A does **not** implement stock consumption, budget formula changes, or financial correction workflows.
 
@@ -29,12 +42,12 @@
 
 | ID | Status | Client statement (summary) | Effect on implementation |
 |---|---|---|---|
-| **D03** | **CONFIRMED / SUPERSEDES prior “enable PO workflow” proposals** | No ITDMS PO approval; SAP/manual external approval; ITDMS keeps PO records | Submit/approve/cancel stay **403**; UI explains SAP; **no** approval engine |
+| **D03** | **SUPERSEDED by Prompt #25** | Auto-approve new POs in ITDMS; no SAP approval | Create → `APPROVED`; workflow endpoints **403** |
 | **D04** | **PARTIALLY CONFIRMED** | 60-day reminders; PO when expiry/applicable date exists | Scan uses existing `valid_until` only — **no invented dates** |
 | **D09** | **CONFIRMED (rules) / PARTIAL (code)** | Non-asset stock + decimal qty + employee/dept-linked movements (withdraw/return/replenish/write-off) | Registration exists; **movement APIs/UI still required** — see 2026-11-06 section |
 | **D10** | **CONFIRMED (rules) / VERIFIED (Phase 3 code)** | Issuance records employee **and** department (not department-only custody) | Snapshot on `AssetMovementDocument` + `AssetTransaction`; UI `/asset-issuance`, history, export |
 | **D12** | **PARTIALLY CONFIRMED** | Excel reports required; official issuance/return templates awaiting files | XLSX/CSV operational exports; **official templates still blocked** |
-| **D14** | **PARTIALLY CONFIRMED** | **60 days** before expiry; in-app (email/SMS not confirmed) | `NOTIFICATION_LEAD_DAYS=60` default |
+| **D14** | **CONFIRMED (Prompt #25)** | Milestones 60…0; in-app; Super Admin only | `EXPIRY_REMINDER_DAYS_BEFORE`; per-recipient dedupe |
 | **D01** | **PARTIALLY CONFIRMED** | One initial full-access user | RBAC kept; see `WAVE1_INITIAL_ADMIN_SETUP.md`; matrix still needed |
 | **D02** | **NEEDS CLARIFICATION** | Not explicitly resolved in Wave 1 brief | Local auth unchanged |
 | **D05–D08** | **NEEDS CLARIFICATION / pending** | Financial rules explicitly deferred | **No Wave 1 code changes** |

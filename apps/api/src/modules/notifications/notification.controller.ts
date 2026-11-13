@@ -29,7 +29,7 @@ export class NotificationController {
       throw new AppError(ErrorCodes.BAD_REQUEST, parsed.error.message, 400);
     }
     const query = parsed.data;
-    const result = await this.service.list(query);
+    const result = await this.service.list(query, req.principal?.userId);
     sendSuccess(res, toPublicJson(result.items), {
       requestId: getRequestId(req),
       ...paginationMeta(query.page, query.pageSize, result.total),
@@ -37,12 +37,15 @@ export class NotificationController {
   });
 
   unreadCount = asyncHandler(async (req: Request, res: Response) => {
-    const count = await this.service.unreadCount();
+    const count = await this.service.unreadCount(req.principal?.userId);
     sendSuccess(res, { count }, { requestId: getRequestId(req) });
   });
 
   markRead = asyncHandler(async (req: Request, res: Response) => {
-    const row = await this.service.markRead(parseId(String(req.params.id)));
+    const row = await this.service.markRead(parseId(String(req.params.id)), req.principal?.userId);
+    if (!row) {
+      throw new AppError(ErrorCodes.NOT_FOUND, "Notification not found", 404);
+    }
     sendSuccess(res, toPublicJson(row), { requestId: getRequestId(req) });
   });
 

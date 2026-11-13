@@ -10,7 +10,10 @@ export class SearchController {
 
   byPoNumber = asyncHandler(async (req: Request, res: Response) => {
     const poNumber = String(req.params.poNumber);
-    const result = await this.service.byPurchaseOrderNumber(poNumber);
+    const result = await this.service.byPurchaseOrderNumber(
+      poNumber,
+      req.principal?.permissions,
+    );
     sendSuccess(res, toPublicJson(result), { requestId: getRequestId(req) });
   });
 }

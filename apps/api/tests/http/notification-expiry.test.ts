@@ -3,11 +3,9 @@ import request from "supertest";
 import { buildApplication } from "../../src/server.js";
 import { prepareTestDatabase } from "../helpers/prepare-test-database.js";
 import { loginAsAdmin, sessionRequestHeaders } from "../helpers/auth-test.js";
-import { resetEnvCacheForTests } from "../../src/shared/config/env.js";
 
-describe("Wave 1 — expiry notifications (60-day lead)", () => {
+describe("Expiry notifications — client milestones", () => {
   beforeAll(async () => {
-    process.env.NOTIFICATION_LEAD_DAYS = "60";
     await prepareTestDatabase();
   }, 120_000);
 
@@ -17,9 +15,7 @@ describe("Wave 1 — expiry notifications (60-day lead)", () => {
     return d.toISOString().slice(0, 10);
   }
 
-  it("creates contract notification inside lead window and skips outside", async () => {
-    process.env.NOTIFICATION_LEAD_DAYS = "60";
-    resetEnvCacheForTests();
+  it("creates contract notification at milestone inside window and skips outside", async () => {
     const app = buildApplication().app;
     const cookie = await loginAsAdmin(app);
     const ts = Date.now();
@@ -30,7 +26,7 @@ describe("Wave 1 — expiry notifications (60-day lead)", () => {
       .send({ vendorName: `ExpV-${ts}` })
       .expect(201);
 
-    const inside = utcDateOnly(45);
+    const inside = utcDateOnly(30);
     const outside = utcDateOnly(75);
 
     await request(app)
@@ -66,14 +62,11 @@ describe("Wave 1 — expiry notifications (60-day lead)", () => {
     expect(scan.body.data.created).toBeGreaterThanOrEqual(1);
 
     const notes = await request(app)
-      .get("/api/v1/notifications?pageSize=100")
+      .get("/api/v1/notifications?pageSize=100&eventType=CONTRACT_EXPIRY")
       .set(sessionRequestHeaders(cookie))
       .expect(200);
 
-    const contractNotes = notes.body.data.filter(
-      (n: { eventType: string }) => n.eventType === "CONTRACT_EXPIRY",
-    );
-    const numbers = contractNotes.map(
+    const numbers = notes.body.data.map(
       (n: { payload: { contractNumber?: string } }) => n.payload?.contractNumber,
     );
     expect(numbers).toContain(`C-IN-${ts}`);
@@ -94,6 +87,7 @@ describe("Wave 1 — expiry notifications (60-day lead)", () => {
       .set(sessionRequestHeaders(cookie))
       .send({ asOf })
       .expect(200);
-    expect(second.body.data.created).toBeLessThanOrEqual(first.body.data.created);
+    expect(second.body.data.created).toBe(0);
+    expect(first.body.data.created).toBeGreaterThanOrEqual(0);
   });
 });

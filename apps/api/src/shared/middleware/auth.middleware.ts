@@ -47,3 +47,18 @@ export function requirePermission(permission: string): RequestHandler {
 export function requireFinancialCorrections(): RequestHandler {
   return requirePermission(PermissionKeys.financialCorrections);
 }
+
+export function requireAnyPermission(...permissions: string[]): RequestHandler {
+  return (req, _res, next) => {
+    const principal = req.principal;
+    if (!principal) {
+      next(new AppError(ErrorCodes.UNAUTHORIZED, "Authentication required", 401));
+      return;
+    }
+    if (!permissions.some((p) => principal.permissions.has(p))) {
+      next(new AppError(ErrorCodes.FORBIDDEN, "Forbidden", 403));
+      return;
+    }
+    next();
+  };
+}

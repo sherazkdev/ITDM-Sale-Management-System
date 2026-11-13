@@ -34,6 +34,7 @@ import { PurchaseOrderService } from "../modules/purchase-orders/purchase-order.
 import { PurchaseOrderController } from "../modules/purchase-orders/purchase-order.controller.js";
 import { AssetMovementService } from "../modules/asset-movements/asset-movement.service.js";
 import { AssetMovementController } from "../modules/asset-movements/asset-movement.controller.js";
+import { AssetMovementOfficialExportService } from "../modules/asset-movements/asset-movement-official-export.js";
 import { InvoiceService } from "../modules/invoices/invoice.service.js";
 import { InvoiceController } from "../modules/invoices/invoice.controller.js";
 import { BudgetService } from "../modules/budget/budget.service.js";
@@ -140,7 +141,11 @@ export function createApplicationControllers(
   const purchaseOrderController = new PurchaseOrderController(purchaseOrderService);
 
   const assetMovementService = new AssetMovementService(prisma, audit);
-  const assetMovementController = new AssetMovementController(assetMovementService);
+  const assetMovementOfficialExport = new AssetMovementOfficialExportService(prisma, env);
+  const assetMovementController = new AssetMovementController(
+    assetMovementService,
+    assetMovementOfficialExport,
+  );
 
   const invoiceService = new InvoiceService(prisma, audit);
   const invoiceController = new InvoiceController(invoiceService);

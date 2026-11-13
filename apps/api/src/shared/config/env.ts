@@ -18,8 +18,10 @@ export const envSchema = z
     SESSION_COOKIE_NAME: z.string().default("itdms_session"),
     CORS_ORIGIN: z.string().optional(),
     STORAGE_ROOT: z.string().default("./storage"),
-    /** PROPOSED lead time — not approved client policy (D14). */
+    /** Max lead for expiry scan window — milestones defined in expiry-reminder-policy (D14 Prompt #25). */
     NOTIFICATION_LEAD_DAYS: z.coerce.number().int().min(1).max(365).default(60),
+    ITDMS_ISSUANCE_TEMPLATE_PATH: z.string().optional(),
+    ITDMS_RETURN_TEMPLATE_PATH: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const strict =

@@ -26,6 +26,12 @@ export function createAssetMovementRouter(deps: {
     requirePermission(PermissionKeys.assetsRead),
     deps.assetMovementController.getIssuance,
   );
+  router.get(
+    "/asset-issuances/:documentId/official-xlsx",
+    authenticate,
+    requirePermission(PermissionKeys.assetsRead),
+    deps.assetMovementController.downloadOfficial,
+  );
   router.post(
     "/asset-returns",
     authenticate,
@@ -38,6 +44,12 @@ export function createAssetMovementRouter(deps: {
     authenticate,
     requirePermission(PermissionKeys.assetsRead),
     deps.assetMovementController.getReturn,
+  );
+  router.get(
+    "/asset-returns/:documentId/official-xlsx",
+    authenticate,
+    requirePermission(PermissionKeys.assetsRead),
+    deps.assetMovementController.downloadOfficial,
   );
   return router;
 }

@@ -51,7 +51,13 @@ import {
 } from "@/lib/validators/purchase-order";
 import { ApiClientError } from "@/lib/api/client";
 import { formatCurrency, formatDateOnly } from "@/lib/utils";
-import { D03_POLICY_MESSAGE, PO_STATUS_LABELS, PO_WORKFLOW_BLOCKED, poStatusToPill } from "@/lib/domain/purchase-order-ui";
+import {
+  D03_POLICY_MESSAGE,
+  PO_STATUS_LABELS,
+  PO_WORKFLOW_BLOCKED,
+  isPoComposableStatus,
+  poStatusToPill,
+} from "@/lib/domain/purchase-order-ui";
 
 function WorkflowActionButton({
   label,
@@ -98,7 +104,7 @@ export default function PurchaseOrderDetailPage() {
     enabled: !!id,
   });
 
-  const isDraft = po?.status === "DRAFT";
+  const isComposable = isPoComposableStatus(po?.status);
   const workflowTooltip = D03_POLICY_MESSAGE;
 
   const lineForm = useForm<PurchaseOrderLineInput>({
@@ -183,7 +189,7 @@ export default function PurchaseOrderDetailPage() {
       cell: (line) =>
         po ? formatCurrency(Number(line.lineSubtotal), po.currency) : Number(line.lineSubtotal),
     },
-    ...(canManage && isDraft
+    ...(canManage && isComposable
       ? [
           {
             key: "actions",
@@ -252,7 +258,7 @@ export default function PurchaseOrderDetailPage() {
                 <>
                   <WorkflowActionButton
                     label="Submit"
-                    disabled={PO_WORKFLOW_BLOCKED || !isDraft}
+                    disabled={PO_WORKFLOW_BLOCKED || !isComposable}
                     tooltip={workflowTooltip}
                   />
                   <WorkflowActionButton
@@ -327,7 +333,7 @@ export default function PurchaseOrderDetailPage() {
             title="Lines"
             flush
             action={
-              canManage && isDraft ? (
+              canManage && isComposable ? (
                 <Button
                   size="sm"
                   onClick={() => {
@@ -353,7 +359,7 @@ export default function PurchaseOrderDetailPage() {
               getRowId={(line) => line.purchaseOrderLineId}
               empty={
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  No lines yet.{isDraft && canManage ? " Add a line to build this draft." : ""}
+                  No lines yet.{isComposable && canManage ? " Add a line to complete this PO." : ""}
                 </p>
               }
             />

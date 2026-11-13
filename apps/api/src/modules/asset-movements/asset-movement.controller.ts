@@ -8,6 +8,7 @@ import { getRequestId } from "../../shared/middleware/request-id.js";
 import { toPublicJson } from "../../shared/json/serialize.js";
 import { issueAssetsSchema, returnAssetsSchema } from "./asset-movement.schema.js";
 import type { AssetMovementService } from "./asset-movement.service.js";
+import type { AssetMovementOfficialExportService } from "./asset-movement-official-export.js";
 
 type IssueBody = z.infer<typeof issueAssetsSchema>;
 type ReturnBody = z.infer<typeof returnAssetsSchema>;
@@ -20,7 +21,10 @@ function parseDocumentId(raw: string): bigint {
 }
 
 export class AssetMovementController {
-  constructor(private readonly service: AssetMovementService) {}
+  constructor(
+    private readonly service: AssetMovementService,
+    private readonly officialExport?: AssetMovementOfficialExportService,
+  ) {}
 
   issue = asyncHandler(async (req: Request, res: Response) => {
     const principal = req.principal;
@@ -60,5 +64,20 @@ export class AssetMovementController {
     const assetId = parseDocumentId(String(req.params.id));
     const holder = await this.service.getCurrentHolder(assetId);
     sendSuccess(res, toPublicJson(holder), { requestId: getRequestId(req) });
+  });
+
+  downloadOfficial = asyncHandler(async (req: Request, res: Response) => {
+    if (!this.officialExport) {
+      throw new AppError(ErrorCodes.INTERNAL_ERROR, "Export service unavailable", 500);
+    }
+    const documentId = parseDocumentId(String(req.params.documentId));
+    const { buffer, filename } = await this.officialExport.generateWorkbook(documentId);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("x-itdms-export-disclaimer", "CLIENT-D12-OFFICIAL-TEMPLATE");
+    res.send(buffer);
   });
 }

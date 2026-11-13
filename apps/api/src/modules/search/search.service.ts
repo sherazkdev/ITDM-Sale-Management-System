@@ -3,12 +3,17 @@ import { ErrorCodes } from "../../shared/errors/error-codes.js";
 import type { PrismaClient } from "@prisma/client";
 import { sumDecimals, toDecimal } from "../../shared/money/decimal-math.js";
 import { listDocumentsForOwner } from "../../shared/documents/document-owner.js";
+import {
+  canViewAssetPurchaseCosts,
+  canViewBudgetFinancials,
+  canViewInvoiceFinancials,
+} from "../../shared/auth/finance-access.js";
 import { enrichNonAssetStockItem } from "../non-asset-stock/non-asset-stock.presenter.js";
 
 export class SearchService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async byPurchaseOrderNumber(poNumber: string) {
+  async byPurchaseOrderNumber(poNumber: string, viewerPermissions?: Set<string>) {
     const po = await this.prisma.purchaseOrder.findUnique({
       where: { poNumber: poNumber.trim() },
       include: {
@@ -70,31 +75,51 @@ export class SearchService {
           })
         : [];
 
-    const budgetSummaries = this.summarizeBudgetTransactions(po.budgetTransactions);
+    const canInvoices = viewerPermissions ? canViewInvoiceFinancials(viewerPermissions) : true;
+    const canBudgets = viewerPermissions ? canViewBudgetFinancials(viewerPermissions) : true;
+    const canAssetFinancials = viewerPermissions ? canViewAssetPurchaseCosts(viewerPermissions) : true;
 
-    const invoiceFinancials = po.invoices.map((inv) => {
-      const paidTotal = sumDecimals(inv.payments.map((p) => p.amount));
-      const outstanding = toDecimal(inv.invoiceAmount).sub(paidTotal);
-      return {
-        invoiceId: inv.invoiceId,
-        invoiceNumber: inv.invoiceNumber,
-        invoiceAmount: inv.invoiceAmount,
-        paymentStatus: inv.paymentStatus,
-        paidTotal,
-        outstanding,
-        paymentCount: inv.payments.length,
-      };
-    });
+    const budgetSummaries = canBudgets
+      ? this.summarizeBudgetTransactions(po.budgetTransactions)
+      : null;
 
-    const { nonAssetStockItems, ...purchaseOrder } = po;
+    const invoiceFinancials = canInvoices
+      ? po.invoices.map((inv) => {
+          const paidTotal = sumDecimals(inv.payments.map((p) => p.amount));
+          const outstanding = toDecimal(inv.invoiceAmount).sub(paidTotal);
+          return {
+            invoiceId: inv.invoiceId,
+            invoiceNumber: inv.invoiceNumber,
+            invoiceAmount: inv.invoiceAmount,
+            paymentStatus: inv.paymentStatus,
+            paidTotal,
+            outstanding,
+            paymentCount: inv.payments.length,
+          };
+        })
+      : [];
+
+    const { nonAssetStockItems, invoices: _invoices, budgetTransactions: _bt, ...purchaseOrder } = po;
+    const poForClient = {
+      ...purchaseOrder,
+      invoices: canInvoices ? po.invoices : [],
+      totalAmount: canInvoices ? purchaseOrder.totalAmount : undefined,
+    };
+
+  const assetsForClient = canAssetFinancials
+      ? po.assets
+      : po.assets.map((a) => ({
+          ...a,
+          purchaseCost: null,
+        }));
 
     return {
-      purchaseOrder,
+      purchaseOrder: { ...poForClient, assets: assetsForClient },
       nonAssetStockItems: nonAssetStockItems.map((item) => enrichNonAssetStockItem(item)),
       expiryDates: {
         contractExpiry: po.contract?.expiryDate ?? null,
         poValidUntil: po.validUntil ?? null,
-        note: "PO valid_until and reminder lead time are PROPOSED until D04/D14 approved",
+        note: "PO valid_until uses entered dates; expiry reminders follow client milestone schedule (D04/D14)",
       },
       supportingDocuments: {
         purchaseOrder: poDocuments.map((d) => d.storedDocument),
@@ -108,6 +133,11 @@ export class SearchService {
         licenseKeyReference: undefined,
       })),
       budget: budgetSummaries,
+      financeAccess: {
+        invoicesVisible: canInvoices,
+        budgetsVisible: canBudgets,
+        assetFinancialsVisible: canAssetFinancials,
+      },
       truncation: {
         movementsCap: 500,
         maintenanceCap: 200,

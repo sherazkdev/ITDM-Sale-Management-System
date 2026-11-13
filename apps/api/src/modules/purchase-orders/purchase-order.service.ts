@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../shared/errors/app-error.js";
 import { ErrorCodes } from "../../shared/errors/error-codes.js";
-import { PurchaseOrderStatus, isPoDraft } from "../../shared/domain/purchase-order-status.js";
+import { PurchaseOrderStatus, isPoComposable } from "../../shared/domain/purchase-order-status.js";
 import { lineSubtotal, toDecimal } from "../../shared/money/decimal-math.js";
 import { runInTransaction } from "../../shared/db/transaction.js";
 import type { AuditService } from "../../shared/audit/audit.service.js";
@@ -68,11 +68,11 @@ export class PurchaseOrderService {
         validUntil: input.validUntil ? parseDateOnly(input.validUntil) : undefined,
         totalAmount: new Prisma.Decimal(0),
         currency: input.currency.toUpperCase(),
-        status: PurchaseOrderStatus.draft,
+        status: PurchaseOrderStatus.approved,
       });
       await this.audit.record({
         actorUserId: auditContext.actorUserId,
-        action: "purchase_order.create_draft",
+        action: "purchase_order.create_approved",
         targetType: "purchase_order",
         targetId: String(po.purchaseOrderId),
         result: "success",
@@ -105,8 +105,8 @@ export class PurchaseOrderService {
     auditContext: { actorUserId?: bigint; requestId?: string },
   ) {
     const po = await this.getById(purchaseOrderId);
-    if (!isPoDraft(po.status)) {
-      throw new AppError(ErrorCodes.CONFLICT, "Only draft purchase orders can be edited", 409);
+    if (!isPoComposable(po.status)) {
+      throw new AppError(ErrorCodes.CONFLICT, "Only composable purchase orders can be edited", 409);
     }
     const vendorId = po.vendorId;
     if (input.contractId !== undefined) {
@@ -153,8 +153,8 @@ export class PurchaseOrderService {
       if (!po) {
         throw new AppError(ErrorCodes.NOT_FOUND, "Purchase order not found", 404);
       }
-      if (!isPoDraft(po.status)) {
-        throw new AppError(ErrorCodes.CONFLICT, "Only draft purchase orders accept new lines", 409);
+      if (!isPoComposable(po.status)) {
+        throw new AppError(ErrorCodes.CONFLICT, "Only composable purchase orders accept new lines", 409);
       }
       const subtotal = lineSubtotal(line.quantity, line.unitPrice);
       await tx.purchaseOrderLine.create({
@@ -189,8 +189,8 @@ export class PurchaseOrderService {
   ) {
     await runInTransaction(this.prisma, async (tx) => {
       const po = await tx.purchaseOrder.findUnique({ where: { purchaseOrderId } });
-      if (!po || !isPoDraft(po.status)) {
-        throw new AppError(ErrorCodes.CONFLICT, "Line can only be removed on draft PO", 409);
+      if (!po || !isPoComposable(po.status)) {
+        throw new AppError(ErrorCodes.CONFLICT, "Line can only be removed on composable PO", 409);
       }
       await tx.purchaseOrderLine.delete({ where: { purchaseOrderLineId } });
       await this.recomputeHeaderTotal(tx, purchaseOrderId);
@@ -209,7 +209,7 @@ export class PurchaseOrderService {
   assertWorkflowEndpointBlocked(): never {
     throw new AppError(
       ErrorCodes.POLICY_NOT_APPROVED,
-      "PO submit/approve/cancel are not used in ITDMS — client confirmed approval occurs in SAP (or manually outside ITDMS). ITDMS maintains PO records only.",
+      "PO submit/approve/cancel workflow endpoints are disabled — new purchase orders are approved automatically on creation in ITDMS (no external SAP approval step).",
       403,
     );
   }

@@ -100,7 +100,7 @@ export default function NewPurchaseOrderPage() {
   const mutation = useMutation({
     mutationFn: createPurchaseOrderDraft,
     onSuccess: (po: PurchaseOrder) => {
-      toast.success("Purchase order draft created");
+      toast.success("Purchase order created (approved)");
       router.push(`/purchase-orders/${po.purchaseOrderId}`);
     },
     onError: (err) => {
