@@ -131,4 +131,4 @@ None for approved Prompt #25/26 scope (functional).
 |---|---|
 | `22ee9aa` | UI official downloads, PO UI, Prompt #26 tests, Vitest tuning |
 | `d7646f3` | Acceptance doc — API 109/109 |
-| *verification* | ESLint fix, E2E harness, UI download E2E, doc close-out (see `git log -1`) |
+| `5ccc6ec` | ESLint fix, E2E harness, UI download E2E, acceptance close-out |
