@@ -128,9 +128,9 @@
 
 | Run | Files | Tests | Notes |
 |---|---|---|---|
-| Full suite (pre timeout fix) | 38 / 43 pass | 101 / 109 pass, 5 skipped | Failures: prepare **lock timeout**, hook timeout, 30s test timeout, transient login 500 after ~58m run |
-| **Targeted Prompt #25/#26 + D09** | **6 / 6** | **9 / 9** | **PASS** after `vitest.config` + prepare lock tuning |
-| **Full rerun** | *In progress* | *In progress* | Log: `docs/release/_tmp_prompt26_api_rerun_log.txt` |
+| Full suite (pre timeout fix) | 38 / 43 pass | 101 / 109 pass, 5 skipped | Harness lock/hook/test timeouts — not business defects |
+| **Targeted Prompt #25/#26 + D09** | **6 / 6** | **9 / 9** | **PASS** |
+| **Full rerun (post harness tuning)** | **43 / 43** | **109 / 109** | **PASS** — `docs/release/_tmp_prompt26_api_rerun_log.txt` (~21 min) |
 
 **Infra fixes applied (test harness only):** `hookTimeout`/`testTimeout` 180s/90s; prepare lock wait 180s; Prisma exec timeout 180s.
 
@@ -165,10 +165,8 @@ Full Playwright including visual capture specs was **not** re-run (out of scope 
 
 ## 12. Remaining functional blockers
 
-1. **Full API Vitest green on Windows long runs** — confirm post–harness rerun (was 101/109).
-2. **Playwright** — install browsers on workstation (`cd apps/web && npx playwright install chromium`) then rerun core batch with API on `:3020` and `itdms_e2e`.
-3. **Full API Vitest rerun** — confirm `docs/release/_tmp_prompt26_api_rerun_log.txt` reaches **43/43** files.
-4. **API ESLint full-tree** — prior run exceeded wall-clock; spot lint on #26 tests **PASS**.
+1. **Playwright** — complete Chromium install (`npx playwright install chromium`, set `PLAYWRIGHT_BROWSERS_PATH` to `%LOCALAPPDATA%\ms-playwright` if needed) and run core E2E with API on `:3020` / `itdms_e2e`.
+3. **API ESLint full-tree** — prior run exceeded wall-clock; spot lint on #26 tests **PASS**.
 
 ---
 
