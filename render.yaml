@@ -34,10 +34,12 @@ services:
         value: info
       - key: STORAGE_ROOT
         value: /tmp/itdms-storage
-      - key: ITDMS_ISSUANCE_TEMPLATE_PATH
-        sync: false
-      - key: ITDMS_RETURN_TEMPLATE_PATH
-        sync: false
+      - key: ITDMS_ISSUANCE_TEMPLATE_B64_PATH
+        value: /etc/secrets/Issuance.xlsx.b64
+      - key: ITDMS_RETURN_TEMPLATE_B64_PATH
+        value: /etc/secrets/Return.xlsx.b64
+      - key: ITDMS_TEMPLATES_DECODE_DIR
+        value: /tmp/itdms-templates
       # Only if browser called API directly (avoid when using Netlify /api/v1 proxy):
       # - key: CORS_ORIGIN
       #   sync: false

@@ -2,10 +2,13 @@ import type { Server } from "node:http";
 import { createApp } from "./app.js";
 import { createApplicationControllers } from "./application/controllers.js";
 import { createApiRouter } from "./routes/index.js";
-import { loadEnv } from "./shared/config/env.js";
+import { loadEnv, resetEnvCache } from "./shared/config/env.js";
 import { createLogger } from "./shared/logging/logger.js";
 import { disconnectPrisma, getPrisma } from "./shared/db/prisma.js";
-import { bootstrapOfficialTemplates } from "./shared/bootstrap/official-templates-bootstrap.js";
+import {
+  bootstrapOfficialTemplates,
+  bootstrapOfficialTemplatesPreEnv,
+} from "./shared/bootstrap/official-templates-bootstrap.js";
 
 export function buildApplication() {
   const env = loadEnv();
@@ -18,8 +21,12 @@ export function buildApplication() {
 }
 
 export async function startServer(): Promise<Server> {
-  const { app, env, logger, prisma } = buildApplication();
+  const bootstrapEnv = loadEnv();
+  const bootstrapLogger = createLogger(bootstrapEnv);
+  await bootstrapOfficialTemplatesPreEnv(bootstrapLogger);
+  resetEnvCache();
 
+  const { app, env, logger, prisma } = buildApplication();
   await bootstrapOfficialTemplates(env, logger);
   await prisma.$connect();
 

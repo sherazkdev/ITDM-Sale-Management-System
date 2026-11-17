@@ -37,3 +37,4 @@ deploy/free-tier/neon-direct.uri
 deploy/free-tier/neon-pooled.uri
 deploy/free-tier/.env.render.local
 deploy/free-tier/render-template-hashes.json
+deploy/free-tier/secrets/

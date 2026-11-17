@@ -64,3 +64,8 @@ export function loadEnv(input: NodeJS.ProcessEnv = process.env): AppEnv {
 export function resetEnvCacheForTests(): void {
   cached = undefined;
 }
+
+/** Clear cached env after bootstrap mutates process.env (e.g. decoded template paths). */
+export function resetEnvCache(): void {
+  cached = undefined;
+}
