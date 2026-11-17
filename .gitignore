@@ -30,3 +30,10 @@ apps/api/.env.staging
 apps/api/storage-staging/
 storage/client-templates/*.xlsx
 apps/web/.env.local.staging
+deploy/free-tier/.env.neon.local
+deploy/free-tier/neon-project-create.json
+deploy/free-tier/neon-connection.local.json
+deploy/free-tier/neon-direct.uri
+deploy/free-tier/neon-pooled.uri
+deploy/free-tier/.env.render.local
+deploy/free-tier/render-template-hashes.json

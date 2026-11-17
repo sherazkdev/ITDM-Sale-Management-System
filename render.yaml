@@ -3,13 +3,14 @@
 
 services:
   - type: web
-    name: itdms-api-demo
+    name: itdms-demo-api
     runtime: node
     plan: free
     region: oregon
-    repo: https://github.com/YOUR_ORG/YOUR_PRIVATE_REPO
+    repo: https://github.com/sherazkdev/ITDM-Sale-Management-System
     branch: main
     rootDir: .
+    autoDeploy: false
     buildCommand: >-
       npm ci &&
       npm run build --workspace=@itdms/api &&
