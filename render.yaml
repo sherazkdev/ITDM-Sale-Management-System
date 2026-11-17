@@ -1,0 +1,42 @@
+# Render Blueprint (manual import or reference) — API only. Web on Netlify.
+# USER ACTION: create as Private GitHub Web Service; do not enable auto-deploy until secrets set.
+
+services:
+  - type: web
+    name: itdms-api-demo
+    runtime: node
+    plan: free
+    region: oregon
+    repo: https://github.com/YOUR_ORG/YOUR_PRIVATE_REPO
+    branch: main
+    rootDir: .
+    buildCommand: >-
+      npm ci &&
+      npm run build --workspace=@itdms/api &&
+      npm exec -w @itdms/api -- prisma generate
+    startCommand: cd apps/api && node dist/index.js
+    healthCheckPath: /api/v1/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ITDMS_STAGING_STRICT
+        value: "1"
+      - key: ITDMS_TRUST_PROXY
+        value: "1"
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
+      - key: STORAGE_ROOT
+        value: /tmp/itdms-storage
+      - key: ITDMS_ISSUANCE_TEMPLATE_PATH
+        sync: false
+      - key: ITDMS_RETURN_TEMPLATE_PATH
+        sync: false
+      # Only if browser called API directly (avoid when using Netlify /api/v1 proxy):
+      # - key: CORS_ORIGIN
+      #   sync: false

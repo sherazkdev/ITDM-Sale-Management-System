@@ -1,0 +1,15 @@
+# ITDMS web — Netlify (free tier) demo front door.
+# Repo is npm workspaces; install at root, build @itdms/web.
+# Browser calls same-origin /api/v1/* (Next route handler → Render API).
+
+[build]
+  base = "/"
+  command = "npm ci && npm run build --workspace=@itdms/web"
+  publish = "apps/web/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--include=dev"

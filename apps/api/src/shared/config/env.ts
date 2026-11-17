@@ -10,6 +10,8 @@ export const envSchema = z
     /** When "1", enable Express trust proxy (reverse proxy / TLS termination). */
     ITDMS_TRUST_PROXY: z.enum(["0", "1"]).optional(),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+    /** Bind address (Render/Linux hosts require 0.0.0.0). */
+    HOST: z.string().default("0.0.0.0"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])

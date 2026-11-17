@@ -21,8 +21,8 @@ export async function startServer(): Promise<Server> {
 
   await prisma.$connect();
 
-  const server = app.listen(env.PORT, () => {
-    logger.info({ port: env.PORT, nodeEnv: env.NODE_ENV }, "ITDMS API listening");
+  const server = app.listen(env.PORT, env.HOST, () => {
+    logger.info({ host: env.HOST, port: env.PORT, nodeEnv: env.NODE_ENV }, "ITDMS API listening");
   });
 
   const shutdown = (signal: string) => {
