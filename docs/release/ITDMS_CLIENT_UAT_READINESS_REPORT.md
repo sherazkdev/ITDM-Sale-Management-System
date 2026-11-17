@@ -10,7 +10,7 @@
 
 The application implements the **approved Prompt #25 business rules** (automatic purchase order approval, Super Admin expiry notifications, finance role matrix, official issuance/return Excel downloads). Automated regression is **actively re-running** on 2026-11-17 to refresh evidence beyond Prompt #26.
 
-**Client UAT readiness:** **YELLOW** — suitable to **begin structured UAT** on core workflows while the final Playwright matrix and a small API re-run complete. **Not** a statement of production go-live.
+**Client UAT readiness:** **GREEN (core)** — API **109/109** and core Playwright **96/96** (2026-11-17). Full responsive screenshot matrix still outstanding (**YELLOW** for layout sign-off only). **Not** a statement of production go-live.
 
 ---
 

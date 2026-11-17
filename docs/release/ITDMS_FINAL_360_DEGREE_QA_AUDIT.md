@@ -101,12 +101,13 @@
 | Prisma validate | **PASS** | — |
 | API TypeScript | **PASS** | — |
 | API ESLint full tree | **PASS** | — |
-| API Vitest full | **IN PROGRESS** | `_tmp_prompt27_api_full_log.txt` — **6 files skipped** at cold start before Postgres healthy; **re-run required** for those files |
+| API Vitest full | **109 / 109 PASS** | Initial run 83+26 skip (`P1001` cold DB) + rerun 6 files 26/26 (`_tmp_prompt27_api_rerun6_log.txt`) |
 | Web TypeScript | **PASS** | — |
 | Web ESLint | **PASS** | — |
 | Web Vitest | **73 / 73 PASS** | — |
 | Next.js production build | **PASS** | — |
-| Playwright functional (non-capture) | **IN PROGRESS** | `_tmp_prompt27_playwright_full_log.txt` — **309** tests scheduled |
+| Playwright core workflows | **96 / 96 PASS** | `_tmp_prompt27_playwright_core_log.txt` (~3.9m) |
+| Playwright full (incl. responsive matrix) | **FAIL (infra)** | `_tmp_prompt27_playwright_full_log.txt` — 43 pass / 243 fail; rerun `responsive.spec.ts` separately with stable API |
 | Playwright capture matrix (`*capture*.spec.ts`, 537 total listed) | **NOT RUN** | Optional; writes to `test-results/ui-captures` when enabled |
 
 **Historical baseline (Prompt #26):** API 109/109, Web 73/73, core Playwright 84/84 — superseded by this run when complete.
@@ -126,8 +127,8 @@
 
 | ID | Sev | Summary |
 |---|---|---|
-| INF-01 | P2 | API Vitest: 6 suites skipped when Postgres was down at suite start — re-run after DB up |
-| INF-02 | P3 | Full Playwright 309-test run duration — monitor to completion |
+| INF-01 | **Closed** | API 109/109 after DB-up rerun |
+| INF-02 | P2 | Responsive matrix (217 tests) — schedule isolated run after full dev API/web up |
 
 **P0 open:** **0**  
 **P1 open:** **0**  
