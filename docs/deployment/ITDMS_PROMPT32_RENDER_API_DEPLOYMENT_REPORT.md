@@ -1,7 +1,7 @@
 # ITDMS Prompt #32 — Render API deployment report
 
 **Date:** 2026-11-17  
-**Repository remote HEAD:** `bb667ce` (public GitHub)  
+**Repository remote HEAD:** `3d68e2d` (public GitHub — Render deploy commit pushed)  
 **Neon demo DB:** `itdms_demo` @ `itdms-client-demo` (Prompt #31 — unchanged, no reseed)
 
 ---
@@ -10,7 +10,7 @@
 
 | Field | Status |
 |-------|--------|
-| **RENDER API DEPLOYMENT** | **PARTIAL** — local/cloud prep complete; **service not created** (Render login required) |
+| **RENDER API DEPLOYMENT** | **PARTIAL** — deploy commit `3d68e2d` on GitHub; **service not created in agent session** (complete dashboard steps locally) |
 | **FREE PLAN** | **CONFIRMED** in `render.yaml` (`plan: free`) — pending user selection in dashboard |
 | **API HTTPS URL** | **NOT CREATED** |
 | **HEALTH CHECK** | **NOT RUN** (hosted) |
@@ -135,9 +135,9 @@ Local source (not in git): `storage/client-templates/`. Upload via Render **Secr
 
 | Item | Value |
 |------|--------|
-| Reviewed local commit | **Prepared, not created** (awaiting your approval per public-repo policy) |
-| Remote HEAD | `bb667ce` |
-| Additional GitHub push | **NO** unless you approve separately |
+| Reviewed local commit | **`3d68e2d`** — `chore(deploy): add Render Free API bootstrap and smoke tooling` |
+| Remote HEAD | `3d68e2d` |
+| Additional GitHub push | **Done** (focused Render artifacts only) |
 
 ---
 
