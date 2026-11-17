@@ -464,7 +464,7 @@ export default function PurchaseOrderDetailPage() {
           open={!!removeLineId}
           onOpenChange={(open) => !open && setRemoveLineId(null)}
           title="Remove line?"
-          description="This line will be removed from the draft purchase order."
+          description="This line will be removed from the purchase order."
           confirmLabel="Remove"
           destructive
           loading={removeLineMutation.isPending}

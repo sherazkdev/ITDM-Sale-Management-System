@@ -43,4 +43,8 @@ export const STATIC_APP_ROUTES = [
   "/notifications",
   "/admin",
   "/admin/audit",
+  "/departments",
+  "/help",
+  "/settings",
+  "/settings/profile",
 ] as const;

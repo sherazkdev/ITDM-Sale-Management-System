@@ -111,7 +111,11 @@ export default function NewPurchaseOrderPage() {
   if (!canManage) {
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader variant="standard" title="New purchase order" description="Create a draft PO." />
+        <PageHeader
+          variant="standard"
+          title="New purchase order"
+          description="Create a purchase order. It is saved as Approved automatically."
+        />
         <Card className="p-6 text-sm text-muted-foreground">
           You need the purchaseOrders.manage permission to create drafts.{" "}
           <Link href="/purchase-orders" className="text-primary hover:underline">
@@ -126,7 +130,7 @@ export default function NewPurchaseOrderPage() {
     <div className="flex flex-col gap-6">
       <PageHeader variant="standard"
         title="New purchase order"
-        description="Create a draft purchase order."
+        description="Create a purchase order. It is saved as Approved automatically."
         breadcrumbs={[{ label: "Purchase orders", href: "/purchase-orders" }, { label: "New" }]}
         actions={
           <Button variant="outline" size="md" asChild>
