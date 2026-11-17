@@ -97,7 +97,7 @@ test.describe("Wave 3 — financial verification (UI + API)", () => {
     expect(bal.data.outstanding).toBe("600");
     expect(bal.data.paidTotal).toBe("400");
 
-    await expect(page.getByText(/600(\.00)?/)).toBeVisible();
+    await expect(page.locator('dt:text-is("Outstanding") + dd')).toContainText(/\$600(\.00)?/);
   });
 
   test("post second invoice and budget committed totals", async ({ page }) => {

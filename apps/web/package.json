@@ -14,6 +14,7 @@
     "test:e2e:ui": "playwright test --ui",
     "capture:ui08": "playwright test e2e/screenshots.spec.ts --project=chromium-desktop",
     "test:e2e:responsive": "playwright test e2e/responsive.spec.ts",
+    "test:e2e:visual-capture": "playwright test e2e/*-capture.spec.ts e2e/screenshots.spec.ts",
     "test:e2e:lifecycle": "playwright test e2e/lifecycle-connected.spec.ts",
     "staging:e2e": "playwright test --config playwright.config.staging.ts"
   },

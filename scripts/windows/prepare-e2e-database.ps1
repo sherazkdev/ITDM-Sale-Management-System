@@ -10,12 +10,21 @@ if ($DbName -match "itdms_dev|itdms_staging") {
   Write-Error "Refusing to prepare E2E database named '$DbName' (dev/staging protected)."
 }
 
+& (Join-Path $PSScriptRoot "wait-postgres.ps1") | Out-Null
+
 $adminUrl = if ($env:ADMIN_DATABASE_URL) {
   $env:ADMIN_DATABASE_URL
 } else {
   "postgresql://itdms:itdms_dev_password@127.0.0.1:5433/postgres?schema=public"
 }
 $env:ADMIN_DATABASE_URL = $adminUrl
+$savedDbUrl = $env:DATABASE_URL
+Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+$env:WAIT_DATABASE_URL = $adminUrl
+node (Join-Path $RepoRoot "scripts\windows\wait-database-ready.mjs")
+if ($null -ne $savedDbUrl) { $env:DATABASE_URL = $savedDbUrl }
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $env:E2E_DB_NAME = $DbName
 
 node (Join-Path $RepoRoot "scripts\windows\ensure-e2e-database.mjs")

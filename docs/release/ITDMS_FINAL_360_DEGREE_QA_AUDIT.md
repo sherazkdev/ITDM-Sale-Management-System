@@ -1,9 +1,21 @@
-# ITDMS — Final 360° Enterprise QA Audit (Prompt #27)
+# ITDMS — Final 360° Enterprise QA Audit (Prompt #27 + #28 closure)
 
 **Audit start:** 2026-11-17  
 **Pre-audit SHA:** `410a7fba0a0bec45f9bb52af12af1f35b130f1f8`  
+**Prompt #28 verification:** `docs/release/ITDMS_PROMPT28_FINAL_RELEASE_VERIFICATION.md`  
 **Recovery tag:** `itdms-pre-prompt27-2026-11-17`  
-**Baseline log:** `docs/release/audit/PROMPT27_BASELINE_AUDIT_LOG.md`
+**Baseline log:** `docs/release/audit/PROMPT27_BASELINE_AUDIT_LOG.md`  
+**Prompt #28 baseline:** `docs/release/ITDMS_PROMPT28_BASELINE.md`
+
+### Prompt #28 regression summary (authoritative)
+
+| Suite | Result |
+|-------|--------|
+| API Vitest | **109 / 0 / 0** |
+| Web Vitest | **73 / 0 / 0** |
+| Playwright (functional UAT gate) | **309 / 0 / 0** |
+| Static gates (Prisma, TSC, ESLint, Next build) | **PASS** |
+| Client UAT engineering gate | **GREEN** |
 
 ---
 

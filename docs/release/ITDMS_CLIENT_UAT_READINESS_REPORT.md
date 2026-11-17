@@ -1,4 +1,4 @@
-# ITDMS — Client UAT Readiness Report (Prompt #27)
+# ITDMS — Client UAT Readiness Report (Prompt #28)
 
 **Audience:** Business owner, IT sponsor, UAT participants  
 **Date:** 2026-11-17  
@@ -8,9 +8,9 @@
 
 ## Executive summary
 
-The application implements the **approved Prompt #25 business rules** (automatic purchase order approval, Super Admin expiry notifications, finance role matrix, official issuance/return Excel downloads). Automated regression is **actively re-running** on 2026-11-17 to refresh evidence beyond Prompt #26.
+The application implements the **approved Prompt #25 business rules** (automatic purchase order approval, Super Admin expiry notifications, finance role matrix, official issuance/return Excel downloads). Prompt #28 completed full automated regression on isolated `itdms_test` / `itdms_e2e` databases.
 
-**Client UAT readiness:** **GREEN (core)** — API **109/109** and core Playwright **96/96** (2026-11-17). Full responsive screenshot matrix still outstanding (**YELLOW** for layout sign-off only). **Not** a statement of production go-live.
+**Client UAT readiness (engineering gate):** **GREEN** — API **109/109**, Web **73/73**, functional Playwright **309/309** (includes responsive matrix + a11y sample). Optional visual-capture Playwright (256 additional screenshot tests) remains **out of UAT gate** (`npm run test:e2e:visual-capture`). **Not** production go-live.
 
 ---
 
@@ -52,9 +52,9 @@ The application implements the **approved Prompt #25 business rules** (automatic
 
 ## Pending engineering items (not UAT blockers)
 
-- Complete **309-test** functional Playwright run (responsive + workflows).  
-- Re-run **6 API Vitest files** that skipped during a cold database start.  
-- Local commit for PO copy fixes and expanded route smoke list.
+- Optional **visual capture** Playwright permutations for marketing archives only.  
+- Client manual walkthrough on staging data (see § “What the client should test”).  
+- Production hosting, backup, and deployment runbooks (out of scope).
 
 ---
 
@@ -71,5 +71,5 @@ The application implements the **approved Prompt #25 business rules** (automatic
 
 | Question | Answer |
 |---|---|
-| **Suitable to start client UAT?** | **YES**, on isolated/staging data, for workflows listed above. |
-| **Production ready?** | **NO** — deployment, migration sign-off, and refreshed full regression log required. |
+| **Suitable to start client UAT?** | **YES** — engineering regression **GREEN** (2026-11-17 Prompt #28). |
+| **Production ready?** | **NO** — deployment, migration sign-off, and client ops prerequisites required. |

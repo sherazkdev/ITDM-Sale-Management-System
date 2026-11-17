@@ -11,7 +11,8 @@ import path from "node:path";
  * Prepare DB: `.\scripts\windows\prepare-e2e-database.ps1`
  * Then point API `DATABASE_URL` at `itdms_e2e` before running tests.
  */
-const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3011";
+const webOrigin = process.env.WEB_ORIGIN ?? "http://127.0.0.1:3021";
+const useExternalStack = process.env.ITDMS_E2E_EXTERNAL_STACK === "1";
 const authFile = path.join(__dirname, "e2e", ".auth", "admin.json");
 
 function resolveWebListenPort(origin: string): string {
@@ -20,7 +21,7 @@ function resolveWebListenPort(origin: string): string {
     if (port) return port;
     return protocol === "https:" ? "443" : "80";
   } catch {
-    return "3011";
+    return "3021";
   }
 }
 
@@ -28,10 +29,13 @@ const webListenPort = resolveWebListenPort(webOrigin);
 
 /** Staging-only; run via `npm run staging:e2e` when UAT credentials exist. */
 const stagingOnly = /staging-verification\.spec\.ts/;
+/** Screenshot/marketing captures — run via `npm run test:e2e:visual-capture` (not UAT gate). */
+const visualCaptureOnly = /-(capture)\.spec\.ts|screenshots\.spec\.ts/;
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: [stagingOnly],
+  globalSetup: path.join(__dirname, "e2e", "global-setup.ts"),
+  testIgnore: [stagingOnly, visualCaptureOnly],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -45,22 +49,26 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "off",
   },
-  webServer: {
-    command: `next start -p ${webListenPort}`,
-    cwd: path.join(__dirname),
-    url: webOrigin,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    env: {
-      ...process.env,
-      ITDMS_API_URL: process.env.ITDMS_API_URL ?? "http://127.0.0.1:3020",
-    },
-  },
+  ...(useExternalStack
+    ? {}
+    : {
+        webServer: {
+          command: `next start -p ${webListenPort}`,
+          cwd: path.join(__dirname),
+          url: webOrigin,
+          reuseExistingServer: !process.env.CI,
+          timeout: 180_000,
+          env: {
+            ...process.env,
+            ITDMS_API_URL: process.env.ITDMS_API_URL ?? "http://127.0.0.1:3020",
+          },
+        },
+      }),
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "chromium-desktop",
-      testIgnore: [/auth\.setup\.ts/, stagingOnly],
+      testIgnore: [/auth\.setup\.ts/, stagingOnly, visualCaptureOnly],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },

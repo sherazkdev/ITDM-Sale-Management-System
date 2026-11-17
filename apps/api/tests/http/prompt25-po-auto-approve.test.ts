@@ -7,7 +7,7 @@ import { loginAsAdmin, sessionRequestHeaders } from "../helpers/auth-test.js";
 describe("Prompt #25 — PO auto approval", () => {
   beforeAll(async () => {
     await prepareTestDatabase();
-  }, 120_000);
+  }, 180_000);
 
   it("creates purchase orders in APPROVED status and allows line composition", async () => {
     const app = buildApplication().app;
