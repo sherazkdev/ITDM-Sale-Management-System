@@ -3,6 +3,7 @@
 **Date:** 2026-11-17  
 **Repository:** `D:\ITDM-Sale-Management`  
 **Baseline HEAD:** `9cd7598` (pre–Prompt #28 changes)  
+**Final local commit:** `b697beb` — `fix(qa): Prompt #28 E2E/API readiness and full regression green`  
 **Recovery tag:** `itdms-pre-prompt27-2026-11-17`  
 **E2E stack:** API `http://127.0.0.1:3020` → `itdms_e2e`; Web `http://127.0.0.1:3021`; PostgreSQL `127.0.0.1:5433`
 
